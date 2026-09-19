@@ -15,7 +15,7 @@ import com.example.wavefret.recording.RecordingUiController
 
 /**
  * App entry point. Sets up edge-to-edge layout, requests microphone access,
- * and wires the Record/Stop buttons to RecordingUiController.
+ * and wires the record/stop toggle button to RecordingUiController.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -25,13 +25,12 @@ class MainActivity : AppCompatActivity() {
     /** Holds recording UI state, independent of Android Views. Type: RecordingUiController */
     private val recordingUiController = RecordingUiController()
 
-    private lateinit var btnRecord: Button
-    private lateinit var btnStop: Button
-    private lateinit var tvStatus: TextView
+    private lateinit var btnToggleRecording: Button
+    private lateinit var tvRecordingStatus: TextView
 
-    private val requestPermissionLauncher =
+    private val requestAudioPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            onPermissionResult(isGranted)
+            onAudioPermissionResult(isGranted)
         }
 
     /**
@@ -48,47 +47,34 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        btnRecord = findViewById(R.id.btnRecord)
-        btnStop = findViewById(R.id.btnStop)
-        tvStatus = findViewById(R.id.tvStatus)
+        btnToggleRecording = findViewById(R.id.btnToggleRecording)
+        tvRecordingStatus = findViewById(R.id.tvStatus)
 
-        btnRecord.setOnClickListener { onRecordClicked() }
-        btnStop.setOnClickListener { onStopClicked() }
+        btnToggleRecording.setOnClickListener { onToggleRecordingClicked() }
 
-        refreshUi()
+        refreshRecordingUi()
         requestAudioPermissionIfNeeded()
     }
 
     /**
-     * Delegates the Record button tap to recordingUiController and refreshes the UI.
+     * Delegates the toggle button tap to recordingUiController and refreshes the UI.
      *
      * @return Unit
      */
-    private fun onRecordClicked() {
-        recordingUiController.onRecordClicked()
-        refreshUi()
+    private fun onToggleRecordingClicked() {
+        recordingUiController.onToggleRecordingClicked()
+        refreshRecordingUi()
     }
 
     /**
-     * Delegates the Stop button tap to recordingUiController and refreshes the UI.
-     *
-     * @return Unit
-     */
-    private fun onStopClicked() {
-        recordingUiController.onStopClicked()
-        refreshUi()
-    }
-
-    /**
-     * Updates button enabled-states and status text to match
+     * Updates the toggle button's label and the status text to match
      * recordingUiController's current state.
      *
      * @return Unit
      */
-    private fun refreshUi() {
-        btnRecord.isEnabled = recordingUiController.isRecordButtonEnabled()
-        btnStop.isEnabled = recordingUiController.isStopButtonEnabled()
-        tvStatus.text = recordingUiController.statusText()
+    private fun refreshRecordingUi() {
+        btnToggleRecording.text = recordingUiController.toggleRecordingButtonLabel()
+        tvRecordingStatus.text = recordingUiController.statusText()
     }
 
     /**
@@ -99,7 +85,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun requestAudioPermissionIfNeeded() {
         if (audioPermissionManager.needsPermissionRequest()) {
-            requestPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+            requestAudioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
         } else {
             Log.d(TAG, "RECORD_AUDIO already granted")
         }
@@ -109,7 +95,7 @@ class MainActivity : AppCompatActivity() {
      * @param isGranted True if permission was granted, false if denied. Type: Boolean
      * @return Unit
      */
-    private fun onPermissionResult(isGranted: Boolean) {
+    private fun onAudioPermissionResult(isGranted: Boolean) {
         if (isGranted) {
             Log.d(TAG, "RECORD_AUDIO granted")
         } else {

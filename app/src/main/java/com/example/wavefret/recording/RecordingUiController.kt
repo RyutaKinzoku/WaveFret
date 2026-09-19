@@ -55,4 +55,25 @@ class RecordingUiController {
         RecordingState.IDLE -> "Ready to record"
         RecordingState.RECORDING -> "Recording..."
     }
+
+    /**
+     * Handles a single toggle button tap: starts recording if idle,
+     * stops recording if currently recording.
+     *
+     * @return Unit
+     */
+    fun onToggleRecordingClicked() {
+        when (state) {
+            RecordingState.IDLE -> onRecordClicked()
+            RecordingState.RECORDING -> onStopClicked()
+        }
+    }
+
+    /**
+     * @return Label the toggle button should display for the current state. Type: String
+     */
+    fun toggleRecordingButtonLabel(): String = when (state) {
+        RecordingState.IDLE -> "Record"
+        RecordingState.RECORDING -> "Stop"
+    }
 }

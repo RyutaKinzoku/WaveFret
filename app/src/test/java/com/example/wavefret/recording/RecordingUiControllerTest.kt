@@ -52,28 +52,28 @@ class RecordingUiControllerTest {
     @Test
     fun `initial button label is Record`() {
         val controller = RecordingUiController()
-        assertEquals("Record", controller.buttonLabel())
+        assertEquals("Record", controller.toggleRecordingButtonLabel())
     }
 
     @Test
     fun `button label is Stop while recording`() {
         val controller = RecordingUiController()
-        controller.onButtonClicked()
-        assertEquals("Stop", controller.buttonLabel())
+        controller.onToggleRecordingClicked()
+        assertEquals("Stop", controller.toggleRecordingButtonLabel())
     }
 
     @Test
-    fun `onButtonClicked toggles idle to recording`() {
+    fun `onToggleRecordingClicked toggles idle to recording`() {
         val controller = RecordingUiController()
-        controller.onButtonClicked()
+        controller.onToggleRecordingClicked()
         assertEquals(RecordingState.RECORDING, controller.currentState())
     }
 
     @Test
-    fun `onButtonClicked toggles recording back to idle`() {
+    fun `onToggleRecordingClicked toggles recording back to idle`() {
         val controller = RecordingUiController()
-        controller.onButtonClicked()
-        controller.onButtonClicked()
+        controller.onToggleRecordingClicked()
+        controller.onToggleRecordingClicked()
         assertEquals(RecordingState.IDLE, controller.currentState())
     }
 }
