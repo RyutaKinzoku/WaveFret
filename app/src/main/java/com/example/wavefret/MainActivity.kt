@@ -2,6 +2,8 @@ package com.example.wavefret
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -9,25 +11,30 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.wavefret.permission.AudioPermissionManager
 import com.example.wavefret.permission.SystemPermissionChecker
+import com.example.wavefret.recording.RecordingUiController
 
 /**
- * App entry point. Sets up edge-to-edge layout and requests microphone
- * access needed for the recording/pitch-detection features.
+ * App entry point. Sets up edge-to-edge layout, requests microphone access,
+ * and wires the Record/Stop buttons to RecordingUiController.
  */
 class MainActivity : AppCompatActivity() {
 
     /** Decides whether RECORD_AUDIO needs to be requested. Type: AudioPermissionManager */
     private val audioPermissionManager = AudioPermissionManager(SystemPermissionChecker(this))
 
-    /** Launcher that shows the system RECORD_AUDIO dialog and reports the user's decision. */
+    /** Holds recording UI state, independent of Android Views. Type: RecordingUiController */
+    private val recordingUiController = RecordingUiController()
+
+    private lateinit var btnRecord: Button
+    private lateinit var btnStop: Button
+    private lateinit var tvStatus: TextView
+
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             onPermissionResult(isGranted)
         }
 
     /**
-     * Called by Android when the activity is created.
-     *
      * @param savedInstanceState Previously saved state, or null on first creation. Type: Bundle?
      * @return Unit
      */
@@ -41,7 +48,47 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        btnRecord = findViewById(R.id.btnRecord)
+        btnStop = findViewById(R.id.btnStop)
+        tvStatus = findViewById(R.id.tvStatus)
+
+        btnRecord.setOnClickListener { onRecordClicked() }
+        btnStop.setOnClickListener { onStopClicked() }
+
+        refreshUi()
         requestAudioPermissionIfNeeded()
+    }
+
+    /**
+     * Delegates the Record button tap to recordingUiController and refreshes the UI.
+     *
+     * @return Unit
+     */
+    private fun onRecordClicked() {
+        recordingUiController.onRecordClicked()
+        refreshUi()
+    }
+
+    /**
+     * Delegates the Stop button tap to recordingUiController and refreshes the UI.
+     *
+     * @return Unit
+     */
+    private fun onStopClicked() {
+        recordingUiController.onStopClicked()
+        refreshUi()
+    }
+
+    /**
+     * Updates button enabled-states and status text to match
+     * recordingUiController's current state.
+     *
+     * @return Unit
+     */
+    private fun refreshUi() {
+        btnRecord.isEnabled = recordingUiController.isRecordButtonEnabled()
+        btnStop.isEnabled = recordingUiController.isStopButtonEnabled()
+        tvStatus.text = recordingUiController.statusText()
     }
 
     /**
@@ -59,8 +106,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Handles the user's response to the RECORD_AUDIO permission dialog.
-     *
      * @param isGranted True if permission was granted, false if denied. Type: Boolean
      * @return Unit
      */
