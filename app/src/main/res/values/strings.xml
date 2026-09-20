@@ -4,4 +4,8 @@
     <string name="stop_playback">Stop Playback</string>
     <string name="play">Play</string>
     <string name="stop">Stop</string>
+    <string name="delete">Delete</string>
+    <string name="delete_recording_title">Delete recording?</string>
+    <string name="delete_recording_message">Delete %1$s? This cannot be undone.</string>
+    <string name="cancel">Cancel</string>
 </resources>

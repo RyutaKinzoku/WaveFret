@@ -12,16 +12,18 @@ import com.example.wavefret.R
 
 /**
  * RecyclerView adapter that displays a list of recordings, delegating each
- * item's text to RecordingDisplayFormatter and each row's own Play/Stop
- * button tap to onPlayStopClicked.
+ * item's text to RecordingDisplayFormatter and each row's Play/Stop and
+ * Delete button taps upward.
  *
  * @property displayFormatter Builds each item's display string. Type: RecordingDisplayFormatter
  * @property onPlayStopClicked Called with a recording when its Play/Stop button is tapped. Type: (RecordingInfo) -> Unit
+ * @property onDeleteClicked Called with a recording when its Delete button is tapped. Type: (RecordingInfo) -> Unit
  * @property isPlaying Reports whether a given file path is currently playing, to choose the button label. Type: (String) -> Boolean
  */
 class RecordingsAdapter(
     private val displayFormatter: RecordingDisplayFormatter,
     private val onPlayStopClicked: (RecordingInfo) -> Unit,
+    private val onDeleteClicked: (RecordingInfo) -> Unit,
     private val isPlaying: (String) -> Boolean
 ) : ListAdapter<RecordingInfo, RecordingsAdapter.RecordingViewHolder>(RecordingDiffCallback()) {
 
@@ -43,9 +45,13 @@ class RecordingsAdapter(
      */
     override fun onBindViewHolder(holder: RecordingViewHolder, position: Int) {
         val recording = getItem(position)
-        holder.bind(recording, displayFormatter, isPlaying(recording.filePath)) {
-            onPlayStopClicked(recording)
-        }
+        holder.bind(
+            recording = recording,
+            displayFormatter = displayFormatter,
+            isCurrentlyPlaying = isPlaying(recording.filePath),
+            onPlayStopClicked = { onPlayStopClicked(recording) },
+            onDeleteClicked = { onDeleteClicked(recording) }
+        )
     }
 
     /**
@@ -80,25 +86,29 @@ class RecordingsAdapter(
 
         private val tvRecordingLabel: TextView = rootView.findViewById(R.id.tvRecordingLabel)
         private val btnPlayStop: Button = rootView.findViewById(R.id.btnPlayStop)
+        private val btnDelete: Button = rootView.findViewById(R.id.btnDelete)
 
         /**
          * @param recording Recording to display in this row. Type: RecordingInfo
          * @param displayFormatter Builds the display string for the recording. Type: RecordingDisplayFormatter
          * @param isCurrentlyPlaying Whether this row's file is currently playing. Type: Boolean
          * @param onPlayStopClicked Called when this row's Play/Stop button is tapped. Type: () -> Unit
+         * @param onDeleteClicked Called when this row's Delete button is tapped. Type: () -> Unit
          * @return Unit
          */
         fun bind(
             recording: RecordingInfo,
             displayFormatter: RecordingDisplayFormatter,
             isCurrentlyPlaying: Boolean,
-            onPlayStopClicked: () -> Unit
+            onPlayStopClicked: () -> Unit,
+            onDeleteClicked: () -> Unit
         ) {
             tvRecordingLabel.text = displayFormatter.format(recording)
             btnPlayStop.text = rootView.context.getString(
                 if (isCurrentlyPlaying) R.string.stop else R.string.play
             )
             btnPlayStop.setOnClickListener { onPlayStopClicked() }
+            btnDelete.setOnClickListener { onDeleteClicked() }
         }
     }
 
