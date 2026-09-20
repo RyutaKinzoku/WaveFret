@@ -68,3 +68,8 @@ class FakeAudioPlayer : AudioPlayer {
         lastCompletionCallback?.invoke()
     }
 }
+
+/** Fake AudioDurationReader returning a fixed duration for every file, for deterministic tests. */
+class FakeAudioDurationReader(private val fixedDurationMillis: Long = 0L) : AudioDurationReader {
+    override fun readDurationMillis(filePath: String): Long = fixedDurationMillis
+}
