@@ -11,14 +11,17 @@ import com.example.wavefret.R
 
 /**
  * RecyclerView adapter that displays a list of recordings, delegating each
- * item's text to RecordingDisplayFormatter. Uses ListAdapter + DiffUtil so
- * list updates only touch the rows that actually changed, instead of
- * redrawing the whole list on every update.
+ * item's text to RecordingDisplayFormatter and reporting taps upward via
+ * onItemClicked.
  *
  * @property displayFormatter Builds each item's display string. Type: RecordingDisplayFormatter
+ * @property onItemClicked Called with a recording when its row is tapped. Type: (RecordingInfo) -> Unit
+ * @property isPlaying Reports whether a given file path is currently playing, for highlighting. Type: (String) -> Boolean
  */
 class RecordingsAdapter(
-    private val displayFormatter: RecordingDisplayFormatter
+    private val displayFormatter: RecordingDisplayFormatter,
+    private val onItemClicked: (RecordingInfo) -> Unit,
+    private val isPlaying: (String) -> Boolean
 ) : ListAdapter<RecordingInfo, RecordingsAdapter.RecordingViewHolder>(RecordingDiffCallback()) {
 
     /**
@@ -38,7 +41,9 @@ class RecordingsAdapter(
      * @return Unit
      */
     override fun onBindViewHolder(holder: RecordingViewHolder, position: Int) {
-        holder.bind(getItem(position), displayFormatter)
+        val recording = getItem(position)
+        holder.bind(recording, displayFormatter, isPlaying(recording.filePath))
+        holder.itemView.setOnClickListener { onItemClicked(recording) }
     }
 
     /**
@@ -53,10 +58,12 @@ class RecordingsAdapter(
         /**
          * @param recording Recording to display in this row. Type: RecordingInfo
          * @param displayFormatter Builds the display string for the recording. Type: RecordingDisplayFormatter
+         * @param isCurrentlyPlaying Whether this row's file is currently playing. Type: Boolean
          * @return Unit
          */
-        fun bind(recording: RecordingInfo, displayFormatter: RecordingDisplayFormatter) {
-            tvRecordingLabel.text = displayFormatter.format(recording)
+        fun bind(recording: RecordingInfo, displayFormatter: RecordingDisplayFormatter, isCurrentlyPlaying: Boolean) {
+            val prefix = if (isCurrentlyPlaying) "▶  " else ""
+            tvRecordingLabel.text = prefix + displayFormatter.format(recording)
         }
     }
 
@@ -66,20 +73,10 @@ class RecordingsAdapter(
      */
     private class RecordingDiffCallback : DiffUtil.ItemCallback<RecordingInfo>() {
 
-        /**
-         * @param oldItem Existing item. Type: RecordingInfo
-         * @param newItem Candidate replacement item. Type: RecordingInfo
-         * @return True if both items represent the same recording file. Type: Boolean
-         */
         override fun areItemsTheSame(oldItem: RecordingInfo, newItem: RecordingInfo): Boolean {
             return oldItem.filePath == newItem.filePath
         }
 
-        /**
-         * @param oldItem Existing item. Type: RecordingInfo
-         * @param newItem Candidate replacement item. Type: RecordingInfo
-         * @return True if the two items have identical field values. Type: Boolean
-         */
         override fun areContentsTheSame(oldItem: RecordingInfo, newItem: RecordingInfo): Boolean {
             return oldItem == newItem
         }
