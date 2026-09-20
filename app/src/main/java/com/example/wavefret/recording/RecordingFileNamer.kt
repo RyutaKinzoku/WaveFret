@@ -1,5 +1,7 @@
 package com.example.wavefret.recording
 
+import com.example.wavefret.common.time.Clock
+
 /**
  * Generates unique file names for new recordings, based on the current time.
  *

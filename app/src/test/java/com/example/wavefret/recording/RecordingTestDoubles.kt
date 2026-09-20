@@ -1,5 +1,8 @@
 package com.example.wavefret.recording
 
+import com.example.wavefret.common.time.Clock
+import com.example.wavefret.common.time.DateFormatter
+
 /** Fake Clock returning a fixed time, for deterministic file-naming tests. */
 class FakeClock(private val fixedTimeMillis: Long) : Clock {
     override fun currentTimeMillis(): Long = fixedTimeMillis
@@ -30,4 +33,9 @@ class FakeAudioRecorder : AudioRecorder {
 /** Fake RecordingDirectoryProvider returning a fixed path, avoiding a real Context dependency. */
 class FakeRecordingDirectoryProvider(private val fixedPath: String) : RecordingDirectoryProvider {
     override fun recordingsDirectoryPath(): String = fixedPath
+}
+
+/** Fake DateFormatter returning a fixed string, for deterministic display-logic tests. */
+class FakeDateFormatter(private val fixedOutput: String) : DateFormatter {
+    override fun format(epochMillis: Long): String = fixedOutput
 }

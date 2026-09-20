@@ -9,20 +9,27 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.wavefret.permission.AudioPermissionManager
-import com.example.wavefret.permission.SystemPermissionChecker
-import com.example.wavefret.recording.ExternalFilesRecordingDirectoryProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.wavefret.common.permission.SystemPermissionChecker
+import com.example.wavefret.common.storage.ExternalAppStorageDirectoryProvider
+import com.example.wavefret.common.time.SystemClock
+import com.example.wavefret.common.time.SystemDateFormatter
+import com.example.wavefret.recording.AudioPermissionManager
 import com.example.wavefret.recording.MediaRecorderAudioRecorder
+import com.example.wavefret.recording.RecordingDisplayFormatter
 import com.example.wavefret.recording.RecordingFileNamer
 import com.example.wavefret.recording.RecordingSessionController
 import com.example.wavefret.recording.RecordingState
 import com.example.wavefret.recording.RecordingUiController
-import com.example.wavefret.recording.SystemClock
+import com.example.wavefret.recording.RecordingsAdapter
+import com.example.wavefret.recording.RecordingsFolderProvider
+import com.example.wavefret.recording.RecordingsRepository
 
 /**
  * App entry point. Sets up edge-to-edge layout, requests microphone access,
- * and wires the record/stop toggle button to RecordingUiController and
- * RecordingSessionController.
+ * wires the record/stop toggle button to RecordingUiController and
+ * RecordingSessionController, and displays past recordings in a list.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -32,15 +39,31 @@ class MainActivity : AppCompatActivity() {
     /** Holds recording UI state (button label, status text), independent of Android Views. Type: RecordingUiController */
     private val recordingUiController = RecordingUiController()
 
+    /** Resolves the app's base storage directory. Type: ExternalAppStorageDirectoryProvider */
+    private val appStorageDirectoryProvider = ExternalAppStorageDirectoryProvider(this)
+
+    /** Resolves where recording files are stored, as a "recordings" subfolder. Type: RecordingsFolderProvider */
+    private val recordingDirectoryProvider = RecordingsFolderProvider(appStorageDirectoryProvider)
+
     /** Drives the actual MediaRecorder lifecycle for each recording session. Type: RecordingSessionController */
     private val recordingSessionController = RecordingSessionController(
         audioRecorder = MediaRecorderAudioRecorder(this),
         fileNamer = RecordingFileNamer(SystemClock()),
-        directoryProvider = ExternalFilesRecordingDirectoryProvider(this)
+        directoryProvider = recordingDirectoryProvider
     )
+
+    /** Reads the current list of recorded files from disk. Type: RecordingsRepository */
+    private val recordingsRepository = RecordingsRepository(recordingDirectoryProvider)
+
+    /** Builds each recording's display text. Type: RecordingDisplayFormatter */
+    private val recordingDisplayFormatter = RecordingDisplayFormatter(SystemDateFormatter())
+
+    /** Displays recordings inside rvRecordings. Type: RecordingsAdapter */
+    private val recordingsAdapter = RecordingsAdapter(recordingDisplayFormatter)
 
     private lateinit var btnToggleRecording: Button
     private lateinit var tvRecordingStatus: TextView
+    private lateinit var rvRecordings: RecyclerView
 
     private val requestAudioPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -63,10 +86,14 @@ class MainActivity : AppCompatActivity() {
 
         btnToggleRecording = findViewById(R.id.btnToggleRecording)
         tvRecordingStatus = findViewById(R.id.tvStatus)
+        rvRecordings = findViewById(R.id.rvRecordings)
 
         btnToggleRecording.setOnClickListener { onToggleRecordingClicked() }
+        rvRecordings.layoutManager = LinearLayoutManager(this)
+        rvRecordings.adapter = recordingsAdapter
 
         refreshRecordingUi()
+        refreshRecordingsList()
         requestAudioPermissionIfNeeded()
     }
 
@@ -90,15 +117,13 @@ class MainActivity : AppCompatActivity() {
             RecordingState.IDLE -> {
                 val recordedFilePath = recordingSessionController.stopCurrentRecording()
                 Log.d(RECORDING_LOG_TAG, "Recording saved to $recordedFilePath")
+                refreshRecordingsList()
             }
         }
         refreshRecordingUi()
     }
 
     /**
-     * Updates the toggle button's label and the status text to match
-     * recordingUiController's current state.
-     *
      * @return Unit
      */
     private fun refreshRecordingUi() {
@@ -107,9 +132,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Requests RECORD_AUDIO from the user if audioPermissionManager determines
-     * it is not currently granted.
-     *
+     * @return Unit
+     */
+    private fun refreshRecordingsList() {
+        recordingsAdapter.submitList(recordingsRepository.listRecordings())
+    }
+
+    /**
      * @return Unit
      */
     private fun requestAudioPermissionIfNeeded() {
