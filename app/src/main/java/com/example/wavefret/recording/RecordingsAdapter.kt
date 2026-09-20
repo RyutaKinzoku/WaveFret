@@ -3,6 +3,7 @@ package com.example.wavefret.recording
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -11,14 +12,17 @@ import com.example.wavefret.R
 
 /**
  * RecyclerView adapter that displays a list of recordings, delegating each
- * item's text to RecordingDisplayFormatter. Uses ListAdapter + DiffUtil so
- * list updates only touch the rows that actually changed, instead of
- * redrawing the whole list on every update.
+ * item's text to RecordingDisplayFormatter and each row's own Play/Stop
+ * button tap to onPlayStopClicked.
  *
  * @property displayFormatter Builds each item's display string. Type: RecordingDisplayFormatter
+ * @property onPlayStopClicked Called with a recording when its Play/Stop button is tapped. Type: (RecordingInfo) -> Unit
+ * @property isPlaying Reports whether a given file path is currently playing, to choose the button label. Type: (String) -> Boolean
  */
 class RecordingsAdapter(
-    private val displayFormatter: RecordingDisplayFormatter
+    private val displayFormatter: RecordingDisplayFormatter,
+    private val onPlayStopClicked: (RecordingInfo) -> Unit,
+    private val isPlaying: (String) -> Boolean
 ) : ListAdapter<RecordingInfo, RecordingsAdapter.RecordingViewHolder>(RecordingDiffCallback()) {
 
     /**
@@ -38,7 +42,33 @@ class RecordingsAdapter(
      * @return Unit
      */
     override fun onBindViewHolder(holder: RecordingViewHolder, position: Int) {
-        holder.bind(getItem(position), displayFormatter)
+        val recording = getItem(position)
+        holder.bind(recording, displayFormatter, isPlaying(recording.filePath)) {
+            onPlayStopClicked(recording)
+        }
+    }
+
+    /**
+     * Refreshes only the rows for the given file paths, instead of redrawing
+     * the whole list, since only their Play/Stop label needs to change.
+     *
+     * @param previousFilePath File that was playing before the change, or null. Type: String?
+     * @param currentFilePath File that is playing now, or null. Type: String?
+     * @return Unit
+     */
+    fun notifyPlaybackChanged(previousFilePath: String?, currentFilePath: String?) {
+        notifyRowForFilePath(previousFilePath)
+        notifyRowForFilePath(currentFilePath)
+    }
+
+    /**
+     * @param filePath File path to locate in the current list, or null to no-op. Type: String?
+     * @return Unit
+     */
+    private fun notifyRowForFilePath(filePath: String?) {
+        if (filePath == null) return
+        val index = currentList.indexOfFirst { it.filePath == filePath }
+        if (index != -1) notifyItemChanged(index)
     }
 
     /**
@@ -49,14 +79,26 @@ class RecordingsAdapter(
     class RecordingViewHolder(private val rootView: View) : RecyclerView.ViewHolder(rootView) {
 
         private val tvRecordingLabel: TextView = rootView.findViewById(R.id.tvRecordingLabel)
+        private val btnPlayStop: Button = rootView.findViewById(R.id.btnPlayStop)
 
         /**
          * @param recording Recording to display in this row. Type: RecordingInfo
          * @param displayFormatter Builds the display string for the recording. Type: RecordingDisplayFormatter
+         * @param isCurrentlyPlaying Whether this row's file is currently playing. Type: Boolean
+         * @param onPlayStopClicked Called when this row's Play/Stop button is tapped. Type: () -> Unit
          * @return Unit
          */
-        fun bind(recording: RecordingInfo, displayFormatter: RecordingDisplayFormatter) {
+        fun bind(
+            recording: RecordingInfo,
+            displayFormatter: RecordingDisplayFormatter,
+            isCurrentlyPlaying: Boolean,
+            onPlayStopClicked: () -> Unit
+        ) {
             tvRecordingLabel.text = displayFormatter.format(recording)
+            btnPlayStop.text = rootView.context.getString(
+                if (isCurrentlyPlaying) R.string.stop else R.string.play
+            )
+            btnPlayStop.setOnClickListener { onPlayStopClicked() }
         }
     }
 
@@ -66,20 +108,10 @@ class RecordingsAdapter(
      */
     private class RecordingDiffCallback : DiffUtil.ItemCallback<RecordingInfo>() {
 
-        /**
-         * @param oldItem Existing item. Type: RecordingInfo
-         * @param newItem Candidate replacement item. Type: RecordingInfo
-         * @return True if both items represent the same recording file. Type: Boolean
-         */
         override fun areItemsTheSame(oldItem: RecordingInfo, newItem: RecordingInfo): Boolean {
             return oldItem.filePath == newItem.filePath
         }
 
-        /**
-         * @param oldItem Existing item. Type: RecordingInfo
-         * @param newItem Candidate replacement item. Type: RecordingInfo
-         * @return True if the two items have identical field values. Type: Boolean
-         */
         override fun areContentsTheSame(oldItem: RecordingInfo, newItem: RecordingInfo): Boolean {
             return oldItem == newItem
         }

@@ -39,3 +39,32 @@ class FakeRecordingDirectoryProvider(private val fixedPath: String) : RecordingD
 class FakeDateFormatter(private val fixedOutput: String) : DateFormatter {
     override fun format(epochMillis: Long): String = fixedOutput
 }
+
+/** Fake AudioPlayer that records calls and lets tests simulate natural playback completion. */
+class FakeAudioPlayer : AudioPlayer {
+    var lastPlayedFilePath: String? = null
+        private set
+    var stopPlaybackCallCount = 0
+        private set
+    var releasePlayerCallCount = 0
+        private set
+    private var lastCompletionCallback: (() -> Unit)? = null
+
+    override fun playFile(filePath: String, onCompleted: () -> Unit) {
+        lastPlayedFilePath = filePath
+        lastCompletionCallback = onCompleted
+    }
+
+    override fun stopPlayback() {
+        stopPlaybackCallCount++
+    }
+
+    override fun releasePlayer() {
+        releasePlayerCallCount++
+    }
+
+    /** Simulates the platform player reaching the end of the file on its own. */
+    fun simulatePlaybackCompleted() {
+        lastCompletionCallback?.invoke()
+    }
+}

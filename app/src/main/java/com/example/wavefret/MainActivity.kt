@@ -16,7 +16,9 @@ import com.example.wavefret.common.storage.ExternalAppStorageDirectoryProvider
 import com.example.wavefret.common.time.SystemClock
 import com.example.wavefret.common.time.SystemDateFormatter
 import com.example.wavefret.recording.AudioPermissionManager
+import com.example.wavefret.recording.MediaPlayerAudioPlayer
 import com.example.wavefret.recording.MediaRecorderAudioRecorder
+import com.example.wavefret.recording.PlaybackController
 import com.example.wavefret.recording.RecordingDisplayFormatter
 import com.example.wavefret.recording.RecordingFileNamer
 import com.example.wavefret.recording.RecordingSessionController
@@ -29,7 +31,7 @@ import com.example.wavefret.recording.RecordingsRepository
 /**
  * App entry point. Sets up edge-to-edge layout, requests microphone access,
  * wires the record/stop toggle button to RecordingUiController and
- * RecordingSessionController, and displays past recordings in a list.
+ * RecordingSessionController, and displays and plays back past recordings.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -58,8 +60,20 @@ class MainActivity : AppCompatActivity() {
     /** Builds each recording's display text. Type: RecordingDisplayFormatter */
     private val recordingDisplayFormatter = RecordingDisplayFormatter(SystemDateFormatter())
 
-    /** Displays recordings inside rvRecordings. Type: RecordingsAdapter */
-    private val recordingsAdapter = RecordingsAdapter(recordingDisplayFormatter)
+    /** Drives playback of a tapped recording, including stopping/switching tracks. Type: PlaybackController */
+    private val playbackController = PlaybackController(
+        audioPlayer = MediaPlayerAudioPlayer(),
+        onPlaybackStateChanged = { previousFilePath, currentFilePath ->
+            refreshPlaybackUi(previousFilePath, currentFilePath)
+        }
+    )
+
+    /** Displays recordings inside rvRecordings and reports Play/Stop taps to playbackController. Type: RecordingsAdapter */
+    private val recordingsAdapter = RecordingsAdapter(
+        displayFormatter = recordingDisplayFormatter,
+        onPlayStopClicked = { recording -> playbackController.onItemClicked(recording.filePath) },
+        isPlaying = { filePath -> playbackController.isPlaying(filePath) }
+    )
 
     private lateinit var btnToggleRecording: Button
     private lateinit var tvRecordingStatus: TextView
@@ -98,6 +112,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Stops any in-progress playback when the Activity is destroyed, so the
+     * MediaPlayer doesn't keep running or leak after the screen is gone.
+     *
+     * @return Unit
+     */
+    override fun onDestroy() {
+        playbackController.stopPlayback()
+        super.onDestroy()
+    }
+
+    /**
      * Delegates the toggle button tap to recordingUiController, then starts
      * or stops the actual recording session to match the new UI state.
      * Refuses to start recording if RECORD_AUDIO has not been granted yet.
@@ -132,10 +157,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Reloads the list of recordings from disk and updates rvRecordings.
+     *
      * @return Unit
      */
     private fun refreshRecordingsList() {
         recordingsAdapter.submitList(recordingsRepository.listRecordings())
+    }
+
+    /**
+     * Refreshes only the rows affected by a playback state change, instead
+     * of redrawing the whole list.
+     *
+     * @param previousFilePath File that was playing before the change, or null. Type: String?
+     * @param currentFilePath File that is playing now, or null. Type: String?
+     * @return Unit
+     */
+    private fun refreshPlaybackUi(previousFilePath: String?, currentFilePath: String?) {
+        recordingsAdapter.notifyPlaybackChanged(previousFilePath, currentFilePath)
     }
 
     /**
