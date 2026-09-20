@@ -1,5 +1,8 @@
 package com.example.wavefret.recording
 
+import com.example.wavefret.common.time.Clock
+import com.example.wavefret.common.time.DateFormatter
+
 /** Fake Clock returning a fixed time, for deterministic file-naming tests. */
 class FakeClock(private val fixedTimeMillis: Long) : Clock {
     override fun currentTimeMillis(): Long = fixedTimeMillis

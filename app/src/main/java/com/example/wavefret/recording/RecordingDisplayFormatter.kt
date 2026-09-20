@@ -1,5 +1,7 @@
 package com.example.wavefret.recording
 
+import com.example.wavefret.common.time.DateFormatter
+
 /**
  * Builds the display string shown for a single recording in the list.
  *

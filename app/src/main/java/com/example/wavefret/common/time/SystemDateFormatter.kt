@@ -1,4 +1,4 @@
-package com.example.wavefret.recording
+package com.example.wavefret.common.time
 
 import java.text.SimpleDateFormat
 import java.util.Date

@@ -1,5 +1,6 @@
 package com.example.wavefret.permission
 
+import com.example.wavefret.common.permission.PermissionChecker
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

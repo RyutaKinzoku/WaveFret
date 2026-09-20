@@ -12,7 +12,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.permission.AudioPermissionManager
-import com.example.wavefret.permission.SystemPermissionChecker
+import com.example.wavefret.common.permission.SystemPermissionChecker
 import com.example.wavefret.recording.ExternalFilesRecordingDirectoryProvider
 import com.example.wavefret.recording.MediaRecorderAudioRecorder
 import com.example.wavefret.recording.RecordingDisplayFormatter
@@ -22,8 +22,8 @@ import com.example.wavefret.recording.RecordingState
 import com.example.wavefret.recording.RecordingUiController
 import com.example.wavefret.recording.RecordingsAdapter
 import com.example.wavefret.recording.RecordingsRepository
-import com.example.wavefret.recording.SystemClock
-import com.example.wavefret.recording.SystemDateFormatter
+import com.example.wavefret.common.time.SystemClock
+import com.example.wavefret.common.time.SystemDateFormatter
 
 /**
  * App entry point. Sets up edge-to-edge layout, requests microphone access,

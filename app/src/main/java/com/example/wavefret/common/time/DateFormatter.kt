@@ -1,4 +1,4 @@
-package com.example.wavefret.recording
+package com.example.wavefret.common.time
 
 /**
  * Abstraction over formatting a timestamp into a human-readable string, so

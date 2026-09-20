@@ -1,4 +1,4 @@
-package com.example.wavefret.permission
+package com.example.wavefret.common.permission
 
 import android.content.Context
 import android.content.pm.PackageManager

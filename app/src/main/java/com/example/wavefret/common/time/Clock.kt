@@ -1,4 +1,4 @@
-package com.example.wavefret.recording
+package com.example.wavefret.common.time
 
 /**
  * Abstraction over the current time, so time-dependent logic (like file

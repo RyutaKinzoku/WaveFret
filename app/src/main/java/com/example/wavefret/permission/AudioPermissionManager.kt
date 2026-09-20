@@ -1,6 +1,7 @@
 package com.example.wavefret.permission
 
 import android.Manifest
+import com.example.wavefret.common.permission.PermissionChecker
 
 /**
  * Encapsulates the app's audio-recording permission policy.

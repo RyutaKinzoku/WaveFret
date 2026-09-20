@@ -1,4 +1,4 @@
-package com.example.wavefret.permission
+package com.example.wavefret.common.permission
 
 /**
  * Abstraction over Android's permission-checking API, so permission logic
