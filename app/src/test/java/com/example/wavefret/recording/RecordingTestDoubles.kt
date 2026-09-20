@@ -31,3 +31,8 @@ class FakeAudioRecorder : AudioRecorder {
 class FakeRecordingDirectoryProvider(private val fixedPath: String) : RecordingDirectoryProvider {
     override fun recordingsDirectoryPath(): String = fixedPath
 }
+
+/** Fake DateFormatter returning a fixed string, for deterministic display-logic tests. */
+class FakeDateFormatter(private val fixedOutput: String) : DateFormatter {
+    override fun format(epochMillis: Long): String = fixedOutput
+}
