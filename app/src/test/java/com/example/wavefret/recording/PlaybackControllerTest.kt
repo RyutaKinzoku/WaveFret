@@ -77,10 +77,29 @@ class PlaybackControllerTest {
     }
 
     @Test
-    fun onPlaybackStateChangedCallbackFiresWhenPlaybackStarts() {
-        var callbackInvocations = 0
-        val controller = PlaybackController(FakeAudioPlayer()) { callbackInvocations++ }
+    fun onPlaybackStateChangedReportsPreviousNullAndNewFileOnFirstPlay() {
+        var reportedPrevious: String? = "not set"
+        var reportedCurrent: String? = "not set"
+        val controller = PlaybackController(FakeAudioPlayer()) { previous, current ->
+            reportedPrevious = previous
+            reportedCurrent = current
+        }
         controller.onItemClicked("/fake/dir/a.m4a")
-        assertEquals(1, callbackInvocations)
+        assertNull(reportedPrevious)
+        assertEquals("/fake/dir/a.m4a", reportedCurrent)
+    }
+
+    @Test
+    fun onPlaybackStateChangedReportsPreviousAndNewFileWhenSwitchingTracks() {
+        var reportedPrevious: String? = "not set"
+        var reportedCurrent: String? = "not set"
+        val controller = PlaybackController(FakeAudioPlayer()) { previous, current ->
+            reportedPrevious = previous
+            reportedCurrent = current
+        }
+        controller.onItemClicked("/fake/dir/a.m4a")
+        controller.onItemClicked("/fake/dir/b.m4a")
+        assertEquals("/fake/dir/a.m4a", reportedPrevious)
+        assertEquals("/fake/dir/b.m4a", reportedCurrent)
     }
 }
