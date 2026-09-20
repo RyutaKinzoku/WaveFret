@@ -11,9 +11,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.wavefret.permission.AudioPermissionManager
 import com.example.wavefret.common.permission.SystemPermissionChecker
-import com.example.wavefret.recording.ExternalFilesRecordingDirectoryProvider
+import com.example.wavefret.common.storage.ExternalAppStorageDirectoryProvider
+import com.example.wavefret.common.time.SystemClock
+import com.example.wavefret.common.time.SystemDateFormatter
+import com.example.wavefret.recording.AudioPermissionManager
 import com.example.wavefret.recording.MediaRecorderAudioRecorder
 import com.example.wavefret.recording.RecordingDisplayFormatter
 import com.example.wavefret.recording.RecordingFileNamer
@@ -21,9 +23,8 @@ import com.example.wavefret.recording.RecordingSessionController
 import com.example.wavefret.recording.RecordingState
 import com.example.wavefret.recording.RecordingUiController
 import com.example.wavefret.recording.RecordingsAdapter
+import com.example.wavefret.recording.RecordingsFolderProvider
 import com.example.wavefret.recording.RecordingsRepository
-import com.example.wavefret.common.time.SystemClock
-import com.example.wavefret.common.time.SystemDateFormatter
 
 /**
  * App entry point. Sets up edge-to-edge layout, requests microphone access,
@@ -38,8 +39,11 @@ class MainActivity : AppCompatActivity() {
     /** Holds recording UI state (button label, status text), independent of Android Views. Type: RecordingUiController */
     private val recordingUiController = RecordingUiController()
 
-    /** Resolves where recording files are stored on disk. Type: ExternalFilesRecordingDirectoryProvider */
-    private val recordingDirectoryProvider = ExternalFilesRecordingDirectoryProvider(this)
+    /** Resolves the app's base storage directory. Type: ExternalAppStorageDirectoryProvider */
+    private val appStorageDirectoryProvider = ExternalAppStorageDirectoryProvider(this)
+
+    /** Resolves where recording files are stored, as a "recordings" subfolder. Type: RecordingsFolderProvider */
+    private val recordingDirectoryProvider = RecordingsFolderProvider(appStorageDirectoryProvider)
 
     /** Drives the actual MediaRecorder lifecycle for each recording session. Type: RecordingSessionController */
     private val recordingSessionController = RecordingSessionController(
@@ -120,9 +124,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Updates the toggle button's label and the status text to match
-     * recordingUiController's current state.
-     *
      * @return Unit
      */
     private fun refreshRecordingUi() {
@@ -131,8 +132,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Reloads the list of recordings from disk and updates rvRecordings.
-     *
      * @return Unit
      */
     private fun refreshRecordingsList() {
@@ -140,9 +139,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Requests RECORD_AUDIO from the user if audioPermissionManager determines
-     * it is not currently granted.
-     *
      * @return Unit
      */
     private fun requestAudioPermissionIfNeeded() {

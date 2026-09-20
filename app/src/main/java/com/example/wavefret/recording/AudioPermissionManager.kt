@@ -1,4 +1,4 @@
-package com.example.wavefret.permission
+package com.example.wavefret.recording
 
 import android.Manifest
 import com.example.wavefret.common.permission.PermissionChecker

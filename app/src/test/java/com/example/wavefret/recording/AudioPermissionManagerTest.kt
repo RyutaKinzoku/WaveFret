@@ -1,4 +1,4 @@
-package com.example.wavefret.permission
+package com.example.wavefret.recording
 
 import com.example.wavefret.common.permission.PermissionChecker
 import org.junit.Assert.assertFalse
