@@ -2,4 +2,6 @@
     <string name="app_name">Wave &amp; Fret</string>
     <string name="record">Record</string>
     <string name="stop_playback">Stop Playback</string>
+    <string name="play">Play</string>
+    <string name="stop">Stop</string>
 </resources>

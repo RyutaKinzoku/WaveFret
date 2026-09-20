@@ -7,11 +7,11 @@ package com.example.wavefret.recording
  * audio-playback technology.
  *
  * @property audioPlayer Platform player abstraction to start/stop. Type: AudioPlayer
- * @property onPlaybackStateChanged Invoked whenever the currently-playing file changes, so the UI can refresh. Type: () -> Unit
+ * @property onPlaybackStateChanged Invoked whenever the currently-playing file changes, with the previous and new file paths, so the UI can refresh just those rows. Type: (String?, String?) -> Unit
  */
 class PlaybackController(
     private val audioPlayer: AudioPlayer,
-    private val onPlaybackStateChanged: () -> Unit = {}
+    private val onPlaybackStateChanged: (previousFilePath: String?, currentFilePath: String?) -> Unit = { _, _ -> }
 ) {
 
     private var currentlyPlayingFilePath: String? = null
@@ -26,8 +26,9 @@ class PlaybackController(
     fun isPlaying(filePath: String): Boolean = currentlyPlayingFilePath == filePath
 
     /**
-     * Handles a tap on a recording row: stops playback if the same file was
-     * already playing, otherwise stops any other playback and starts this file.
+     * Handles a tap on a recording's play/stop button: stops playback if the
+     * same file was already playing, otherwise switches directly to this file
+     * (stopping any other playback first) as a single atomic state change.
      *
      * @param filePath Absolute path of the tapped recording. Type: String
      * @return Unit
@@ -38,7 +39,8 @@ class PlaybackController(
             return
         }
         if (currentlyPlayingFilePath != null) {
-            stopPlayback()
+            audioPlayer.stopPlayback()
+            audioPlayer.releasePlayer()
         }
         setCurrentlyPlaying(filePath)
         audioPlayer.playFile(filePath) { onPlaybackCompleted() }
@@ -71,7 +73,8 @@ class PlaybackController(
      * @return Unit
      */
     private fun setCurrentlyPlaying(filePath: String?) {
+        val previousFilePath = currentlyPlayingFilePath
         currentlyPlayingFilePath = filePath
-        onPlaybackStateChanged()
+        onPlaybackStateChanged(previousFilePath, filePath)
     }
 }
