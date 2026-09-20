@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -13,14 +14,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.common.permission.SystemPermissionChecker
 import com.example.wavefret.common.storage.ExternalAppStorageDirectoryProvider
+import com.example.wavefret.common.time.DurationFormatter
 import com.example.wavefret.common.time.SystemClock
 import com.example.wavefret.common.time.SystemDateFormatter
 import com.example.wavefret.recording.AudioPermissionManager
+import com.example.wavefret.recording.MediaMetadataRetrieverDurationReader
 import com.example.wavefret.recording.MediaPlayerAudioPlayer
 import com.example.wavefret.recording.MediaRecorderAudioRecorder
 import com.example.wavefret.recording.PlaybackController
 import com.example.wavefret.recording.RecordingDisplayFormatter
 import com.example.wavefret.recording.RecordingFileNamer
+import com.example.wavefret.recording.RecordingInfo
 import com.example.wavefret.recording.RecordingSessionController
 import com.example.wavefret.recording.RecordingState
 import com.example.wavefret.recording.RecordingUiController
@@ -31,7 +35,8 @@ import com.example.wavefret.recording.RecordingsRepository
 /**
  * App entry point. Sets up edge-to-edge layout, requests microphone access,
  * wires the record/stop toggle button to RecordingUiController and
- * RecordingSessionController, and displays and plays back past recordings.
+ * RecordingSessionController, and displays, plays back, and deletes past
+ * recordings.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -54,11 +59,17 @@ class MainActivity : AppCompatActivity() {
         directoryProvider = recordingDirectoryProvider
     )
 
-    /** Reads the current list of recorded files from disk. Type: RecordingsRepository */
-    private val recordingsRepository = RecordingsRepository(recordingDirectoryProvider)
+    /** Reads the current list of recorded files from disk, including duration, and deletes them. Type: RecordingsRepository */
+    private val recordingsRepository = RecordingsRepository(
+        directoryProvider = recordingDirectoryProvider,
+        audioDurationReader = MediaMetadataRetrieverDurationReader()
+    )
 
     /** Builds each recording's display text. Type: RecordingDisplayFormatter */
-    private val recordingDisplayFormatter = RecordingDisplayFormatter(SystemDateFormatter())
+    private val recordingDisplayFormatter = RecordingDisplayFormatter(
+        dateFormatter = SystemDateFormatter(),
+        durationFormatter = DurationFormatter()
+    )
 
     /** Drives playback of a tapped recording, including stopping/switching tracks. Type: PlaybackController */
     private val playbackController = PlaybackController(
@@ -68,10 +79,11 @@ class MainActivity : AppCompatActivity() {
         }
     )
 
-    /** Displays recordings inside rvRecordings and reports Play/Stop taps to playbackController. Type: RecordingsAdapter */
+    /** Displays recordings inside rvRecordings and reports Play/Stop/Delete taps. Type: RecordingsAdapter */
     private val recordingsAdapter = RecordingsAdapter(
         displayFormatter = recordingDisplayFormatter,
         onPlayStopClicked = { recording -> playbackController.onItemClicked(recording.filePath) },
+        onDeleteClicked = { recording -> onDeleteRecordingClicked(recording) },
         isPlaying = { filePath -> playbackController.isPlaying(filePath) }
     )
 
@@ -146,6 +158,37 @@ class MainActivity : AppCompatActivity() {
             }
         }
         refreshRecordingUi()
+    }
+
+    /**
+     * Shows a confirmation dialog before deleting a recording, since
+     * deletion cannot be undone.
+     *
+     * @param recording Recording the user tapped Delete on. Type: RecordingInfo
+     * @return Unit
+     */
+    private fun onDeleteRecordingClicked(recording: RecordingInfo) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.delete_recording_title)
+            .setMessage(getString(R.string.delete_recording_message, recording.fileName))
+            .setPositiveButton(R.string.delete) { _, _ -> deleteRecording(recording) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * Stops playback if the file being deleted is currently playing, then
+     * removes it from disk and refreshes the list.
+     *
+     * @param recording Recording to delete. Type: RecordingInfo
+     * @return Unit
+     */
+    private fun deleteRecording(recording: RecordingInfo) {
+        if (playbackController.isPlaying(recording.filePath)) {
+            playbackController.stopPlayback()
+        }
+        recordingsRepository.deleteRecording(recording.filePath)
+        refreshRecordingsList()
     }
 
     /**
