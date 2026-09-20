@@ -4,31 +4,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.R
 
 /**
  * RecyclerView adapter that displays a list of recordings, delegating each
- * item's text to RecordingDisplayFormatter.
+ * item's text to RecordingDisplayFormatter. Uses ListAdapter + DiffUtil so
+ * list updates only touch the rows that actually changed, instead of
+ * redrawing the whole list on every update.
  *
  * @property displayFormatter Builds each item's display string. Type: RecordingDisplayFormatter
  */
 class RecordingsAdapter(
     private val displayFormatter: RecordingDisplayFormatter
-) : RecyclerView.Adapter<RecordingsAdapter.RecordingViewHolder>() {
-
-    private var recordings: List<RecordingInfo> = emptyList()
-
-    /**
-     * Replaces the displayed list of recordings and refreshes the view.
-     *
-     * @param newRecordings Updated list of recordings to display. Type: List<RecordingInfo>
-     * @return Unit
-     */
-    fun submitList(newRecordings: List<RecordingInfo>) {
-        recordings = newRecordings
-        notifyDataSetChanged()
-    }
+) : ListAdapter<RecordingInfo, RecordingsAdapter.RecordingViewHolder>(RecordingDiffCallback()) {
 
     /**
      * @param parent ViewGroup the new view will be attached to. Type: ViewGroup
@@ -36,9 +27,9 @@ class RecordingsAdapter(
      * @return A new RecordingViewHolder wrapping the inflated item layout. Type: RecordingViewHolder
      */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecordingViewHolder {
-        val view = LayoutInflater.from(parent.context)
+        val inflatedView = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_recording, parent, false)
-        return RecordingViewHolder(view)
+        return RecordingViewHolder(inflatedView)
     }
 
     /**
@@ -47,20 +38,17 @@ class RecordingsAdapter(
      * @return Unit
      */
     override fun onBindViewHolder(holder: RecordingViewHolder, position: Int) {
-        holder.bind(recordings[position], displayFormatter)
+        holder.bind(getItem(position), displayFormatter)
     }
-
-    /** @return Number of recordings currently displayed. Type: Int */
-    override fun getItemCount(): Int = recordings.size
 
     /**
      * Holds the views for a single recording list item.
      *
-     * @property itemView Root view of the inflated item layout. Type: View
+     * @property rootView Root view of the inflated item layout. Type: View
      */
-    class RecordingViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class RecordingViewHolder(private val rootView: View) : RecyclerView.ViewHolder(rootView) {
 
-        private val tvRecordingLabel: TextView = itemView.findViewById(R.id.tvRecordingLabel)
+        private val tvRecordingLabel: TextView = rootView.findViewById(R.id.tvRecordingLabel)
 
         /**
          * @param recording Recording to display in this row. Type: RecordingInfo
@@ -69,6 +57,31 @@ class RecordingsAdapter(
          */
         fun bind(recording: RecordingInfo, displayFormatter: RecordingDisplayFormatter) {
             tvRecordingLabel.text = displayFormatter.format(recording)
+        }
+    }
+
+    /**
+     * Tells ListAdapter how to detect item identity and content changes
+     * between two RecordingInfo lists, so it can compute a minimal update.
+     */
+    private class RecordingDiffCallback : DiffUtil.ItemCallback<RecordingInfo>() {
+
+        /**
+         * @param oldItem Existing item. Type: RecordingInfo
+         * @param newItem Candidate replacement item. Type: RecordingInfo
+         * @return True if both items represent the same recording file. Type: Boolean
+         */
+        override fun areItemsTheSame(oldItem: RecordingInfo, newItem: RecordingInfo): Boolean {
+            return oldItem.filePath == newItem.filePath
+        }
+
+        /**
+         * @param oldItem Existing item. Type: RecordingInfo
+         * @param newItem Candidate replacement item. Type: RecordingInfo
+         * @return True if the two items have identical field values. Type: Boolean
+         */
+        override fun areContentsTheSame(oldItem: RecordingInfo, newItem: RecordingInfo): Boolean {
+            return oldItem == newItem
         }
     }
 }
