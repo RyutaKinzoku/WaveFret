@@ -16,7 +16,7 @@ class NoteMapper {
      * @return The nearest note and how many cents sharp or flat it was. Type: MappedNote
      */
     fun mapFrequencyToNote(frequencyHz: Double): MappedNote {
-        val semitonesFromA4 = 12.0 * ln(frequencyHz / REFERENCE_FREQUENCY_HZ) / ln(2.0)
+        val semitonesFromA4 = centsBetween(REFERENCE_FREQUENCY_HZ, frequencyHz) / 100.0
         val roundedSemitones = semitonesFromA4.roundToInt()
         val centsOffset = (semitonesFromA4 - roundedSemitones) * 100.0
 
