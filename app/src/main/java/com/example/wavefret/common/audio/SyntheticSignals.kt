@@ -2,6 +2,7 @@ package com.example.wavefret.common.audio
 
 import kotlin.math.PI
 import kotlin.math.sin
+import kotlin.random.Random
 
 /**
  * Generates synthetic PCM waveforms for testing pitch-detection logic
@@ -55,5 +56,25 @@ object SyntheticSignals {
         return FloatArray(sampleCount) { index ->
             fundamental[index] + secondHarmonic[index] + thirdHarmonic[index]
         }
+    }
+
+    /**
+     * @param sampleCount Number of samples to generate. Type: Int
+     * @return A buffer of all-zero samples, representing silence. Type: FloatArray
+     */
+    fun silence(sampleCount: Int): FloatArray = FloatArray(sampleCount)
+
+    /**
+     * Generates deterministic pseudo-random noise, useful for testing that
+     * pitch detection correctly reports "no pitch" for non-periodic input.
+     *
+     * @param sampleCount Number of samples to generate. Type: Int
+     * @param amplitude Peak amplitude of the noise, from 0.0 to 1.0. Type: Double
+     * @param seed Random seed, fixed by default so tests are reproducible. Type: Long
+     * @return A buffer of random samples in [-amplitude, amplitude]. Type: FloatArray
+     */
+    fun whiteNoise(sampleCount: Int, amplitude: Double = 1.0, seed: Long = 42L): FloatArray {
+        val random = Random(seed)
+        return FloatArray(sampleCount) { random.nextDouble(-amplitude, amplitude).toFloat() }
     }
 }
