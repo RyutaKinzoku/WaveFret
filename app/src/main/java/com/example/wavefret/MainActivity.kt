@@ -12,12 +12,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.wavefret.common.permission.SystemPermissionChecker
-import com.example.wavefret.common.storage.ExternalAppStorageDirectoryProvider
-import com.example.wavefret.common.time.DurationFormatter
-import com.example.wavefret.common.time.SystemClock
-import com.example.wavefret.common.time.SystemDateFormatter
-import com.example.wavefret.common.permission.MicrophonePermissionManager
 import com.example.wavefret.recording.MediaMetadataRetrieverDurationReader
 import com.example.wavefret.recording.MediaPlayerAudioPlayer
 import com.example.wavefret.recording.MediaRecorderAudioRecorder
@@ -40,22 +34,19 @@ import com.example.wavefret.recording.RecordingsRepository
  */
 class MainActivity : AppCompatActivity() {
 
-    /** Decides whether RECORD_AUDIO needs to be requested. Type: MicrophonePermissionManager */
-    private val microphonePermissionManager = MicrophonePermissionManager(SystemPermissionChecker(this))
+    /** Composition root providing shared, feature-independent dependencies. Type: AppContainer */
+    private val appContainer = AppContainer(this)
 
     /** Holds recording UI state (button label, status text), independent of Android Views. Type: RecordingUiController */
     private val recordingUiController = RecordingUiController()
 
-    /** Resolves the app's base storage directory. Type: ExternalAppStorageDirectoryProvider */
-    private val appStorageDirectoryProvider = ExternalAppStorageDirectoryProvider(this)
-
     /** Resolves where recording files are stored, as a "recordings" subfolder. Type: RecordingsFolderProvider */
-    private val recordingDirectoryProvider = RecordingsFolderProvider(appStorageDirectoryProvider)
+    private val recordingDirectoryProvider = RecordingsFolderProvider(appContainer.appStorageDirectoryProvider)
 
     /** Drives the actual MediaRecorder lifecycle for each recording session. Type: RecordingSessionController */
     private val recordingSessionController = RecordingSessionController(
         audioRecorder = MediaRecorderAudioRecorder(this),
-        fileNamer = RecordingFileNamer(SystemClock()),
+        fileNamer = RecordingFileNamer(appContainer.clock),
         directoryProvider = recordingDirectoryProvider
     )
 
@@ -67,8 +58,8 @@ class MainActivity : AppCompatActivity() {
 
     /** Builds each recording's display text. Type: RecordingDisplayFormatter */
     private val recordingDisplayFormatter = RecordingDisplayFormatter(
-        dateFormatter = SystemDateFormatter(),
-        durationFormatter = DurationFormatter()
+        dateFormatter = appContainer.dateFormatter,
+        durationFormatter = appContainer.durationFormatter
     )
 
     /** Drives playback of a tapped recording, including stopping/switching tracks. Type: PlaybackController */
@@ -143,7 +134,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun onToggleRecordingClicked() {
         val isCurrentlyIdle = recordingUiController.currentState() == RecordingState.IDLE
-        if (isCurrentlyIdle && microphonePermissionManager.needsPermissionRequest()) {
+        if (isCurrentlyIdle && appContainer.microphonePermissionManager.needsPermissionRequest()) {
             Log.w(PERMISSION_LOG_TAG, "Cannot start recording without RECORD_AUDIO permission")
             return
         }
@@ -224,7 +215,7 @@ class MainActivity : AppCompatActivity() {
      * @return Unit
      */
     private fun requestAudioPermissionIfNeeded() {
-        if (microphonePermissionManager.needsPermissionRequest()) {
+        if (appContainer.microphonePermissionManager.needsPermissionRequest()) {
             requestAudioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
         } else {
             Log.d(PERMISSION_LOG_TAG, "RECORD_AUDIO already granted")
