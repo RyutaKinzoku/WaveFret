@@ -17,3 +17,10 @@ local.properties
 *.jks
 *.keystore
 keystore.properties
+
+# Build outputs
+/app/build/
+/app/release/
+*.apk
+*.aab
+output-metadata.json

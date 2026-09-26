@@ -17,7 +17,7 @@ import com.example.wavefret.common.storage.ExternalAppStorageDirectoryProvider
 import com.example.wavefret.common.time.DurationFormatter
 import com.example.wavefret.common.time.SystemClock
 import com.example.wavefret.common.time.SystemDateFormatter
-import com.example.wavefret.recording.AudioPermissionManager
+import com.example.wavefret.common.permission.MicrophonePermissionManager
 import com.example.wavefret.recording.MediaMetadataRetrieverDurationReader
 import com.example.wavefret.recording.MediaPlayerAudioPlayer
 import com.example.wavefret.recording.MediaRecorderAudioRecorder
@@ -40,8 +40,8 @@ import com.example.wavefret.recording.RecordingsRepository
  */
 class MainActivity : AppCompatActivity() {
 
-    /** Decides whether RECORD_AUDIO needs to be requested. Type: AudioPermissionManager */
-    private val audioPermissionManager = AudioPermissionManager(SystemPermissionChecker(this))
+    /** Decides whether RECORD_AUDIO needs to be requested. Type: MicrophonePermissionManager */
+    private val microphonePermissionManager = MicrophonePermissionManager(SystemPermissionChecker(this))
 
     /** Holds recording UI state (button label, status text), independent of Android Views. Type: RecordingUiController */
     private val recordingUiController = RecordingUiController()
@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun onToggleRecordingClicked() {
         val isCurrentlyIdle = recordingUiController.currentState() == RecordingState.IDLE
-        if (isCurrentlyIdle && audioPermissionManager.needsPermissionRequest()) {
+        if (isCurrentlyIdle && microphonePermissionManager.needsPermissionRequest()) {
             Log.w(PERMISSION_LOG_TAG, "Cannot start recording without RECORD_AUDIO permission")
             return
         }
@@ -224,7 +224,7 @@ class MainActivity : AppCompatActivity() {
      * @return Unit
      */
     private fun requestAudioPermissionIfNeeded() {
-        if (audioPermissionManager.needsPermissionRequest()) {
+        if (microphonePermissionManager.needsPermissionRequest()) {
             requestAudioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
         } else {
             Log.d(PERMISSION_LOG_TAG, "RECORD_AUDIO already granted")
