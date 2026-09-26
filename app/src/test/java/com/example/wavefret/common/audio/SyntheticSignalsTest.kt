@@ -47,4 +47,22 @@ class SyntheticSignalsTest {
         val pureSine = SyntheticSignals.sine(frequencyHz = 110.0, sampleRate = 44100, sampleCount = 2000)
         assertNotEquals(pureSine.toList(), bassLike.toList())
     }
+
+    @Test
+    fun silenceReturnsAllZeroSamples() {
+        val samples = SyntheticSignals.silence(500)
+        assertTrue(samples.all { it == 0f })
+    }
+
+    @Test
+    fun whiteNoiseReturnsRequestedSampleCount() {
+        val samples = SyntheticSignals.whiteNoise(sampleCount = 500)
+        assertEquals(500, samples.size)
+    }
+
+    @Test
+    fun whiteNoiseStaysWithinRequestedAmplitude() {
+        val samples = SyntheticSignals.whiteNoise(sampleCount = 500, amplitude = 0.5)
+        assertTrue(samples.all { abs(it) <= 0.5f })
+    }
 }
