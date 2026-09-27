@@ -8,4 +8,7 @@
     <string name="delete_recording_title">Delete recording?</string>
     <string name="delete_recording_message">Delete %1$s? This cannot be undone.</string>
     <string name="cancel">Cancel</string>
+    <string name="tuner_listening_prompt">Play a note</string>
+    <string name="tuner_needle_description">Tuning needle</string>
+    <string name="open_tuner">Open Tuner</string>
 </resources>
