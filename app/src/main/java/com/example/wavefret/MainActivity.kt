@@ -1,5 +1,6 @@
 package com.example.wavefret
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -25,12 +26,13 @@ import com.example.wavefret.recording.RecordingUiController
 import com.example.wavefret.recording.RecordingsAdapter
 import com.example.wavefret.recording.RecordingsFolderProvider
 import com.example.wavefret.recording.RecordingsRepository
+import com.example.wavefret.tuner.TunerActivity
 
 /**
  * App entry point. Sets up edge-to-edge layout, requests microphone access,
  * wires the record/stop toggle button to RecordingUiController and
- * RecordingSessionController, and displays, plays back, and deletes past
- * recordings.
+ * RecordingSessionController, displays, plays back, and deletes past
+ * recordings, and launches the tuner screen.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -81,6 +83,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnToggleRecording: Button
     private lateinit var tvRecordingStatus: TextView
     private lateinit var rvRecordings: RecyclerView
+    private lateinit var btnOpenTuner: Button
 
     private val requestAudioPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -104,8 +107,10 @@ class MainActivity : AppCompatActivity() {
         btnToggleRecording = findViewById(R.id.btnToggleRecording)
         tvRecordingStatus = findViewById(R.id.tvStatus)
         rvRecordings = findViewById(R.id.rvRecordings)
+        btnOpenTuner = findViewById(R.id.btnOpenTuner)
 
         btnToggleRecording.setOnClickListener { onToggleRecordingClicked() }
+        btnOpenTuner.setOnClickListener { onOpenTunerClicked() }
         rvRecordings.layoutManager = LinearLayoutManager(this)
         rvRecordings.adapter = recordingsAdapter
 
@@ -149,6 +154,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
         refreshRecordingUi()
+    }
+
+    /**
+     * Launches the tuner screen.
+     *
+     * @return Unit
+     */
+    private fun onOpenTunerClicked() {
+        startActivity(Intent(this, TunerActivity::class.java))
     }
 
     /**
