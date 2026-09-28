@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
+import android.media.audiofx.AutomaticGainControl
 
 /**
  * Real [PcmAudioSource] backed by [AudioRecord]. Prefers
@@ -38,6 +39,7 @@ class AudioRecordPcmSource(
      */
     override fun audioBufferStream(): Flow<FloatArray> = callbackFlow {
         val audioRecord = createAudioRecord()
+        val automaticGainControl = enableAutomaticGainControlIfAvailable(audioRecord.audioSessionId)
         audioRecord.startRecording()
         val pcmReadBuffer = ShortArray(samplesPerBufferCount)
         try {
@@ -50,9 +52,28 @@ class AudioRecordPcmSource(
         } finally {
             audioRecord.stop()
             audioRecord.release()
+            automaticGainControl?.release()
         }
         awaitClose { }
     }.flowOn(Dispatchers.IO)
+
+    /**
+     * Enables Android's built-in automatic gain control on this capture
+     * session, when the device supports it. This compensates for
+     * [MediaRecorder.AudioSource.UNPROCESSED] skipping the gain boost a
+     * normal microphone source would apply.
+     *
+     * Unlike noise suppression, AGC adjusts overall level rather than
+     * filtering specific frequencies, so it shouldn't reintroduce the
+     * fundamental-eating problem UNPROCESSED was chosen to avoid.
+     *
+     * @param audioSessionId The capture session to attach AGC to. Type: Int
+     * @return The active effect, or null if the device doesn't support it. Type: AutomaticGainControl?
+     */
+    private fun enableAutomaticGainControlIfAvailable(audioSessionId: Int): AutomaticGainControl? {
+        if (!AutomaticGainControl.isAvailable()) return null
+        return AutomaticGainControl.create(audioSessionId)?.apply { enabled = true }
+    }
 
     /**
      * Builds an [AudioRecord] on [MediaRecorder.AudioSource.UNPROCESSED]
@@ -121,7 +142,7 @@ class AudioRecordPcmSource(
 
     private companion object {
         const val DEFAULT_SAMPLE_RATE_HZ = 44100
-        const val DEFAULT_SAMPLES_PER_BUFFER_COUNT = 4096
+        const val DEFAULT_SAMPLES_PER_BUFFER_COUNT = 8192
         const val BYTES_PER_SAMPLE = 2
     }
 }

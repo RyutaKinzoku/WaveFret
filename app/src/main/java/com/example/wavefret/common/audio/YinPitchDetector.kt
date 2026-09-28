@@ -9,10 +9,10 @@ package com.example.wavefret.common.audio
  * common case for a bass guitar captured on a phone mic.
  *
  * @property threshold Absolute threshold on the cumulative mean normalized
- *   difference function; the first dip below this value (that is also a
- *   local minimum) is treated as the period. Lower values are stricter
- *   (fewer false positives on noise, may miss quiet notes); higher values
- *   are more lenient. Type: Double
+ *   difference function; only lags whose value dips below it are
+ *   considered as the period. Lower values are stricter (fewer false
+ *   positives on noise, may miss quiet notes); higher values are more
+ *   lenient. Type: Double
  */
 class YinPitchDetector(private val threshold: Double = 0.15) : PitchDetector {
 
@@ -28,8 +28,10 @@ class YinPitchDetector(private val threshold: Double = 0.15) : PitchDetector {
 
         val differenceFunction = computeDifferenceFunction(samples, maxLag)
         val cmndf = computeCumulativeMeanNormalizedDifference(differenceFunction)
-        val estimatedLag = findAbsoluteThresholdLag(cmndf) ?: return null
-        val refinedLag = refineLagByParabolicInterpolation(cmndf, estimatedLag)
+        val candidateLags = findCandidateLags(cmndf)
+        if (candidateLags.isEmpty()) return null
+        val fundamentalLag = selectFundamentalLag(cmndf, candidateLags)
+        val refinedLag = refineLagByParabolicInterpolation(cmndf, fundamentalLag)
 
         return sampleRate / refinedLag
     }
@@ -81,28 +83,51 @@ class YinPitchDetector(private val threshold: Double = 0.15) : PitchDetector {
     }
 
     /**
-     * Finds the first lag whose CMNDF value dips below threshold and is a
-     * local minimum, per YIN's absolute threshold step. Taking the first
-     * qualifying dip — rather than the global minimum across all lags — is
-     * what avoids octave errors: it stops at the true fundamental's period
-     * as soon as it looks periodic enough, instead of continuing to search
-     * and risking a deeper dip at an unrelated lag.
+     * Finds every candidate period, per YIN's absolute threshold step.
+     * Each contiguous run of lags whose CMNDF dips below threshold is one
+     * candidate, represented by its deepest lag.
      *
      * @param cmndf Cumulative mean normalized difference function. Type: DoubleArray
-     * @return The candidate lag, or null if no value ever dips below threshold. Type: Int?
+     * @return Candidate lags in ascending order; empty if nothing dips below threshold. Type: List<Int>
      */
-    private fun findAbsoluteThresholdLag(cmndf: DoubleArray): Int? {
+    private fun findCandidateLags(cmndf: DoubleArray): List<Int> {
+        val candidateLags = mutableListOf<Int>()
         var lag = MIN_LAG
         while (lag < cmndf.size) {
             if (cmndf[lag] < threshold) {
-                while (lag + 1 < cmndf.size && cmndf[lag + 1] < cmndf[lag]) {
+                var deepestLagInDip = lag
+                while (lag < cmndf.size && cmndf[lag] < threshold) {
+                    if (cmndf[lag] < cmndf[deepestLagInDip]) deepestLagInDip = lag
                     lag++
                 }
-                return lag
+                candidateLags.add(deepestLagInDip)
+            } else {
+                lag++
             }
-            lag++
         }
-        return null
+        return candidateLags
+    }
+
+    /**
+     * Picks the shortest candidate lag whose dip is nearly as deep as the
+     * deepest candidate, guarding against octave errors in both directions:
+     *
+     * - Too low (a subharmonic): a real note also dips at 2T, 3T, ... about
+     *   as deeply as at T, so preferring the shortest near-deepest lag
+     *   still picks T.
+     * - Too high (a harmonic): when the fundamental is weak and even
+     *   harmonics dominate, a shallow dip appears at T/2 before the much
+     *   deeper one at T. Taking the first dip alone locked onto T/2, which
+     *   is how a low E (41.2 Hz) was read as 82.4 Hz and shown as D.
+     *
+     * @param cmndf Cumulative mean normalized difference function. Type: DoubleArray
+     * @param candidateLags Candidate lags in ascending order, not empty. Type: List<Int>
+     * @return The lag judged to be the fundamental period. Type: Int
+     */
+    private fun selectFundamentalLag(cmndf: DoubleArray, candidateLags: List<Int>): Int {
+        val deepestValue = candidateLags.minOf { cmndf[it] }
+        val acceptableValue = deepestValue * HARMONIC_REJECTION_RATIO + HARMONIC_REJECTION_MARGIN
+        return candidateLags.first { cmndf[it] <= acceptableValue }
     }
 
     /**
@@ -128,5 +153,7 @@ class YinPitchDetector(private val threshold: Double = 0.15) : PitchDetector {
     companion object {
         private const val MIN_LAG = 1
         private const val MINIMUM_USABLE_MAX_LAG = 4
+        private const val HARMONIC_REJECTION_RATIO = 2.0
+        private const val HARMONIC_REJECTION_MARGIN = 0.005
     }
 }

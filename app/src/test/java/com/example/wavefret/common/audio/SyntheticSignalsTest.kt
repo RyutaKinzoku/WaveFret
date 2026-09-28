@@ -3,6 +3,8 @@ package com.example.wavefret.common.audio
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import kotlin.math.abs
 
@@ -64,5 +66,31 @@ class SyntheticSignalsTest {
     fun whiteNoiseStaysWithinRequestedAmplitude() {
         val samples = SyntheticSignals.whiteNoise(sampleCount = 500, amplitude = 0.5)
         assertTrue(samples.all { abs(it) <= 0.5f })
+    }
+
+    @Test
+    fun evenHarmonicHeavyToneReturnsRequestedSampleCount() {
+        val samples = SyntheticSignals.evenHarmonicHeavyTone(fundamentalHz = 41.2, sampleRate = 44100, sampleCount = 4096)
+        assertEquals(4096, samples.size)
+    }
+
+    @Test
+    fun evenHarmonicHeavyTonePeakAmplitudeNeverClips() {
+        val samples = SyntheticSignals.evenHarmonicHeavyTone(fundamentalHz = 41.2, sampleRate = 44100, sampleCount = 4096)
+        val peak = samples.maxOf { abs(it) }
+        assertTrue(peak <= 1.0f)
+    }
+
+    @Test
+    fun mixAddsSignalsSampleBySample() {
+        val mixed = SyntheticSignals.mix(floatArrayOf(0.1f, -0.2f, 0.3f), floatArrayOf(0.4f, 0.2f, -0.1f))
+        assertArrayEquals(floatArrayOf(0.5f, 0.0f, 0.2f), mixed, 0.0001f)
+    }
+
+    @Test
+    fun mixRejectsSignalsOfDifferentSizes() {
+        assertThrows(IllegalArgumentException::class.java) {
+            SyntheticSignals.mix(FloatArray(3), FloatArray(4))
+        }
     }
 }

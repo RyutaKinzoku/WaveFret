@@ -2,6 +2,7 @@ package com.example.wavefret.tuner
 
 import android.Manifest
 import android.os.Bundle
+import android.os.SystemClock
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,6 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
 import com.example.wavefret.common.audio.AudioRecordPcmSource
+import com.example.wavefret.common.audio.LowPassFilter
+import com.example.wavefret.common.audio.LowPassFilteredPitchDetector
 import com.example.wavefret.common.audio.YinPitchDetector
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
@@ -26,7 +29,8 @@ import kotlinx.coroutines.flow.onEach
  * updates with no meaningful branching logic of its own — so per this
  * project's convention it's verified manually on-device rather than in
  * JUnit; the actual formatting decisions live in the tested
- * [TunerDisplayFormatter].
+ * [TunerDisplayFormatter], and the hold/lock behavior in the tested
+ * [TunerDisplayStabilizer].
  */
 class TunerActivity : AppCompatActivity() {
 
@@ -37,6 +41,11 @@ class TunerActivity : AppCompatActivity() {
     private val appContainer = AppContainer(this)
     private val tunerController = buildTunerController()
     private val tunerDisplayFormatter = TunerDisplayFormatter()
+
+    private val displayStabilizer = TunerDisplayStabilizer(
+        holdDurationMillis = DISPLAY_HOLD_DURATION_MILLIS,
+        stringChangeConfirmationCount = STRING_CHANGE_CONFIRMATION_COUNT
+    )
 
     private var tuningResultCollectionJob: Job? = null
 
@@ -69,10 +78,15 @@ class TunerActivity : AppCompatActivity() {
 
     /**
      * Starts collecting tuning results and rendering them until paused.
+     * Each raw reading is formatted, then passed through the stabilizer
+     * so the screen holds a reading briefly and only switches strings
+     * after several consecutive agreeing readings — otherwise a fast,
+     * noisy stream of readings would be unreadable while tuning.
      */
     private fun startListening() {
         tuningResultCollectionJob = tunerController.tuningResultStream()
             .map(tunerDisplayFormatter::format)
+            .map { displayStabilizer.stabilize(it, SystemClock.elapsedRealtime()) }
             .onEach(::renderDisplayState)
             .launchIn(lifecycleScope)
     }
@@ -122,9 +136,19 @@ class TunerActivity : AppCompatActivity() {
         return TunerController(
             audioSource = AudioRecordPcmSource(),
             silenceGate = SilenceGate(),
-            pitchDetector = YinPitchDetector(),
+            pitchDetector = LowPassFilteredPitchDetector(
+                lowPassFilter = LowPassFilter(cutoffHz = PITCH_ANALYSIS_CUTOFF_HZ),
+                innerPitchDetector = YinPitchDetector()
+            ),
             pitchSmoother = PitchSmoother(),
             tuningEvaluator = TuningEvaluator(BassTunings.STANDARD)
         )
+    }
+
+    private companion object {
+        /** Bass fundamentals top out around 400 Hz; above ~1 kHz there is only noise. */
+        const val PITCH_ANALYSIS_CUTOFF_HZ = 1000.0
+        const val DISPLAY_HOLD_DURATION_MILLIS = 4000L
+        const val STRING_CHANGE_CONFIRMATION_COUNT = 3
     }
 }

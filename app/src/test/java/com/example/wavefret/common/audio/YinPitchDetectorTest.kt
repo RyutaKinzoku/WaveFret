@@ -78,6 +78,13 @@ class YinPitchDetectorTest {
         assertNull(detected)
     }
 
+    @Test
+    fun detectPitchFindsFundamentalWhenEvenHarmonicsDominate() {
+        val samples = SyntheticSignals.evenHarmonicHeavyTone(fundamentalHz = 41.20, sampleRate = SAMPLE_RATE, sampleCount = SAMPLE_COUNT)
+        val detected = YinPitchDetector().detectPitch(samples, SAMPLE_RATE)
+        assertWithinCents(41.20, detected)
+    }
+
     companion object {
         private const val SAMPLE_RATE = 44100
         private const val SAMPLE_COUNT = 4096
