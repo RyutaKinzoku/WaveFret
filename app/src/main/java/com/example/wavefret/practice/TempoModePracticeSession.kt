@@ -26,7 +26,7 @@ class TempoModePracticeSession(
     private var beatClock: BeatClock? = null
     private var currentNoteIndex = 0
     private var hitCount = 0
-    private var missCount = 0
+    private val missedNoteIndices = mutableSetOf<Int>()
     private var lastReading = PitchReading.SILENT
     private var playheadPosition = -countInBeats.toDouble()
 
@@ -68,9 +68,10 @@ class TempoModePracticeSession(
         currentNoteIndex = currentNoteIndex,
         noteCount = exercise.noteCount,
         hitCount = hitCount,
-        missCount = missCount,
+        missCount = missedNoteIndices.size,
         lastReading = lastReading,
-        playheadPosition = playheadPosition
+        playheadPosition = playheadPosition,
+        missedNoteIndices = missedNoteIndices.toSet()
     )
 
     /** @return Progress after going back to the start; [start] must be called again. Type: PracticeProgress */
@@ -78,7 +79,7 @@ class TempoModePracticeSession(
         beatClock = null
         currentNoteIndex = 0
         hitCount = 0
-        missCount = 0
+        missedNoteIndices.clear()
         lastReading = PitchReading.SILENT
         playheadPosition = -countInBeats.toDouble()
         expectedNoteJudge.reset()
@@ -94,7 +95,7 @@ class TempoModePracticeSession(
         while (currentNoteIndex < exercise.noteCount &&
             playheadPosition > currentNoteIndex + HIT_WINDOW_HALF_WIDTH_BEATS
         ) {
-            missCount++
+            missedNoteIndices.add(currentNoteIndex)
             advancePastCurrentNote()
         }
     }
