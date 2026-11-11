@@ -40,4 +40,14 @@ class TabTextWriterTest {
 
         assertEquals(timedExercise, TabTextParser(BassTunings.STANDARD).parse(TabTextWriter().write(timedExercise)))
     }
+
+    @Test
+    fun mediaSourceRoundTrips() {
+        val lessonWithVideo = exercise.copy(
+            noteOnsetsMillis = listOf(0L, 500L, 1_000L, 1_500L),
+            mediaSource = LessonMediaSource.YouTubeVideo("dQw4w9WgXcQ")
+        )
+
+        assertEquals(lessonWithVideo, TabTextParser(BassTunings.STANDARD).parse(TabTextWriter().write(lessonWithVideo)))
+    }
 }
