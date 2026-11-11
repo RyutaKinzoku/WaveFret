@@ -27,11 +27,20 @@ class RecordingsRepositoryTest {
     }
 
     @Test
-    fun listRecordingsOnlyIncludesM4aFiles() {
-        tempFolder.newFile("recording_1.m4a")
+    fun listRecordingsIncludesAudioAndVideoTakesOnly() {
+        tempFolder.newFile("recording_1.m4a").setLastModified(2_000L)
+        tempFolder.newFile("recording_2.mp4").setLastModified(1_000L)
         tempFolder.newFile("notes.txt")
         val fileNames = buildRepository().listRecordings().map { it.fileName }
-        assertEquals(listOf("recording_1.m4a"), fileNames)
+        assertEquals(listOf("recording_1.m4a", "recording_2.mp4"), fileNames)
+    }
+
+    @Test
+    fun takesKnowWhetherTheyAreAudioOrVideo() {
+        tempFolder.newFile("recording_1.m4a").setLastModified(2_000L)
+        tempFolder.newFile("recording_2.mp4").setLastModified(1_000L)
+        val mediaTypes = buildRepository().listRecordings().map { it.mediaType }
+        assertEquals(listOf(RecordingMediaType.AUDIO, RecordingMediaType.VIDEO), mediaTypes)
     }
 
     @Test
