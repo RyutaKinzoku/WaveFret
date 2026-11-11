@@ -22,7 +22,7 @@ import com.example.wavefret.practice.TabNote
  *
  * @property tuning Tuning whose string names and count the tab uses. Type: BassTuning
  */
-class AsciiTabParser(private val tuning: BassTuning) {
+class AsciiTabParser(val tuning: BassTuning) {
 
     /**
      * @param asciiTabText Full pasted tab text. Type: String
