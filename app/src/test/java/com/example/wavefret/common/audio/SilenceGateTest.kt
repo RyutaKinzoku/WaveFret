@@ -1,4 +1,4 @@
-package com.example.wavefret.tuner
+package com.example.wavefret.common.audio
 
 import com.example.wavefret.common.audio.SyntheticSignals
 import org.junit.Assert.assertFalse

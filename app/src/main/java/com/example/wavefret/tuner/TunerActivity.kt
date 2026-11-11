@@ -16,6 +16,7 @@ import com.example.wavefret.R
 import com.example.wavefret.common.audio.AudioRecordPcmSource
 import com.example.wavefret.common.audio.LowPassFilter
 import com.example.wavefret.common.audio.LowPassFilteredPitchDetector
+import com.example.wavefret.common.audio.SilenceGate
 import com.example.wavefret.common.audio.YinPitchDetector
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn

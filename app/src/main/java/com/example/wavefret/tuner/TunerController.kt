@@ -2,6 +2,7 @@ package com.example.wavefret.tuner
 
 import com.example.wavefret.common.audio.PcmAudioSource
 import com.example.wavefret.common.audio.PitchDetector
+import com.example.wavefret.common.audio.SilenceGate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
