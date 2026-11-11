@@ -8,13 +8,16 @@ package com.example.wavefret.practice
  * @property hitCount Notes played correctly so far. Type: Int
  * @property missCount Notes missed so far (only tempo mode can miss). Type: Int
  * @property lastReading How the most recent buffer compared to the expected note. Type: PitchReading
+ * @property playheadPosition Where playback is, in fractional note positions; in wait
+ *   mode this is simply the current note. Type: Double
  */
 data class PracticeProgress(
     val currentNoteIndex: Int,
     val noteCount: Int,
     val hitCount: Int,
     val missCount: Int,
-    val lastReading: PitchReading
+    val lastReading: PitchReading,
+    val playheadPosition: Double = currentNoteIndex.toDouble()
 ) {
     /** True once every note has been either hit or missed. Type: Boolean */
     val isComplete: Boolean get() = currentNoteIndex >= noteCount
