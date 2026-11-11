@@ -19,7 +19,8 @@ class NoteEventsLessonBuilderTest {
 
         assertEquals("Riff", lesson.title)
         assertEquals(100, lesson.tempoBpm)
-        assertEquals(listOf(TabNote(0, 0), TabNote(0, 3), TabNote(1, 0)), lesson.notes)
+        // A1 after G1 stays in the hand position: E string, fret 5
+        assertEquals(listOf(TabNote(0, 0), TabNote(0, 3), TabNote(0, 5)), lesson.notes)
         assertEquals(listOf(0L, 600L, 1_200L), lesson.noteOnsetsMillis)
     }
 
@@ -39,10 +40,10 @@ class NoteEventsLessonBuilderTest {
 
     @Test
     fun notesBelowTheBassAreRaisedByOctaves() {
-        // B0 (MIDI 23) from a five-string part becomes B1 (35), fret 7 on the E string
+        // B0 (MIDI 23) from a five-string part becomes B1 (35): A string, fret 2
         val lesson = builder.build("Low", 100, listOf(event(23, 0)))
 
-        assertEquals(listOf(TabNote(0, 7)), lesson.notes)
+        assertEquals(listOf(TabNote(1, 2)), lesson.notes)
     }
 
     @Test

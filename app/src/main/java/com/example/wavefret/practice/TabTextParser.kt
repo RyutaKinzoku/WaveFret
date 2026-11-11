@@ -12,6 +12,8 @@ import com.example.wavefret.common.music.BassTuning
  * E0 A0 D0 G0
  * ```
  *
+ * An optional `timing:` line lists each note's start time in milliseconds.
+ *
  * Each note token is a string name from the tuning (case-insensitive)
  * immediately followed by a fret number. Note lines are read in order and
  * joined into one sequence. `#` starts a comment that runs to end of line.
@@ -29,6 +31,8 @@ class TabTextParser(private val tuning: BassTuning) {
         var title = UNTITLED_EXERCISE_TITLE
         var tempoBpm = DEFAULT_TEMPO_BPM
         val notes = mutableListOf<TabNote>()
+        var noteOnsetsMillis: List<Long>? = null
+        var timingLineNumber = 0
 
         tabText.lines().forEachIndexed { lineIndex, rawLine ->
             val lineNumber = lineIndex + 1
@@ -37,6 +41,10 @@ class TabTextParser(private val tuning: BassTuning) {
                 line.isEmpty() -> Unit
                 line.startsWith(TITLE_HEADER, ignoreCase = true) ->
                     title = line.substring(TITLE_HEADER.length).trim()
+                line.startsWith(TIMING_HEADER, ignoreCase = true) -> {
+                    noteOnsetsMillis = parseTimings(line.substring(TIMING_HEADER.length).trim(), lineNumber)
+                    timingLineNumber = lineNumber
+                }
                 line.startsWith(TEMPO_HEADER, ignoreCase = true) ->
                     tempoBpm = parseTempo(line.substring(TEMPO_HEADER.length).trim(), lineNumber)
                 else -> line.split(WHITESPACE).mapTo(notes) { parseNoteToken(it, lineNumber) }
@@ -44,7 +52,14 @@ class TabTextParser(private val tuning: BassTuning) {
         }
 
         if (notes.isEmpty()) throw TabParseException(null, "Tab contains no notes")
-        return Exercise(title = title, tuning = tuning, tempoBpm = tempoBpm, notes = notes)
+        if (noteOnsetsMillis != null && noteOnsetsMillis.size != notes.size) {
+            throw TabParseException(timingLineNumber, "Expected ${notes.size} timings, found ${noteOnsetsMillis.size}")
+        }
+        return try {
+            Exercise(title = title, tuning = tuning, tempoBpm = tempoBpm, notes = notes, noteOnsetsMillis = noteOnsetsMillis)
+        } catch (invalidTiming: IllegalArgumentException) {
+            throw TabParseException(timingLineNumber, invalidTiming.message ?: "Invalid timing")
+        }
     }
 
     /**
@@ -58,6 +73,18 @@ class TabTextParser(private val tuning: BassTuning) {
             throw TabParseException(lineNumber, "Tempo must be a positive whole number, was '$tempoText'")
         }
         return tempoBpm
+    }
+
+    /**
+     * @param timingText Text after the timing header. Type: String
+     * @param lineNumber Line being parsed, for error reporting. Type: Int
+     * @return Each note's start time, in milliseconds. Type: List<Long>
+     */
+    private fun parseTimings(timingText: String, lineNumber: Int): List<Long> {
+        return timingText.split(WHITESPACE).filter { it.isNotEmpty() }.map { timingToken ->
+            timingToken.toLongOrNull()?.takeIf { it >= 0 }
+                ?: throw TabParseException(lineNumber, "'$timingToken' is not a time in milliseconds")
+        }
     }
 
     /**
@@ -86,6 +113,7 @@ class TabTextParser(private val tuning: BassTuning) {
         private const val COMMENT_MARKER = "#"
         private const val TITLE_HEADER = "title:"
         private const val TEMPO_HEADER = "tempo:"
+        private const val TIMING_HEADER = "timing:"
         private val WHITESPACE = Regex("\\s+")
         private val NOTE_TOKEN_PATTERN = Regex("([A-Za-z]+)(\\d+)")
     }

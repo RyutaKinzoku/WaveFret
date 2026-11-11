@@ -22,6 +22,9 @@ class TabTextWriter(private val notesPerLine: Int = DEFAULT_NOTES_PER_LINE) {
         exercise.notes.chunked(notesPerLine).forEach { lineNotes ->
             append(lineNotes.joinToString(" ") { it.stringName(exercise.tuning) + it.fret }).append('\n')
         }
+        exercise.noteOnsetsMillis?.let { noteOnsetsMillis ->
+            append("timing: ").append(noteOnsetsMillis.joinToString(" ")).append('\n')
+        }
     }
 
     private companion object {

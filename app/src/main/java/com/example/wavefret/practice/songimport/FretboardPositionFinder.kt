@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
  */
 class FretboardPositionFinder(
     private val tuning: BassTuning,
-    private val highestFret: Int = DEFAULT_HIGHEST_FRET
+    val highestFret: Int = DEFAULT_HIGHEST_FRET
 ) {
 
     /**
