@@ -95,4 +95,21 @@ class TabTextParserTest {
     fun tabWithoutAnyNotesIsRejected() {
         assertThrows(TabParseException::class.java) { tabTextParser.parse("title: Nothing") }
     }
+
+    @Test
+    fun parsesNoteTimingsInMilliseconds() {
+        val exercise = tabTextParser.parse("title: Timed\nE0 A2\ntiming: 0 750")
+
+        assertEquals(listOf(0L, 750L), exercise.noteOnsetsMillis)
+    }
+
+    @Test
+    fun timingCountThatDoesNotMatchTheNotesIsRejected() {
+        assertThrows(TabParseException::class.java) { tabTextParser.parse("E0 A2\ntiming: 0") }
+    }
+
+    @Test
+    fun tabWithoutTimingHasNoTimings() {
+        assertEquals(null, tabTextParser.parse("E0").noteOnsetsMillis)
+    }
 }
