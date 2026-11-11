@@ -26,6 +26,14 @@
         layout="@layout/item_add_song_option" />
 
     <include
+        android:id="@+id/addSongYouTubeOption"
+        layout="@layout/item_add_song_option" />
+
+    <include
+        android:id="@+id/addSongListenOption"
+        layout="@layout/item_add_song_option" />
+
+    <include
         android:id="@+id/addSongPasteTabOption"
         layout="@layout/item_add_song_option" />
 

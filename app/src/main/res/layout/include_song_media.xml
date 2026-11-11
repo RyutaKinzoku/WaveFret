@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The original song: YouTube's player, or a line for a stored or live recording. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/songMediaCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <FrameLayout
+        android:id="@+id/songMediaVideoFrame"
+        android:layout_width="match_parent"
+        android:layout_height="208dp"
+        android:visibility="gone">
+
+        <WebView
+            android:id="@+id/songMediaWebView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/songMediaAudioTextView"
+        style="@style/Widget.WaveFret.SecondaryText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawablePadding="@dimen/space_m"
+        android:gravity="center_vertical"
+        android:minHeight="72dp"
+        android:padding="@dimen/space_m"
+        app:drawableStartCompat="@drawable/ic_music_note"
+        app:drawableTint="?attr/colorPrimary"
+        tools:text="Original recording" />
+</com.google.android.material.card.MaterialCardView>

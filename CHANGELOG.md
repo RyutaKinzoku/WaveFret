@@ -203,3 +203,36 @@
 ### Known limits
 - Transcription quality on full mixes has not been measured on real
   songs on a device yet; expect to fix notes in the editor.
+
+## [0.9.0] - 2026-11-11 - Play-along and Listen mode
+
+### Added
+- Play-along: lessons made from a song keep that song (a YouTube video or
+  the stored audio). "Play along with the song" plays it above the tab and
+  stops at every note until you play it right, with unlimited tries, then
+  carries on. Notes heard while the song is playing are ignored, so the
+  phone speaker can't play the notes for you.
+- YouTube: paste a link (Add a song → YouTube video) or share a video from
+  the YouTube app to WaveFret. The video plays in YouTube's official
+  embedded player while WaveFret listens through the microphone and turns
+  the bass line into a lesson that keeps the video's timing. Nothing is
+  downloaded from YouTube.
+- Listen mode: play a song on a speaker, TV or another phone and WaveFret
+  listens, transcribes it, and keeps what it heard as the lesson's audio.
+- Lessons made from audio files now keep a copy of the audio for
+  play-along (`lesson_audio/`); deleting the song deletes it too.
+
+### Architecture
+- `PlayAlongSession` (a `PracticeSession` driven by the song position),
+  `YouTubeLinkParser`, `LessonAudioStore`, `LessonMediaSource` (saved as a
+  `source:` line in tab text), `Exercise.withTimingsShiftedBy`,
+  `WavFileWriter`, `OnDeviceLessonTranscriber`,
+  `PlayAlongMediaPlayer` with `AudioFilePlayAlongPlayer` and
+  `YouTubePlayAlongPlayer`, `PlayAlongActivity`, `ListenActivity`.
+- New permission: `INTERNET`, used only by the YouTube embedded player.
+
+### Known limits
+- Not yet tried on a device: YouTube embedding in a WebView, and how well
+  the microphone hears a song played from the phone's own speaker.
+- Some YouTube videos don't allow embedding; WaveFret says so, and Listen
+  mode with another speaker still works for them.

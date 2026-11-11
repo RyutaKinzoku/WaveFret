@@ -28,6 +28,8 @@ import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.time.ElapsedRealtimeClock
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
+import com.example.wavefret.practice.playalong.LessonAudioStore
+import com.example.wavefret.practice.playalong.PlayAlongActivity
 import com.example.wavefret.practice.progression.ExercisePickerItem
 import com.example.wavefret.practice.progression.ExercisePickerItemsBuilder
 import com.example.wavefret.practice.progression.PerformanceRating
@@ -138,6 +140,9 @@ class PracticeActivity : AppCompatActivity() {
         practiceModeToggleGroup.check(R.id.practiceWaitModeButton)
         practiceModeToggleGroup.addOnButtonCheckedListener { _, _, isChecked -> if (isChecked) onPracticeModeChanged() }
         exerciseCard.setOnClickListener { showExercisePicker() }
+        findViewById<View>(R.id.practicePlayAlongButton).setOnClickListener {
+            selectedExercise?.let { exercise -> startActivity(PlayAlongActivity.intentFor(this, exercise.title)) }
+        }
         startStopButton.setOnClickListener { onStartStopClicked() }
 
         refreshExercises(preferredTitle = intent.getStringExtra(EXTRA_EXERCISE_TITLE))
@@ -185,6 +190,8 @@ class PracticeActivity : AppCompatActivity() {
         exerciseDetailTextView.text = describeExercise(pickerItem)
         exerciseCard.contentDescription = getString(R.string.practice_choose_exercise_description, pickerItem.exercise.title)
         tabStaffView.contentDescription = getString(R.string.practice_tab_description, pickerItem.exercise.title)
+        findViewById<View>(R.id.practicePlayAlongButton).isVisible =
+            pickerItem.exercise.noteOnsetsMillis != null && pickerItem.exercise.mediaSource != null
         showPreview(pickerItem.exercise)
     }
 
@@ -274,6 +281,9 @@ class PracticeActivity : AppCompatActivity() {
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.delete) { _, _ ->
                 appContainer.importedExercisesRepository.delete(song.title)
+                (song.mediaSource as? LessonMediaSource.StoredAudio)?.let { storedAudio ->
+                    LessonAudioStore(appContainer.appStorageDirectoryProvider).delete(storedAudio.fileName)
+                }
                 if (selectedExercise?.title == song.title) selectedExercise = null
                 refreshExercises(preferredTitle = null)
             }

@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Only for YouTube's embedded player in play-along and Listen mode. -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature
         android:name="android.hardware.camera.any"
@@ -68,6 +70,14 @@
                 <data android:mimeType="audio/x-midi" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".practice.playalong.PlayAlongActivity"
+            android:exported="false"
+            android:parentActivityName=".practice.PracticeActivity" />
+        <activity
+            android:name=".practice.playalong.ListenActivity"
+            android:exported="false"
+            android:parentActivityName=".practice.SongLibraryActivity" />
         <activity
             android:name=".practice.LessonEditorActivity"
             android:exported="false"

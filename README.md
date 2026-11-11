@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: 0.8.0 — audio files become lessons
+## Status: 0.9.0 — play-along with the original song, YouTube and Listen mode
 
 The current build lets you:
 
@@ -23,6 +23,10 @@ The current build lets you:
   your takes. Pick "just my bass" (YIN, accurate) or "full song"
   (on-device basic-pitch model, rough), then fix any wrong notes in the
   lesson editor;
+- play along with the original song (0.9): it stops at each note until
+  you play it right. Works with lessons made from audio files, YouTube
+  links (YouTube's own player; nothing is downloaded) and Listen mode
+  (WaveFret listens to a song played on a speaker);
 - record audio or video takes and share them with any app (0.7);
 - follow a learning path (v4): exercises are rated Beginner /
   Intermediate / Advanced by a heuristic, listed easiest first with your
