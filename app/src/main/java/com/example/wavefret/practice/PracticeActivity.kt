@@ -25,6 +25,14 @@ import com.example.wavefret.common.audio.ToneGeneratorClickPlayer
 import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.time.ElapsedRealtimeClock
+import com.example.wavefret.practice.progression.DifficultyLevel
+import com.example.wavefret.practice.progression.DifficultyScorer
+import com.example.wavefret.practice.progression.ExercisePickerItem
+import com.example.wavefret.practice.progression.ExercisePickerItemsBuilder
+import com.example.wavefret.practice.progression.ExerciseProgression
+import com.example.wavefret.practice.progression.PracticeMode
+import com.example.wavefret.practice.progression.PracticeResult
+import com.example.wavefret.practice.progression.PracticeResultsRepository
 import com.example.wavefret.practice.songimport.AsciiTabParser
 import com.example.wavefret.practice.songimport.FretboardPositionFinder
 import com.example.wavefret.practice.songimport.ImportedExercisesRepository
@@ -72,7 +80,9 @@ class PracticeActivity : AppCompatActivity() {
     private val songImporter = SongImporter(AsciiTabParser(BassTunings.STANDARD), tabTextParser)
     private val musicXmlFileReader = MusicXmlFileReader()
     private val musicXmlBassParser = MusicXmlBassParser(BassTunings.STANDARD, FretboardPositionFinder(BassTunings.STANDARD))
-    private var exercises: List<Exercise> = emptyList()
+    private val practiceResultsRepository by lazy { PracticeResultsRepository(appContainer.appStorageDirectoryProvider) }
+    private val exercisePickerItemsBuilder = ExercisePickerItemsBuilder(ExerciseProgression(DifficultyScorer()))
+    private var exercisePickerItems: List<ExercisePickerItem> = emptyList()
     private val practiceDisplayFormatter = PracticeDisplayFormatter()
     private val practiceController = PracticeController(
         audioSource = AudioRecordPcmSource(samplesPerBufferCount = PRACTICE_SAMPLES_PER_BUFFER_COUNT),
@@ -120,18 +130,53 @@ class PracticeActivity : AppCompatActivity() {
     }
 
     /**
-     * Reloads built-in and imported exercises into the picker.
+     * Reloads built-in and imported exercises into the picker, easiest
+     * first, labelled with level and best score.
      *
-     * @param selectedTitle Title to select afterwards, or null to keep the first. Type: String?
+     * @param selectedTitle Title to select afterwards, or null for the recommended one. Type: String?
      * @return Unit
      */
     private fun refreshExerciseList(selectedTitle: String?) {
-        exercises = builtInExercises.all() + importedExercisesRepository.listExercises()
+        val exercises = builtInExercises.all() + importedExercisesRepository.listExercises()
+        exercisePickerItems = exercisePickerItemsBuilder.build(exercises, practiceResultsRepository.listResults())
         exerciseSpinner.adapter = ArrayAdapter(
-            this, android.R.layout.simple_spinner_dropdown_item, exercises.map { it.title }
+            this, android.R.layout.simple_spinner_dropdown_item, exercisePickerItems.map(::pickerLabelFor)
         )
-        val selectedIndex = exercises.indexOfLast { it.title == selectedTitle }
+        val selectedIndex = if (selectedTitle != null) {
+            exercisePickerItems.indexOfLast { it.exercise.title == selectedTitle }
+        } else {
+            exercisePickerItems.indexOfFirst { it.isRecommended }
+        }
         if (selectedIndex >= 0) exerciseSpinner.setSelection(selectedIndex)
+    }
+
+    /**
+     * @param exercisePickerItem Row to describe. Type: ExercisePickerItem
+     * @return Picker text such as "Open strings · Beginner · best 85%". Type: String
+     */
+    private fun pickerLabelFor(exercisePickerItem: ExercisePickerItem): String {
+        val levelName = getString(levelNameFor(exercisePickerItem.difficultyLevel))
+        val bestScorePercent = exercisePickerItem.bestScorePercent
+        val baseLabel = if (bestScorePercent == null) {
+            getString(R.string.exercise_picker_label, exercisePickerItem.exercise.title, levelName)
+        } else {
+            getString(R.string.exercise_picker_label_with_best, exercisePickerItem.exercise.title, levelName, bestScorePercent)
+        }
+        return when {
+            exercisePickerItem.isMastered -> getString(R.string.exercise_picker_mastered, baseLabel)
+            exercisePickerItem.isRecommended -> getString(R.string.exercise_picker_recommended, baseLabel)
+            else -> baseLabel
+        }
+    }
+
+    /**
+     * @param difficultyLevel Level to name. Type: DifficultyLevel
+     * @return String resource naming it. Type: Int
+     */
+    private fun levelNameFor(difficultyLevel: DifficultyLevel): Int = when (difficultyLevel) {
+        DifficultyLevel.BEGINNER -> R.string.difficulty_beginner
+        DifficultyLevel.INTERMEDIATE -> R.string.difficulty_intermediate
+        DifficultyLevel.ADVANCED -> R.string.difficulty_advanced
     }
 
     /**
@@ -243,8 +288,9 @@ class PracticeActivity : AppCompatActivity() {
      */
     private fun startPractice() {
         stopPractice()
-        val selectedExercise = exercises[exerciseSpinner.selectedItemPosition]
+        val selectedExercise = exercisePickerItems.getOrNull(exerciseSpinner.selectedItemPosition)?.exercise ?: return
         val isTempoMode = practiceModeToggleGroup.checkedButtonId == R.id.practiceTempoModeButton
+        val practiceMode = if (isTempoMode) PracticeMode.TEMPO else PracticeMode.WAIT
         val newSession = if (isTempoMode) startTempoSession(selectedExercise) else buildWaitSession(selectedExercise)
         practiceSession = newSession
         startPracticeButton.setText(R.string.practice_restart)
@@ -255,7 +301,10 @@ class PracticeActivity : AppCompatActivity() {
                 emit(progress)
                 !progress.isComplete
             }
-            .onEach { progress -> renderProgress(newSession.exercise, progress) }
+            .onEach { progress ->
+                renderProgress(newSession.exercise, progress)
+                if (progress.isComplete) recordResult(newSession.exercise, practiceMode, progress)
+            }
             .launchIn(lifecycleScope)
     }
 
@@ -301,6 +350,30 @@ class PracticeActivity : AppCompatActivity() {
         metronomeJob?.cancel()
         metronomeJob = null
         tabStaffView.playheadPositionProvider = null
+    }
+
+    /**
+     * Stores a completed run and refreshes the picker so level badges, best
+     * scores and the recommendation reflect it.
+     *
+     * @param exercise Exercise that was completed. Type: Exercise
+     * @param practiceMode Mode it was played in. Type: PracticeMode
+     * @param progress Final progress. Type: PracticeProgress
+     * @return Unit
+     */
+    private fun recordResult(exercise: Exercise, practiceMode: PracticeMode, progress: PracticeProgress) {
+        val scorePercent = practiceDisplayFormatter.format(exercise, progress).scorePercent ?: 0
+        practiceResultsRepository.record(
+            PracticeResult(
+                exerciseTitle = exercise.title,
+                practiceMode = practiceMode,
+                scorePercent = scorePercent,
+                hitCount = progress.hitCount,
+                missCount = progress.missCount,
+                completedAtMillis = appContainer.clock.currentTimeMillis()
+            )
+        )
+        refreshExerciseList(selectedTitle = exercise.title)
     }
 
     /**

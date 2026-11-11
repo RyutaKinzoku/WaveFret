@@ -96,3 +96,21 @@
 ### Not included
 - YouTube transcription (Demucs + basic-pitch) is deferred: it needs an
   off-device ML step. PDF/photo OCR remains ruled out.
+
+## [0.5.0] - 2026-11-10 - v4: Difficulty & progression
+
+### Added
+- Heuristic difficulty rating (0-100, banded Beginner/Intermediate/
+  Advanced) from tempo, hand-position shifts (outside a four-fret span),
+  string-crossing distance, neck height and average fret jump.
+- Exercise picker lists exercises easiest first, with level, best score,
+  a ✓ for mastered ones and → for the recommended next exercise, which
+  is selected by default.
+- Every completed run (exercise, mode, score, hits, misses, time) is
+  appended to `practice_results.tsv` in app storage.
+
+### Architecture
+- New `practice.progression` package: DifficultyScorer, DifficultyScore,
+  DifficultyLevel, ExerciseProgression, RankedExercise, PracticeMode,
+  PracticeResult, PracticeResultsRepository, ExercisePickerItem,
+  ExercisePickerItemsBuilder.
