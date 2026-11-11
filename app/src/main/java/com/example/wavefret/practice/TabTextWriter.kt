@@ -25,6 +25,11 @@ class TabTextWriter(private val notesPerLine: Int = DEFAULT_NOTES_PER_LINE) {
         exercise.noteOnsetsMillis?.let { noteOnsetsMillis ->
             append("timing: ").append(noteOnsetsMillis.joinToString(" ")).append('\n')
         }
+        when (val mediaSource = exercise.mediaSource) {
+            is LessonMediaSource.YouTubeVideo -> append("source: ${TabTextParser.YOUTUBE_SOURCE} ${mediaSource.videoId}\n")
+            is LessonMediaSource.StoredAudio -> append("source: ${TabTextParser.AUDIO_SOURCE} ${mediaSource.fileName}\n")
+            null -> Unit
+        }
     }
 
     private companion object {

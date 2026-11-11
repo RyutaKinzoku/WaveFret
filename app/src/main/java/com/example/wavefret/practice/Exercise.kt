@@ -12,13 +12,15 @@ import com.example.wavefret.common.music.BassTuning
  * @property notes The notes to play, in order. Type: List<TabNote>
  * @property noteOnsetsMillis When each note starts in the original recording, or null
  *   for exercises without timing. Type: List<Long>?
+ * @property mediaSource Recording the timings refer to, for play-along, or null. Type: LessonMediaSource?
  */
 data class Exercise(
     val title: String,
     val tuning: BassTuning,
     val tempoBpm: Int,
     val notes: List<TabNote>,
-    val noteOnsetsMillis: List<Long>? = null
+    val noteOnsetsMillis: List<Long>? = null,
+    val mediaSource: LessonMediaSource? = null
 ) {
     init {
         require(notes.isNotEmpty()) { "Exercise must contain at least one note" }
@@ -33,6 +35,13 @@ data class Exercise(
             }
         }
     }
+
+    /**
+     * @param offsetMillis Time to add to every note, e.g. where in a video listening started. Type: Long
+     * @return The same lesson with every timing moved by the offset. Type: Exercise
+     */
+    fun withTimingsShiftedBy(offsetMillis: Long): Exercise =
+        copy(noteOnsetsMillis = noteOnsetsMillis?.map { onsetMillis -> onsetMillis + offsetMillis })
 
     /** How many notes the exercise has. Type: Int */
     val noteCount: Int get() = notes.size
