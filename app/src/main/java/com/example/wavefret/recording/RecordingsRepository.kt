@@ -16,19 +16,20 @@ class RecordingsRepository(
 ) {
 
     /**
-     * @return All .m4a recordings in the recordings directory, sorted by
+     * @return All audio (.m4a) and video (.mp4) takes in the recordings directory, sorted by
      *   lastModifiedMillis descending (most recent first). Type: List<RecordingInfo>
      */
     fun listRecordings(): List<RecordingInfo> {
         val directory = File(directoryProvider.recordingsDirectoryPath())
-        val files = directory.listFiles { file -> file.extension == "m4a" } ?: emptyArray()
+        val files = directory.listFiles { file -> RecordingMediaType.forFileName(file.name) != null } ?: emptyArray()
         return files
             .map { file ->
                 RecordingInfo(
                     filePath = file.absolutePath,
                     fileName = file.name,
                     lastModifiedMillis = file.lastModified(),
-                    durationMillis = audioDurationReader.readDurationMillis(file.absolutePath)
+                    durationMillis = audioDurationReader.readDurationMillis(file.absolutePath),
+                    mediaType = requireNotNull(RecordingMediaType.forFileName(file.name))
                 )
             }
             .sortedByDescending { it.lastModifiedMillis }
