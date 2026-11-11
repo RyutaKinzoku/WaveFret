@@ -1,6 +1,7 @@
 package com.example.wavefret.practice
 
 import android.Manifest
+import android.net.Uri
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -25,7 +26,10 @@ import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.time.ElapsedRealtimeClock
 import com.example.wavefret.practice.songimport.AsciiTabParser
+import com.example.wavefret.practice.songimport.FretboardPositionFinder
 import com.example.wavefret.practice.songimport.ImportedExercisesRepository
+import com.example.wavefret.practice.songimport.MusicXmlBassParser
+import com.example.wavefret.practice.songimport.MusicXmlFileReader
 import com.example.wavefret.practice.songimport.SongImporter
 import com.google.android.material.button.MaterialButtonToggleGroup
 import kotlinx.coroutines.Job
@@ -33,10 +37,12 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 /**
  * Practice screen: pick a built-in or imported exercise and a mode, then
- * play along. Tabs pasted from the internet can be imported here too.
+ * play along. Tabs pasted from the internet and MusicXML files can be
+ * imported here too.
  * In wait mode the tab only advances when the right note is heard; in
  * tempo mode a metronome counts in and the tab scrolls at the exercise's
  * tempo, scoring each note as hit or missed.
@@ -64,6 +70,8 @@ class PracticeActivity : AppCompatActivity() {
         ImportedExercisesRepository(appContainer.appStorageDirectoryProvider, TabTextWriter(), tabTextParser)
     }
     private val songImporter = SongImporter(AsciiTabParser(BassTunings.STANDARD), tabTextParser)
+    private val musicXmlFileReader = MusicXmlFileReader()
+    private val musicXmlBassParser = MusicXmlBassParser(BassTunings.STANDARD, FretboardPositionFinder(BassTunings.STANDARD))
     private var exercises: List<Exercise> = emptyList()
     private val practiceDisplayFormatter = PracticeDisplayFormatter()
     private val practiceController = PracticeController(
@@ -84,6 +92,10 @@ class PracticeActivity : AppCompatActivity() {
     private val requestMicrophonePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted -> if (isGranted) startPractice() }
+
+    private val openMusicXmlFileLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { musicXmlFileUri -> musicXmlFileUri?.let(::importMusicXmlFile) }
 
     /**
      * @param savedInstanceState Previously saved state, or null on first creation. Type: Bundle?
@@ -142,8 +154,48 @@ class PracticeActivity : AppCompatActivity() {
                     tempoBpm = tempoEditText.text.toString().toIntOrNull()?.takeIf { it > 0 }
                 )
             }
+            .setNeutralButton(R.string.import_song_open_music_xml) { _, _ ->
+                openMusicXmlFileLauncher.launch(MUSIC_XML_MIME_TYPES)
+            }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /**
+     * Reads a chosen MusicXML (.musicxml, .xml or .mxl) file and stores its bass line.
+     *
+     * @param musicXmlFileUri Document the player picked. Type: Uri
+     * @return Unit
+     */
+    private fun importMusicXmlFile(musicXmlFileUri: Uri) {
+        try {
+            val fileBytes = contentResolver.openInputStream(musicXmlFileUri)?.use { it.readBytes() }
+                ?: throw IllegalArgumentException(getString(R.string.import_song_unreadable_file))
+            val importedExercise = musicXmlBassParser.parse(musicXmlFileReader.readMusicXmlText(fileBytes))
+            saveImportedExercise(importedExercise)
+        } catch (unreadableScore: IllegalArgumentException) {
+            showImportFailure(unreadableScore)
+        } catch (unreadableFile: IOException) {
+            showImportFailure(unreadableFile)
+        }
+    }
+
+    /**
+     * @param importedExercise Exercise to store and select. Type: Exercise
+     * @return Unit
+     */
+    private fun saveImportedExercise(importedExercise: Exercise) {
+        importedExercisesRepository.save(importedExercise)
+        refreshExerciseList(selectedTitle = importedExercise.title)
+        Toast.makeText(this, getString(R.string.import_song_saved, importedExercise.title), Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * @param importFailure Why the import failed. Type: Exception
+     * @return Unit
+     */
+    private fun showImportFailure(importFailure: Exception) {
+        Toast.makeText(this, getString(R.string.import_song_failed, importFailure.message), Toast.LENGTH_LONG).show()
     }
 
     /**
@@ -154,12 +206,9 @@ class PracticeActivity : AppCompatActivity() {
      */
     private fun importSong(pastedText: String, title: String, tempoBpm: Int?) {
         try {
-            val importedExercise = songImporter.import(pastedText, title, tempoBpm)
-            importedExercisesRepository.save(importedExercise)
-            refreshExerciseList(selectedTitle = importedExercise.title)
-            Toast.makeText(this, getString(R.string.import_song_saved, importedExercise.title), Toast.LENGTH_SHORT).show()
+            saveImportedExercise(songImporter.import(pastedText, title, tempoBpm))
         } catch (unreadableTab: IllegalArgumentException) {
-            Toast.makeText(this, getString(R.string.import_song_failed, unreadableTab.message), Toast.LENGTH_LONG).show()
+            showImportFailure(unreadableTab)
         }
     }
 
@@ -301,5 +350,12 @@ class PracticeActivity : AppCompatActivity() {
         const val PRACTICE_SAMPLES_PER_BUFFER_COUNT = 4096
         const val PITCH_ANALYSIS_CUTOFF_HZ = 1000.0
         const val TEMPO_MODE_REQUIRED_MATCHES = 1
+        val MUSIC_XML_MIME_TYPES = arrayOf(
+            "application/vnd.recordare.musicxml+xml",
+            "application/vnd.recordare.musicxml",
+            "application/xml",
+            "text/xml",
+            "application/octet-stream"
+        )
     }
 }

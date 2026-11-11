@@ -32,4 +32,6 @@
     <string name="import_song_confirm">Import</string>
     <string name="import_song_saved">Imported \"%1$s\"</string>
     <string name="import_song_failed">Couldn\'t read that tab: %1$s</string>
+    <string name="import_song_open_music_xml">Open MusicXML…</string>
+    <string name="import_song_unreadable_file">the file could not be opened</string>
 </resources>
