@@ -193,6 +193,7 @@ class RecorderActivity : AppCompatActivity() {
         val takes = recordingsRepository.listRecordings()
         recordingsAdapter.submitList(takes)
         emptyStateView.isVisible = takes.isEmpty()
+        findViewById<View>(R.id.recorderTakesHeading).isVisible = takes.isNotEmpty()
     }
 
     /**

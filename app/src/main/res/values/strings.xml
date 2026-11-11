@@ -71,6 +71,8 @@
     <string name="practice_start">Start</string>
     <string name="practice_stop">Stop</string>
     <string name="practice_current_note">%1$s · fret %2$d</string>
+    <string name="practice_current_note_open">%1$s · open</string>
+    <string name="practice_current_note_open_description">Open %1$s string</string>
     <string name="practice_current_note_description">%1$s string, fret %2$d</string>
     <string name="practice_note_progress">Note %1$d of %2$d</string>
     <string name="practice_feedback_ready">Press Start, then play the highlighted note.</string>

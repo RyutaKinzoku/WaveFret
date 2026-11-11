@@ -25,6 +25,9 @@ android {
             }
         }
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -44,5 +47,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 }

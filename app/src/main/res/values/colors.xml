@@ -7,8 +7,8 @@
     <color name="wf_on_primary_container">#2C1700</color>
     <color name="wf_secondary">#00696B</color>
     <color name="wf_on_secondary">#FFFFFF</color>
-    <color name="wf_secondary_container">#9CF1F2</color>
-    <color name="wf_on_secondary_container">#002020</color>
+    <color name="wf_secondary_container">#CCE8E7</color>
+    <color name="wf_on_secondary_container">#051F1F</color>
     <color name="wf_error">#BA1A1A</color>
     <color name="wf_on_error">#FFFFFF</color>
     <color name="wf_error_container">#FFDAD6</color>

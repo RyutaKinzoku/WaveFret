@@ -150,7 +150,10 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/space_l"
+                        app:indicatorColor="?attr/colorPrimary"
+                        app:trackColor="?attr/colorSurfaceContainerHighest"
                         app:trackCornerRadius="4dp"
+                        app:trackStopIndicatorSize="0dp"
                         app:trackThickness="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

@@ -404,9 +404,17 @@ class PracticeActivity : AppCompatActivity() {
         val currentStringName = displayState.currentStringName
         val currentFret = displayState.currentFret
         if (currentStringName != null && currentFret != null) {
-            currentNoteTextView.text = getString(R.string.practice_current_note, currentStringName, currentFret)
-            currentNoteTextView.contentDescription =
+            val isOpenString = currentFret == 0
+            currentNoteTextView.text = if (isOpenString) {
+                getString(R.string.practice_current_note_open, currentStringName)
+            } else {
+                getString(R.string.practice_current_note, currentStringName, currentFret)
+            }
+            currentNoteTextView.contentDescription = if (isOpenString) {
+                getString(R.string.practice_current_note_open_description, currentStringName)
+            } else {
                 getString(R.string.practice_current_note_description, currentStringName, currentFret)
+            }
         } else {
             currentNoteTextView.text = getString(R.string.summary_score, displayState.scorePercent ?: 0)
             currentNoteTextView.contentDescription = null
