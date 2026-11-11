@@ -34,4 +34,11 @@
     <string name="import_song_failed">Couldn\'t read that tab: %1$s</string>
     <string name="import_song_open_music_xml">Open MusicXML…</string>
     <string name="import_song_unreadable_file">the file could not be opened</string>
+    <string name="exercise_picker_label">%1$s · %2$s</string>
+    <string name="exercise_picker_label_with_best">%1$s · %2$s · best %3$d%%</string>
+    <string name="exercise_picker_mastered">✓ %1$s</string>
+    <string name="exercise_picker_recommended">→ %1$s</string>
+    <string name="difficulty_beginner">Beginner</string>
+    <string name="difficulty_intermediate">Intermediate</string>
+    <string name="difficulty_advanced">Advanced</string>
 </resources>
