@@ -68,7 +68,8 @@ class MusicXmlBassParserTest {
     fun placesPlainPitchesOnTheFretboard() {
         val musicXml = scoreWith(pitchedNote("E", 1) + pitchedNote("G", 1) + pitchedNote("B", 1, alter = -1))
 
-        assertEquals(listOf(TabNote(0, 0), TabNote(0, 3), TabNote(0, 6)), musicXmlBassParser.parse(musicXml).notes)
+        // Bb1 is 2 frets from the hand on the A string (fret 1) but 3 on the E string (fret 6)
+        assertEquals(listOf(TabNote(0, 0), TabNote(0, 3), TabNote(1, 1)), musicXmlBassParser.parse(musicXml).notes)
     }
 
     @Test
