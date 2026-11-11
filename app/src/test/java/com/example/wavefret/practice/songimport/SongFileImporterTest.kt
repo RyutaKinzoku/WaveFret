@@ -47,7 +47,7 @@ class SongFileImporterTest {
 
     @Test
     fun asciiTabTextFileIsImported() {
-        val outcome = songFileImporter.import("riff.txt", "text/plain", "G|---|\nD|---|\nA|-2-|\nE|---|".toByteArray(), "")
+        val outcome = songFileImporter.import("riff.txt", "text/plain", "G|-----|\nD|-----|\nA|--2--|\nE|-----|".toByteArray(), "")
 
         assertEquals(listOf(TabNote(1, 2)), (outcome as SongImportOutcome.Imported).exercise.notes)
     }
