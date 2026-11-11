@@ -2,7 +2,7 @@
 
 This document maps each product-quality characteristic of ISO/IEC 25010:2023
 to what WaveFret does about it, how that is verified, and what is still
-open. It is updated with every release; the current state is **0.8.0**.
+open. It is updated with every release; the current state is **0.9.0**.
 
 Verification legend: **UT** = JUnit unit test, **RT** = Robolectric screen
 test (`ScreenRenderTest`, renders every screen in light/dark),
@@ -32,7 +32,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Sub-characteristic | How | Verified by |
 |---|---|---|
 | Co-existence | Mic is held only while Tuner/Practice/Recorder are visible; playback stops when leaving the recorder. | DEV |
-| Interoperability | Imports ASCII tabs, MusicXML 4.0 (plain or `.mxl`), Guitar Pro 7+ (`.gp`) and MIDI; receives files and text from any app through the share sheet; shares takes out through the share sheet. Exports its own human-readable tab text. | UT (all parsers, `ZipArchiveReader`, `SongFileImporter`, `TabTextWriter` round trip), DEV (share sheet) |
+| Interoperability | Plays YouTube videos through YouTube's official IFrame Player API (no downloading, as YouTube's terms require). Imports ASCII tabs, MusicXML 4.0 (plain or `.mxl`), Guitar Pro 7+ (`.gp`) and MIDI; receives files and text from any app through the share sheet; shares takes out through the share sheet. Exports its own human-readable tab text. | UT (all parsers, `ZipArchiveReader`, `SongFileImporter`, `TabTextWriter` round trip), DEV (share sheet) |
 
 ## 4. Interaction capability (usability)
 
@@ -42,7 +42,8 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Learnability | New players see onboarding copy ("Tune up, then play your first exercise") and a "Start here" recommendation; each mode explains itself under the toggle; empty states explain what to do. | RT |
 | Operability | Primary actions in the thumb zone (Practise, Start/Stop, Record); all tap targets ≥ 48 dp; edge-to-edge insets keep every button above the navigation bar; screen stays on while playing. | RT (primary view shown), LINT, DEV |
 | User error protection | Leaving the lesson editor with unsaved edits asks first; a lesson can't lose its last note or its title. Deleting a take or song asks first; import validates input and explains failures; denied microphone access explains why and links to Settings; leaving mid-take saves the take. | DEV |
-| User engagement | Streak, weekly runs and mastery progress; end-of-run summary with rating, score, "New best" and "Mastered" badges and a one-tap next exercise (peak-end design). | UT (`PracticeStatsCalculator`, `PracticeSummaryBuilder`), RT |
+| User engagement | Play-along turns any song into a stop-and-go game with unlimited tries. |
+| User engagement (progress) | Streak, weekly runs and mastery progress; end-of-run summary with rating, score, "New best" and "Mastered" badges and a one-tap next exercise (peak-end design). | UT (`PracticeStatsCalculator`, `PracticeSummaryBuilder`), RT |
 | Inclusivity | Text in `sp`; colour roles meet M3 contrast in light and dark; every icon button has a spoken label; section titles are headings for TalkBack (API 28+); live regions announce feedback; tuner status is said in words, not only colour. | LINT, RT |
 | User assistance | Plain-language tuner guidance ("Too low · tighten the string"); hints on every input. | DEV |
 | Self-descriptiveness | Takes are titled by date instead of file names; exercises show level, tempo, note count and best score. | UT (`RecordingDisplayFormatter`) |
@@ -52,7 +53,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Sub-characteristic | How | Verified by |
 |---|---|---|
 | Faultlessness | TDD: every logic class has failing-first tests; full suite green at each commit. | UT |
-| Availability | Works fully offline; no account or network needed. | Design |
+| Availability | Everything except YouTube play-along works offline; no account needed. | Design |
 | Fault tolerance | Corrupt imported files and history lines are skipped, not fatal; unparsable tabs/scores raise a readable message. | UT |
 | Recoverability | Microphone denial is recoverable via Settings; an interrupted take is saved; history is append-only text. | DEV, UT |
 
@@ -60,8 +61,8 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 
 | Sub-characteristic | How | Verified by |
 |---|---|---|
-| Confidentiality | `RECORD_AUDIO` and `CAMERA` are requested only when a screen needs them; no `INTERNET` permission. Takes leave the device only when the player shares one: a FileProvider exposes just that file, read-only, to the app they pick. | Manifest review |
-| Integrity | All XML (MusicXML, Guitar Pro) goes through `SafeXmlDocumentParser` (no entity expansion, no external DTDs); file names are URL-encoded so titles can't escape the storage folder; shared files are parsed, never executed. | UT |
+| Confidentiality | `RECORD_AUDIO` and `CAMERA` are requested only when a screen needs them. `INTERNET` (since 0.9) is used only to load YouTube's embedded player for a video the player chose; no WaveFret data is sent anywhere, there are no accounts, analytics or ads, and transcription runs on the device. Takes leave the device only when the player shares one: a FileProvider exposes just that file, read-only, to the app they pick. | Manifest review |
+| Integrity | YouTube video ids are checked against YouTube's id format before they are placed in the player page, and the page's JavaScript bridge only receives player events. All XML (MusicXML, Guitar Pro) goes through `SafeXmlDocumentParser` (no entity expansion, no external DTDs); file names are URL-encoded so titles can't escape the storage folder; shared files are parsed, never executed. | UT |
 | Accountability / authenticity | Not applicable: single-user, no accounts. | — |
 
 ## 7. Maintainability
@@ -97,6 +98,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 - No physical device or emulator was available when 0.6.0 was built, so the
   **DEV** rows (audio latency, mic behaviour, metronome timing, TalkBack
   walk-through) still need a manual pass on a phone.
+- Play-along and Listen mode with YouTube have only been checked with rendered screens and unit tests, not on a phone with network access.
 - Tablet / landscape layouts are not specialised yet (content stretches full width).
 - English only; strings are externalized, so translation is possible but not done.
 - Android Gradle Plugin 9.5.1 is available (lint notice); upgrading is a separate task.

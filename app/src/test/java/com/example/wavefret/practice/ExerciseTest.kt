@@ -53,4 +53,11 @@ class ExerciseTest {
             Exercise("Bad", BassTunings.STANDARD, 80, listOf(TabNote(0, 0), TabNote(1, 0)), noteOnsetsMillis = listOf(500L, 100L))
         }
     }
+
+    @Test
+    fun timingsCanBeShiftedToLineUpWithAVideo() {
+        val timed = Exercise("Song", BassTunings.STANDARD, 80, listOf(TabNote(0, 0), TabNote(1, 0)), listOf(0L, 400L))
+
+        assertEquals(listOf(12_000L, 12_400L), timed.withTimingsShiftedBy(12_000L).noteOnsetsMillis)
+    }
 }

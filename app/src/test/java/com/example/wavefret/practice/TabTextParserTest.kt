@@ -112,4 +112,23 @@ class TabTextParserTest {
     fun tabWithoutTimingHasNoTimings() {
         assertEquals(null, tabTextParser.parse("E0").noteOnsetsMillis)
     }
+
+    @Test
+    fun parsesAYouTubeSource() {
+        val exercise = tabTextParser.parse("E0\ntiming: 0\nsource: youtube dQw4w9WgXcQ")
+
+        assertEquals(LessonMediaSource.YouTubeVideo("dQw4w9WgXcQ"), exercise.mediaSource)
+    }
+
+    @Test
+    fun parsesAStoredAudioSource() {
+        val exercise = tabTextParser.parse("E0\ntiming: 0\nsource: audio 1700000000000.mp3")
+
+        assertEquals(LessonMediaSource.StoredAudio("1700000000000.mp3"), exercise.mediaSource)
+    }
+
+    @Test
+    fun unknownSourceKindIsRejected() {
+        assertThrows(TabParseException::class.java) { tabTextParser.parse("E0\nsource: vinyl x") }
+    }
 }

@@ -23,24 +23,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
-import com.example.wavefret.common.audio.AudioResampler
 import com.example.wavefret.common.audio.MediaCodecAudioDecoder
-import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.music.BassTunings
-import com.example.wavefret.common.transcription.BasicPitchTranscriber
-import com.example.wavefret.common.transcription.BasicPitchWindowing
-import com.example.wavefret.common.transcription.MonophonicTranscriber
-import com.example.wavefret.common.transcription.PosteriorgramNoteDecoder
-import com.example.wavefret.common.transcription.TempoEstimator
-import com.example.wavefret.common.transcription.TfLiteBasicPitchModel
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.practice.progression.ExercisePickerItem
 import com.example.wavefret.practice.progression.ExercisePickerItemsBuilder
 import com.example.wavefret.practice.progression.SongLibraryQuery
 import com.example.wavefret.practice.progression.SongSortOrder
 import com.example.wavefret.practice.progression.SongSource
+import com.example.wavefret.practice.playalong.LessonAudioStore
+import com.example.wavefret.practice.playalong.ListenActivity
+import com.example.wavefret.practice.playalong.YouTubeLinkParser
 import com.example.wavefret.practice.songimport.AsciiTabParser
-import com.example.wavefret.practice.songimport.AudioLessonBuilder
+import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
 import com.example.wavefret.practice.songimport.SongFileFormat
 import com.example.wavefret.practice.songimport.FretboardPositionFinder
 import com.example.wavefret.practice.songimport.GuitarProFileParser
@@ -60,6 +55,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -176,8 +172,10 @@ class SongLibraryActivity : AppCompatActivity() {
             incomingIntent.action == Intent.ACTION_SEND -> {
                 val sharedUri = IntentCompat.getParcelableExtra(incomingIntent, Intent.EXTRA_STREAM, Uri::class.java)
                 val sharedText = incomingIntent.getStringExtra(Intent.EXTRA_TEXT)
+                val sharedYouTubeVideoId = sharedText?.let(YouTubeLinkParser()::videoIdFrom)
                 when {
                     sharedUri != null -> importSongFile(sharedUri)
+                    sharedYouTubeVideoId != null -> startActivity(ListenActivity.intentFor(this, sharedYouTubeVideoId))
                     !sharedText.isNullOrBlank() -> showPasteTabDialog(prefilledTab = sharedText)
                 }
             }
@@ -264,6 +262,16 @@ class SongLibraryActivity : AppCompatActivity() {
             addSongSheet.dismiss()
             openSongFileLauncher.launch(arrayOf("audio/*", "video/mp4"))
         }
+        bindAddSongOption(sheetView.findViewById(R.id.addSongYouTubeOption), R.drawable.ic_play,
+            R.string.add_song_youtube_title, R.string.add_song_youtube_body) {
+            addSongSheet.dismiss()
+            showYouTubeLinkDialog()
+        }
+        bindAddSongOption(sheetView.findViewById(R.id.addSongListenOption), R.drawable.ic_mic,
+            R.string.add_song_listen_title, R.string.add_song_listen_body) {
+            addSongSheet.dismiss()
+            startActivity(ListenActivity.intentFor(this, youTubeVideoId = null))
+        }
         bindAddSongOption(sheetView.findViewById(R.id.addSongPasteTabOption), R.drawable.ic_content_paste,
             R.string.add_song_paste_title, R.string.add_song_paste_body) {
             addSongSheet.dismiss()
@@ -329,6 +337,35 @@ class SongLibraryActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /**
+     * Asks for a YouTube link and opens Listen mode with that video.
+     *
+     * @return Unit
+     */
+    private fun showYouTubeLinkDialog() {
+        val linkLayout = layoutInflater.inflate(R.layout.dialog_youtube_link, rootView, false) as TextInputLayout
+        val linkEditText = requireNotNull(linkLayout.editText)
+        val linkDialog = MaterialAlertDialogBuilder(this)
+            .setIcon(R.drawable.ic_play)
+            .setTitle(R.string.add_song_youtube_title)
+            .setView(linkLayout)
+            .setPositiveButton(R.string.next, null)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        linkDialog.setOnShowListener {
+            linkDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                val videoId = YouTubeLinkParser().videoIdFrom(linkEditText.text.toString())
+                if (videoId == null) {
+                    linkLayout.error = getString(R.string.youtube_link_invalid)
+                } else {
+                    linkDialog.dismiss()
+                    startActivity(ListenActivity.intentFor(this, videoId))
+                }
+            }
+        }
+        linkDialog.show()
     }
 
     /**
@@ -432,23 +469,17 @@ class SongLibraryActivity : AppCompatActivity() {
                 val decodedAudio = withContext(Dispatchers.IO) { MediaCodecAudioDecoder(this@SongLibraryActivity).decode(audioUri) }
                 stepTextView.setText(R.string.transcribing_detecting)
                 val draftLesson = withContext(Dispatchers.Default) {
-                    val tuning = BassTunings.STANDARD
-                    val lessonBuilder = NoteEventsLessonBuilder(tuning, FretboardPositionFinder(tuning))
-                    if (isFullSong) {
-                        TfLiteBasicPitchModel(this@SongLibraryActivity).use { basicPitchModel ->
-                            val transcriber = BasicPitchTranscriber(
-                                basicPitchModel, BasicPitchWindowing(), PosteriorgramNoteDecoder(), AudioResampler()
-                            )
-                            AudioLessonBuilder(transcriber, TempoEstimator(), lessonBuilder)
-                                .build(title, decodedAudio.samples, decodedAudio.sampleRateHz)
-                        }
-                    } else {
-                        AudioLessonBuilder(MonophonicTranscriber(YinPitchDetector()), TempoEstimator(), lessonBuilder)
-                            .build(title, decodedAudio.samples, decodedAudio.sampleRateHz)
+                    OnDeviceLessonTranscriber(this@SongLibraryActivity)
+                        .transcribe(title, decodedAudio.samples, decodedAudio.sampleRateHz, isFullSong)
+                }
+                val storedAudioName = withContext(Dispatchers.IO) {
+                    contentResolver.openInputStream(audioUri)?.use { audioStream ->
+                        LessonAudioStore(appContainer.appStorageDirectoryProvider).store(displayNameOf(audioUri), audioStream)
                     }
                 }
+                val playableDraft = storedAudioName?.let { draftLesson.copy(mediaSource = LessonMediaSource.StoredAudio(it)) } ?: draftLesson
                 progressDialog.dismiss()
-                startActivity(LessonEditorActivity.intentFor(this@SongLibraryActivity, draftLesson, originalTitle = null))
+                startActivity(LessonEditorActivity.intentFor(this@SongLibraryActivity, playableDraft, originalTitle = null))
             } catch (transcriptionFailure: IllegalArgumentException) {
                 progressDialog.dismiss()
                 showTranscriptionFailure(transcriptionFailure.message.orEmpty())
@@ -521,6 +552,9 @@ class SongLibraryActivity : AppCompatActivity() {
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.delete) { _, _ ->
                 appContainer.importedExercisesRepository.delete(song.title)
+                (song.mediaSource as? LessonMediaSource.StoredAudio)?.let { storedAudio ->
+                    LessonAudioStore(appContainer.appStorageDirectoryProvider).delete(storedAudio.fileName)
+                }
                 reloadLibrary()
             }
             .show()

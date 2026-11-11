@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/playAlongRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".practice.playalong.PlayAlongActivity">
+
+    <include layout="@layout/include_top_app_bar" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/screen_gutter"
+            android:paddingBottom="@dimen/space_l">
+
+            <include layout="@layout/include_song_media" />
+
+            <TextView
+                android:id="@+id/playAlongCurrentNoteTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_l"
+                android:gravity="center"
+                android:textAppearance="@style/TextAppearance.WaveFret.Display"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="A · fret 5" />
+
+            <TextView
+                android:id="@+id/playAlongFeedbackTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s"
+                android:accessibilityLiveRegion="polite"
+                android:gravity="center"
+                android:text="@string/play_along_ready"
+                android:textAppearance="@style/TextAppearance.WaveFret.Body"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_l">
+
+                <com.example.wavefret.practice.TabStaffView
+                    android:id="@+id/playAlongTabStaffView"
+                    android:layout_width="match_parent"
+                    android:layout_height="160dp" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/playAlongProgressIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
+                app:indicatorColor="?attr/colorPrimary"
+                app:trackColor="?attr/colorSurfaceContainerHighest"
+                app:trackCornerRadius="4dp"
+                app:trackStopIndicatorSize="0dp"
+                app:trackThickness="8dp" />
+
+            <TextView
+                android:id="@+id/playAlongNoteProgressTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s"
+                android:textAppearance="@style/TextAppearance.WaveFret.Label"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:id="@+id/playAlongBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerLow"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingVertical="@dimen/space_m">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/playAlongRestartButton"
+            style="?attr/materialIconButtonFilledTonalStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/space_s"
+            android:contentDescription="@string/play_along_restart"
+            app:icon="@drawable/ic_replay" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/playAlongStartButton"
+            style="@style/Widget.WaveFret.PrimaryAction"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:enabled="false"
+            android:text="@string/play_along_start"
+            app:icon="@drawable/ic_play"
+            app:iconGravity="textStart" />
+    </LinearLayout>
+</LinearLayout>

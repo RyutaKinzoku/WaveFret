@@ -105,6 +105,17 @@
                 android:layout_marginTop="@dimen/space_s"
                 android:text="@string/practice_mode_wait_help" />
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/practicePlayAlongButton"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s"
+                android:minHeight="@dimen/touch_target"
+                android:text="@string/practice_play_along"
+                android:visibility="gone"
+                app:icon="@drawable/ic_play" />
+
             <TextView
                 android:id="@+id/practiceCurrentNoteTextView"
                 android:layout_width="match_parent"

@@ -195,4 +195,39 @@
     <string name="edit_note_fret_description">Fret</string>
     <string name="edit_note_insert_after">Add after</string>
     <string name="edit_song_description">Edit %1$s</string>
+
+    <!-- Play-along -->
+    <string name="play_along_ready">Press Play. The song stops at each note until you play it.</string>
+    <string name="play_along_start">Play</string>
+    <string name="play_along_pause">Pause</string>
+    <string name="play_along_restart">Start the song again</string>
+    <string name="play_along_loading">Loading the song…</string>
+    <string name="play_along_listening_for_note">Your turn: play this note</string>
+    <string name="play_along_song_playing">Get ready…</string>
+    <string name="play_along_complete">You played the whole song!</string>
+    <string name="play_along_original_recording">Original recording</string>
+    <string name="play_along_unavailable">This lesson has no song to play along with.</string>
+    <string name="play_along_media_error">The song can\'t be played here. Some YouTube videos don\'t allow playing in other apps.</string>
+    <string name="practice_play_along">Play along with the song</string>
+
+    <!-- Listen -->
+    <string name="listen_title">Listen</string>
+    <string name="listen_start">Start listening</string>
+    <string name="listen_stop">Stop and make a lesson</string>
+    <string name="listen_status_youtube">Press Start: the video plays and WaveFret listens through the microphone.</string>
+    <string name="listen_status_speaker">Play the song on a speaker near your phone, then press Start.</string>
+    <string name="listen_status_listening">Listening… press Stop when you have enough.</string>
+    <string name="listen_tip">Turn the volume up and keep the phone close. Headphones won\'t work: the microphone has to hear the song.</string>
+    <string name="listen_speaker_panel">Music from a speaker, TV or another phone</string>
+    <string name="listen_too_short">Listen a little longer: at least a few seconds</string>
+    <string name="listen_permission_needed">WaveFret needs the microphone to listen to the song.</string>
+    <string name="add_song_youtube_title">YouTube video</string>
+    <string name="add_song_youtube_body">Paste a link: WaveFret listens while it plays</string>
+    <string name="add_song_listen_title">Listen to a song</string>
+    <string name="add_song_listen_body">Play it on a speaker and let WaveFret hear it</string>
+    <string name="youtube_link_hint">YouTube link</string>
+    <string name="youtube_link_invalid">That doesn\'t look like a YouTube link</string>
+    <string name="youtube_lesson_title">YouTube lesson</string>
+    <string name="listen_lesson_title">Song I listened to</string>
+    <string name="next">Next</string>
 </resources>

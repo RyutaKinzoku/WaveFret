@@ -12,7 +12,9 @@ import com.example.wavefret.common.music.BassTuning
  * E0 A0 D0 G0
  * ```
  *
- * An optional `timing:` line lists each note's start time in milliseconds.
+ * An optional `timing:` line lists each note's start time in milliseconds,
+ * and an optional `source:` line names the recording it came from
+ * (`source: youtube <videoId>` or `source: audio <storedFileName>`).
  *
  * Each note token is a string name from the tuning (case-insensitive)
  * immediately followed by a fret number. Note lines are read in order and
@@ -33,6 +35,7 @@ class TabTextParser(private val tuning: BassTuning) {
         val notes = mutableListOf<TabNote>()
         var noteOnsetsMillis: List<Long>? = null
         var timingLineNumber = 0
+        var mediaSource: LessonMediaSource? = null
 
         tabText.lines().forEachIndexed { lineIndex, rawLine ->
             val lineNumber = lineIndex + 1
@@ -45,6 +48,8 @@ class TabTextParser(private val tuning: BassTuning) {
                     noteOnsetsMillis = parseTimings(line.substring(TIMING_HEADER.length).trim(), lineNumber)
                     timingLineNumber = lineNumber
                 }
+                line.startsWith(SOURCE_HEADER, ignoreCase = true) ->
+                    mediaSource = parseMediaSource(line.substring(SOURCE_HEADER.length).trim(), lineNumber)
                 line.startsWith(TEMPO_HEADER, ignoreCase = true) ->
                     tempoBpm = parseTempo(line.substring(TEMPO_HEADER.length).trim(), lineNumber)
                 else -> line.split(WHITESPACE).mapTo(notes) { parseNoteToken(it, lineNumber) }
@@ -56,7 +61,14 @@ class TabTextParser(private val tuning: BassTuning) {
             throw TabParseException(timingLineNumber, "Expected ${notes.size} timings, found ${noteOnsetsMillis.size}")
         }
         return try {
-            Exercise(title = title, tuning = tuning, tempoBpm = tempoBpm, notes = notes, noteOnsetsMillis = noteOnsetsMillis)
+            Exercise(
+                title = title,
+                tuning = tuning,
+                tempoBpm = tempoBpm,
+                notes = notes,
+                noteOnsetsMillis = noteOnsetsMillis,
+                mediaSource = mediaSource
+            )
         } catch (invalidTiming: IllegalArgumentException) {
             throw TabParseException(timingLineNumber, invalidTiming.message ?: "Invalid timing")
         }
@@ -73,6 +85,22 @@ class TabTextParser(private val tuning: BassTuning) {
             throw TabParseException(lineNumber, "Tempo must be a positive whole number, was '$tempoText'")
         }
         return tempoBpm
+    }
+
+    /**
+     * @param sourceText Text after the source header, e.g. "youtube dQw4w9WgXcQ". Type: String
+     * @param lineNumber Line being parsed, for error reporting. Type: Int
+     * @return The lesson's recording. Type: LessonMediaSource
+     */
+    private fun parseMediaSource(sourceText: String, lineNumber: Int): LessonMediaSource {
+        val sourceKind = sourceText.substringBefore(' ').lowercase()
+        val sourceValue = sourceText.substringAfter(' ', missingDelimiterValue = "").trim()
+        if (sourceValue.isEmpty()) throw TabParseException(lineNumber, "Source '$sourceText' has no value")
+        return when (sourceKind) {
+            YOUTUBE_SOURCE -> LessonMediaSource.YouTubeVideo(sourceValue)
+            AUDIO_SOURCE -> LessonMediaSource.StoredAudio(sourceValue)
+            else -> throw TabParseException(lineNumber, "Unknown source '$sourceKind'")
+        }
     }
 
     /**
@@ -114,6 +142,13 @@ class TabTextParser(private val tuning: BassTuning) {
         private const val TITLE_HEADER = "title:"
         private const val TEMPO_HEADER = "tempo:"
         private const val TIMING_HEADER = "timing:"
+        private const val SOURCE_HEADER = "source:"
+
+        /** Source kind for YouTube videos. Type: String */
+        const val YOUTUBE_SOURCE = "youtube"
+
+        /** Source kind for stored audio files. Type: String */
+        const val AUDIO_SOURCE = "audio"
         private val WHITESPACE = Regex("\\s+")
         private val NOTE_TOKEN_PATTERN = Regex("([A-Za-z]+)(\\d+)")
     }

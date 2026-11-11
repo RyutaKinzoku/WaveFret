@@ -12,7 +12,11 @@ import com.example.wavefret.R
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.practice.Exercise
 import com.example.wavefret.practice.LessonEditorActivity
+import com.example.wavefret.AppContainer
+import com.example.wavefret.practice.LessonMediaSource
 import com.example.wavefret.practice.PracticeActivity
+import com.example.wavefret.practice.playalong.ListenActivity
+import com.example.wavefret.practice.playalong.PlayAlongActivity
 import com.example.wavefret.practice.TabNote
 import com.example.wavefret.practice.SongLibraryActivity
 import com.example.wavefret.recording.RecorderActivity
@@ -90,6 +94,32 @@ class ScreenRenderTest {
             }
         }
     }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun playAlongShowsTheSongAndTheFirstNote() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val lesson = Exercise(
+            title = "Another One Bites the Dust",
+            tuning = BassTunings.STANDARD,
+            tempoBpm = 110,
+            notes = listOf(TabNote(1, 0), TabNote(1, 0), TabNote(1, 0), TabNote(1, 3), TabNote(1, 0), TabNote(1, 5)),
+            noteOnsetsMillis = listOf(1_000L, 1_300L, 1_600L, 2_000L, 2_200L, 2_400L),
+            mediaSource = LessonMediaSource.YouTubeVideo("rY0WxgSXdEE")
+        )
+        AppContainer(context).importedExercisesRepository.save(lesson)
+        ActivityScenario.launch<PlayAlongActivity>(PlayAlongActivity.intentFor(context, lesson.title)).use { scenario ->
+            scenario.onActivity { activity ->
+                assertTrue(activity.findViewById<View>(R.id.playAlongStartButton).isShown)
+                saveScreenshot(activity.window.decorView, "play_along_dark")
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun listenModeShowsTheStartButton() =
+        renderAndCheck(ListenActivity::class.java, "listen_dark", R.id.listenToggleButton)
 
     @Test
     fun practiceShowsTheStartButtonInLightTheme() =

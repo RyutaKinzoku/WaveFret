@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/listenRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".practice.playalong.ListenActivity">
+
+    <include layout="@layout/include_top_app_bar" />
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/screen_gutter"
+            android:paddingBottom="@dimen/space_l">
+
+            <include layout="@layout/include_song_media" />
+
+            <TextView
+                android:id="@+id/listenTimerTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xl"
+                android:text="@string/recorder_timer_zero"
+                android:textAppearance="@style/TextAppearance.WaveFret.Display"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/listenStatusTextView"
+                style="@style/Widget.WaveFret.SecondaryText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s"
+                android:accessibilityLiveRegion="polite"
+                android:gravity="center" />
+
+            <TextView
+                style="@style/Widget.WaveFret.SecondaryText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_l"
+                android:gravity="center"
+                android:text="@string/listen_tip" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <FrameLayout
+        android:id="@+id/listenBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerLow"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingVertical="@dimen/space_m">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/listenToggleButton"
+            style="@style/Widget.WaveFret.PrimaryAction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/listen_start"
+            app:icon="@drawable/ic_mic"
+            app:iconGravity="textStart" />
+    </FrameLayout>
+</LinearLayout>
