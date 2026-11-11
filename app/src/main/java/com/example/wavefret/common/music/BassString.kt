@@ -1,4 +1,4 @@
-package com.example.wavefret.tuner
+package com.example.wavefret.common.music
 
 /**
  * A single string on a bass, at its standard (correctly tuned) pitch.

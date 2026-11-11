@@ -1,5 +1,7 @@
 package com.example.wavefret.tuner
 
+import com.example.wavefret.common.music.BassTunings
+
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

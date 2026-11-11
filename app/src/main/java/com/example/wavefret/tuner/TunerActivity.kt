@@ -1,5 +1,7 @@
 package com.example.wavefret.tuner
 
+import com.example.wavefret.common.music.BassTunings
+
 import android.Manifest
 import android.os.Bundle
 import android.os.SystemClock

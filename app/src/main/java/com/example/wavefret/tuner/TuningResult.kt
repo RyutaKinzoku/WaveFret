@@ -1,5 +1,7 @@
 package com.example.wavefret.tuner
 
+import com.example.wavefret.common.music.BassString
+
 /**
  * The outcome of comparing a detected pitch against a BassTuning.
  *

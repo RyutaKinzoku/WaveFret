@@ -1,4 +1,4 @@
-package com.example.wavefret.tuner
+package com.example.wavefret.common.music
 
 /** Built-in bass tunings the app ships with. */
 object BassTunings {
