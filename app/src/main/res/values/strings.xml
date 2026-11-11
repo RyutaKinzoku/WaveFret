@@ -24,4 +24,12 @@
     <string name="practice_feedback_correct">Nice!</string>
     <string name="practice_feedback_wrong_note">Not quite — try again</string>
     <string name="practice_feedback_complete">Exercise complete</string>
+    <string name="practice_import_song">Import tab</string>
+    <string name="import_song_dialog_title">Import a tab</string>
+    <string name="import_song_title_hint">Title</string>
+    <string name="import_song_tempo_hint">Tempo (BPM, optional)</string>
+    <string name="import_song_tab_hint">Paste an ASCII bass tab (G|--, D|--, A|--, E|--) or WaveFret tab text</string>
+    <string name="import_song_confirm">Import</string>
+    <string name="import_song_saved">Imported \"%1$s\"</string>
+    <string name="import_song_failed">Couldn\'t read that tab: %1$s</string>
 </resources>

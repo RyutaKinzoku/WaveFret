@@ -81,6 +81,17 @@
         app:layout_constraintEnd_toEndOf="parent" />
 
     <Button
+        android:id="@+id/practiceImportSongButton"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/practice_import_song"
+        app:layout_constraintBottom_toTopOf="@id/practiceStartButton"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
         android:id="@+id/practiceStartButton"
         android:layout_width="0dp"
         android:layout_height="56dp"

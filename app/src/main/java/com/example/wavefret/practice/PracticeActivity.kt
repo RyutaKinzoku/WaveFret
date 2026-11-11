@@ -4,8 +4,11 @@ import android.Manifest
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -21,6 +24,9 @@ import com.example.wavefret.common.audio.ToneGeneratorClickPlayer
 import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.time.ElapsedRealtimeClock
+import com.example.wavefret.practice.songimport.AsciiTabParser
+import com.example.wavefret.practice.songimport.ImportedExercisesRepository
+import com.example.wavefret.practice.songimport.SongImporter
 import com.google.android.material.button.MaterialButtonToggleGroup
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
@@ -29,7 +35,8 @@ import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
 
 /**
- * Practice screen: pick a built-in exercise and a mode, then play along.
+ * Practice screen: pick a built-in or imported exercise and a mode, then
+ * play along. Tabs pasted from the internet can be imported here too.
  * In wait mode the tab only advances when the right note is heard; in
  * tempo mode a metronome counts in and the tab scrolls at the exercise's
  * tempo, scoring each note as hit or missed.
@@ -47,10 +54,17 @@ class PracticeActivity : AppCompatActivity() {
     private lateinit var noteProgressTextView: TextView
     private lateinit var practiceFeedbackTextView: TextView
     private lateinit var startPracticeButton: Button
+    private lateinit var importSongButton: Button
 
     private val appContainer = AppContainer(this)
     private val monotonicClock = ElapsedRealtimeClock()
-    private val exercises = BuiltInExercises(TabTextParser(BassTunings.STANDARD)).all()
+    private val tabTextParser = TabTextParser(BassTunings.STANDARD)
+    private val builtInExercises = BuiltInExercises(tabTextParser)
+    private val importedExercisesRepository by lazy {
+        ImportedExercisesRepository(appContainer.appStorageDirectoryProvider, TabTextWriter(), tabTextParser)
+    }
+    private val songImporter = SongImporter(AsciiTabParser(BassTunings.STANDARD), tabTextParser)
+    private var exercises: List<Exercise> = emptyList()
     private val practiceDisplayFormatter = PracticeDisplayFormatter()
     private val practiceController = PracticeController(
         audioSource = AudioRecordPcmSource(samplesPerBufferCount = PRACTICE_SAMPLES_PER_BUFFER_COUNT),
@@ -85,12 +99,68 @@ class PracticeActivity : AppCompatActivity() {
         noteProgressTextView = findViewById(R.id.practiceNoteProgressTextView)
         practiceFeedbackTextView = findViewById(R.id.practiceFeedbackTextView)
         startPracticeButton = findViewById(R.id.practiceStartButton)
+        importSongButton = findViewById(R.id.practiceImportSongButton)
 
+        refreshExerciseList(selectedTitle = null)
+        practiceModeToggleGroup.check(R.id.practiceWaitModeButton)
+        startPracticeButton.setOnClickListener { onStartPracticeClicked() }
+        importSongButton.setOnClickListener { showImportSongDialog() }
+    }
+
+    /**
+     * Reloads built-in and imported exercises into the picker.
+     *
+     * @param selectedTitle Title to select afterwards, or null to keep the first. Type: String?
+     * @return Unit
+     */
+    private fun refreshExerciseList(selectedTitle: String?) {
+        exercises = builtInExercises.all() + importedExercisesRepository.listExercises()
         exerciseSpinner.adapter = ArrayAdapter(
             this, android.R.layout.simple_spinner_dropdown_item, exercises.map { it.title }
         )
-        practiceModeToggleGroup.check(R.id.practiceWaitModeButton)
-        startPracticeButton.setOnClickListener { onStartPracticeClicked() }
+        val selectedIndex = exercises.indexOfLast { it.title == selectedTitle }
+        if (selectedIndex >= 0) exerciseSpinner.setSelection(selectedIndex)
+    }
+
+    /**
+     * Shows a dialog where a tab can be pasted, then imports and stores it.
+     *
+     * @return Unit
+     */
+    private fun showImportSongDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_import_song, null)
+        val titleEditText = dialogView.findViewById<EditText>(R.id.importSongTitleEditText)
+        val tempoEditText = dialogView.findViewById<EditText>(R.id.importSongTempoEditText)
+        val tabEditText = dialogView.findViewById<EditText>(R.id.importSongTabEditText)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.import_song_dialog_title)
+            .setView(dialogView)
+            .setPositiveButton(R.string.import_song_confirm) { _, _ ->
+                importSong(
+                    pastedText = tabEditText.text.toString(),
+                    title = titleEditText.text.toString(),
+                    tempoBpm = tempoEditText.text.toString().toIntOrNull()?.takeIf { it > 0 }
+                )
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * @param pastedText Tab text the player pasted. Type: String
+     * @param title Title typed by the player, possibly blank. Type: String
+     * @param tempoBpm Tempo typed by the player, or null. Type: Int?
+     * @return Unit
+     */
+    private fun importSong(pastedText: String, title: String, tempoBpm: Int?) {
+        try {
+            val importedExercise = songImporter.import(pastedText, title, tempoBpm)
+            importedExercisesRepository.save(importedExercise)
+            refreshExerciseList(selectedTitle = importedExercise.title)
+            Toast.makeText(this, getString(R.string.import_song_saved, importedExercise.title), Toast.LENGTH_SHORT).show()
+        } catch (unreadableTab: IllegalArgumentException) {
+            Toast.makeText(this, getString(R.string.import_song_failed, unreadableTab.message), Toast.LENGTH_LONG).show()
+        }
     }
 
     /**
