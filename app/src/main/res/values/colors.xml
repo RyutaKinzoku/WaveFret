@@ -4,4 +4,11 @@
     <color name="white">#FFFFFFFF</color>
     <color name="tuning_status_in_tune">#4CAF50</color>
     <color name="tuning_status_out_of_tune">#F4511E</color>
+    <color name="tab_staff_string_line">#9E9E9E</color>
+    <color name="tab_staff_playhead">#3F51B5</color>
+    <color name="tab_staff_fret_text">#FFFFFFFF</color>
+    <color name="tab_note_hit">#4CAF50</color>
+    <color name="tab_note_missed">#F4511E</color>
+    <color name="tab_note_current">#3F51B5</color>
+    <color name="tab_note_upcoming">#616161</color>
 </resources>

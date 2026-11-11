@@ -11,4 +11,17 @@
     <string name="tuner_listening_prompt">Play a note</string>
     <string name="tuner_needle_description">Tuning needle</string>
     <string name="open_tuner">Open Tuner</string>
+    <string name="open_practice">Practice</string>
+    <string name="practice_exercise_picker_description">Exercise</string>
+    <string name="practice_mode_wait">Wait</string>
+    <string name="practice_mode_tempo">Tempo</string>
+    <string name="practice_start">Start</string>
+    <string name="practice_restart">Restart</string>
+    <string name="practice_current_note">%1$s · fret %2$d</string>
+    <string name="practice_note_progress">Note %1$d of %2$d</string>
+    <string name="practice_score">%1$d%%</string>
+    <string name="practice_feedback_listening">Listening…</string>
+    <string name="practice_feedback_correct">Nice!</string>
+    <string name="practice_feedback_wrong_note">Not quite — try again</string>
+    <string name="practice_feedback_complete">Exercise complete</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.example.wavefret.tuner
+package com.example.wavefret.common.music
 
 import org.junit.Assert.assertThrows
 import org.junit.Test

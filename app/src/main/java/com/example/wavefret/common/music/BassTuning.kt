@@ -1,4 +1,4 @@
-package com.example.wavefret.tuner
+package com.example.wavefret.common.music
 
 /**
  * A named set of strings a bass can be tuned to. Adding a new tuning (a

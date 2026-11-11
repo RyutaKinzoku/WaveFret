@@ -1,0 +1,235 @@
+package com.example.wavefret.practice
+
+import android.Manifest
+import android.os.Bundle
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.Spinner
+import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.example.wavefret.AppContainer
+import com.example.wavefret.R
+import com.example.wavefret.common.audio.AudioRecordPcmSource
+import com.example.wavefret.common.audio.LowPassFilter
+import com.example.wavefret.common.audio.LowPassFilteredPitchDetector
+import com.example.wavefret.common.audio.Metronome
+import com.example.wavefret.common.audio.SilenceGate
+import com.example.wavefret.common.audio.ToneGeneratorClickPlayer
+import com.example.wavefret.common.audio.YinPitchDetector
+import com.example.wavefret.common.music.BassTunings
+import com.example.wavefret.common.time.ElapsedRealtimeClock
+import com.google.android.material.button.MaterialButtonToggleGroup
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.launch
+
+/**
+ * Practice screen: pick a built-in exercise and a mode, then play along.
+ * In wait mode the tab only advances when the right note is heard; in
+ * tempo mode a metronome counts in and the tab scrolls at the exercise's
+ * tempo, scoring each note as hit or missed.
+ *
+ * Android framework glue — every decision lives in the tested sessions,
+ * [PracticeController], [PracticeDisplayFormatter], [TabStaffLayout] and
+ * [Metronome] — so it is verified manually on-device.
+ */
+class PracticeActivity : AppCompatActivity() {
+
+    private lateinit var exerciseSpinner: Spinner
+    private lateinit var practiceModeToggleGroup: MaterialButtonToggleGroup
+    private lateinit var tabStaffView: TabStaffView
+    private lateinit var currentNoteTextView: TextView
+    private lateinit var noteProgressTextView: TextView
+    private lateinit var practiceFeedbackTextView: TextView
+    private lateinit var startPracticeButton: Button
+
+    private val appContainer = AppContainer(this)
+    private val monotonicClock = ElapsedRealtimeClock()
+    private val exercises = BuiltInExercises(TabTextParser(BassTunings.STANDARD)).all()
+    private val practiceDisplayFormatter = PracticeDisplayFormatter()
+    private val practiceController = PracticeController(
+        audioSource = AudioRecordPcmSource(samplesPerBufferCount = PRACTICE_SAMPLES_PER_BUFFER_COUNT),
+        silenceGate = SilenceGate(),
+        pitchDetector = LowPassFilteredPitchDetector(
+            lowPassFilter = LowPassFilter(cutoffHz = PITCH_ANALYSIS_CUTOFF_HZ),
+            innerPitchDetector = YinPitchDetector()
+        ),
+        clock = monotonicClock
+    )
+    private var metronomeClickPlayer: ToneGeneratorClickPlayer? = null
+
+    private var practiceSession: PracticeSession? = null
+    private var practiceProgressJob: Job? = null
+    private var metronomeJob: Job? = null
+
+    private val requestMicrophonePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted -> if (isGranted) startPractice() }
+
+    /**
+     * @param savedInstanceState Previously saved state, or null on first creation. Type: Bundle?
+     * @return Unit
+     */
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_practice)
+        exerciseSpinner = findViewById(R.id.practiceExerciseSpinner)
+        practiceModeToggleGroup = findViewById(R.id.practiceModeToggleGroup)
+        tabStaffView = findViewById(R.id.practiceTabStaffView)
+        currentNoteTextView = findViewById(R.id.practiceCurrentNoteTextView)
+        noteProgressTextView = findViewById(R.id.practiceNoteProgressTextView)
+        practiceFeedbackTextView = findViewById(R.id.practiceFeedbackTextView)
+        startPracticeButton = findViewById(R.id.practiceStartButton)
+
+        exerciseSpinner.adapter = ArrayAdapter(
+            this, android.R.layout.simple_spinner_dropdown_item, exercises.map { it.title }
+        )
+        practiceModeToggleGroup.check(R.id.practiceWaitModeButton)
+        startPracticeButton.setOnClickListener { onStartPracticeClicked() }
+    }
+
+    /**
+     * Stops listening and the metronome when the screen is no longer visible.
+     *
+     * @return Unit
+     */
+    override fun onPause() {
+        super.onPause()
+        stopPractice()
+        metronomeClickPlayer?.release()
+        metronomeClickPlayer = null
+    }
+
+    /**
+     * @return Unit
+     */
+    private fun onStartPracticeClicked() {
+        if (appContainer.microphonePermissionManager.needsPermissionRequest()) {
+            requestMicrophonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        } else {
+            startPractice()
+        }
+    }
+
+    /**
+     * Builds a fresh session for the selected exercise and mode and starts
+     * listening; in tempo mode it also starts the count-in metronome.
+     *
+     * @return Unit
+     */
+    private fun startPractice() {
+        stopPractice()
+        val selectedExercise = exercises[exerciseSpinner.selectedItemPosition]
+        val isTempoMode = practiceModeToggleGroup.checkedButtonId == R.id.practiceTempoModeButton
+        val newSession = if (isTempoMode) startTempoSession(selectedExercise) else buildWaitSession(selectedExercise)
+        practiceSession = newSession
+        startPracticeButton.setText(R.string.practice_restart)
+        renderProgress(newSession.exercise, newSession.currentProgress())
+
+        practiceProgressJob = practiceController.progressStream(newSession)
+            .transformWhile { progress ->
+                emit(progress)
+                !progress.isComplete
+            }
+            .onEach { progress -> renderProgress(newSession.exercise, progress) }
+            .launchIn(lifecycleScope)
+    }
+
+    /**
+     * @param exercise Exercise to practice. Type: Exercise
+     * @return A wait-mode session for it. Type: PracticeSession
+     */
+    private fun buildWaitSession(exercise: Exercise): PracticeSession {
+        tabStaffView.playheadPositionProvider = null
+        return WaitModePracticeSession(exercise, NoteMatcher(), HitConfirmer())
+    }
+
+    /**
+     * Starts the clock, metronome and smooth scrolling for tempo mode.
+     *
+     * @param exercise Exercise to practice. Type: Exercise
+     * @return A started tempo-mode session for it. Type: PracticeSession
+     */
+    private fun startTempoSession(exercise: Exercise): PracticeSession {
+        val tempoSession = TempoModePracticeSession(
+            exercise = exercise,
+            noteMatcher = NoteMatcher(),
+            hitConfirmer = HitConfirmer(requiredConsecutiveMatches = TEMPO_MODE_REQUIRED_MATCHES)
+        )
+        val beatClock = tempoSession.start(monotonicClock.currentTimeMillis())
+        val clickPlayer = metronomeClickPlayer ?: ToneGeneratorClickPlayer().also { metronomeClickPlayer = it }
+        val metronome = Metronome(clickPlayer, monotonicClock)
+        metronomeJob = lifecycleScope.launch {
+            metronome.play(beatClock, beatCount = tempoSession.countInBeats + exercise.noteCount)
+        }
+        tabStaffView.playheadPositionProvider = {
+            beatClock.beatPositionAt(monotonicClock.currentTimeMillis()) - tempoSession.countInBeats
+        }
+        return tempoSession
+    }
+
+    /**
+     * @return Unit
+     */
+    private fun stopPractice() {
+        practiceProgressJob?.cancel()
+        practiceProgressJob = null
+        metronomeJob?.cancel()
+        metronomeJob = null
+        tabStaffView.playheadPositionProvider = null
+    }
+
+    /**
+     * @param exercise Exercise being practiced. Type: Exercise
+     * @param progress Latest progress through it. Type: PracticeProgress
+     * @return Unit
+     */
+    private fun renderProgress(exercise: Exercise, progress: PracticeProgress) {
+        val displayState = practiceDisplayFormatter.format(exercise, progress)
+        tabStaffView.render(exercise, displayState)
+        noteProgressTextView.text = getString(
+            R.string.practice_note_progress, displayState.currentNoteNumber, displayState.noteCount
+        )
+        currentNoteTextView.text = if (displayState.currentStringName != null && displayState.currentFret != null) {
+            getString(R.string.practice_current_note, displayState.currentStringName, displayState.currentFret)
+        } else {
+            getString(R.string.practice_score, displayState.scorePercent ?: 0)
+        }
+        practiceFeedbackTextView.text = getString(feedbackTextFor(displayState.feedback))
+        practiceFeedbackTextView.setTextColor(ContextCompat.getColor(this, feedbackColorFor(displayState.feedback)))
+        if (displayState.feedback == PracticeFeedback.COMPLETE) stopPractice()
+    }
+
+    /**
+     * @param practiceFeedback Feedback to describe. Type: PracticeFeedback
+     * @return String resource describing it. Type: Int
+     */
+    private fun feedbackTextFor(practiceFeedback: PracticeFeedback): Int = when (practiceFeedback) {
+        PracticeFeedback.LISTENING -> R.string.practice_feedback_listening
+        PracticeFeedback.CORRECT -> R.string.practice_feedback_correct
+        PracticeFeedback.WRONG_NOTE -> R.string.practice_feedback_wrong_note
+        PracticeFeedback.COMPLETE -> R.string.practice_feedback_complete
+    }
+
+    /**
+     * @param practiceFeedback Feedback to color. Type: PracticeFeedback
+     * @return Color resource for it. Type: Int
+     */
+    private fun feedbackColorFor(practiceFeedback: PracticeFeedback): Int = when (practiceFeedback) {
+        PracticeFeedback.CORRECT, PracticeFeedback.COMPLETE -> R.color.tuning_status_in_tune
+        PracticeFeedback.WRONG_NOTE -> R.color.tuning_status_out_of_tune
+        PracticeFeedback.LISTENING -> R.color.tab_staff_string_line
+    }
+
+    private companion object {
+        /** ~93 ms at 44.1 kHz: long enough for low E, short enough for tempo mode. */
+        const val PRACTICE_SAMPLES_PER_BUFFER_COUNT = 4096
+        const val PITCH_ANALYSIS_CUTOFF_HZ = 1000.0
+        const val TEMPO_MODE_REQUIRED_MATCHES = 1
+    }
+}

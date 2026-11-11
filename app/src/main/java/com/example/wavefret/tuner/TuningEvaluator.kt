@@ -1,5 +1,7 @@
 package com.example.wavefret.tuner
 
+import com.example.wavefret.common.music.BassTuning
+
 import com.example.wavefret.common.music.centsBetween
 import kotlin.math.abs
 

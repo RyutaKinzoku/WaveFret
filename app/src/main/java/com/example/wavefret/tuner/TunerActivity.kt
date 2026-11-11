@@ -1,5 +1,7 @@
 package com.example.wavefret.tuner
 
+import com.example.wavefret.common.music.BassTunings
+
 import android.Manifest
 import android.os.Bundle
 import android.os.SystemClock
@@ -14,6 +16,7 @@ import com.example.wavefret.R
 import com.example.wavefret.common.audio.AudioRecordPcmSource
 import com.example.wavefret.common.audio.LowPassFilter
 import com.example.wavefret.common.audio.LowPassFilteredPitchDetector
+import com.example.wavefret.common.audio.SilenceGate
 import com.example.wavefret.common.audio.YinPitchDetector
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn

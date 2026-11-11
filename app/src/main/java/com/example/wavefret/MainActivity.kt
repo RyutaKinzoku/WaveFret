@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.wavefret.practice.PracticeActivity
 import com.example.wavefret.recording.MediaMetadataRetrieverDurationReader
 import com.example.wavefret.recording.MediaPlayerAudioPlayer
 import com.example.wavefret.recording.MediaRecorderAudioRecorder
@@ -32,7 +33,7 @@ import com.example.wavefret.tuner.TunerActivity
  * App entry point. Sets up edge-to-edge layout, requests microphone access,
  * wires the record/stop toggle button to RecordingUiController and
  * RecordingSessionController, displays, plays back, and deletes past
- * recordings, and launches the tuner screen.
+ * recordings, and launches the tuner and practice screens.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -84,6 +85,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvRecordingStatus: TextView
     private lateinit var rvRecordings: RecyclerView
     private lateinit var btnOpenTuner: Button
+    private lateinit var btnOpenPractice: Button
 
     private val requestAudioPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -108,9 +110,11 @@ class MainActivity : AppCompatActivity() {
         tvRecordingStatus = findViewById(R.id.tvStatus)
         rvRecordings = findViewById(R.id.rvRecordings)
         btnOpenTuner = findViewById(R.id.btnOpenTuner)
+        btnOpenPractice = findViewById(R.id.btnOpenPractice)
 
         btnToggleRecording.setOnClickListener { onToggleRecordingClicked() }
         btnOpenTuner.setOnClickListener { onOpenTunerClicked() }
+        btnOpenPractice.setOnClickListener { onOpenPracticeClicked() }
         rvRecordings.layoutManager = LinearLayoutManager(this)
         rvRecordings.adapter = recordingsAdapter
 
@@ -163,6 +167,15 @@ class MainActivity : AppCompatActivity() {
      */
     private fun onOpenTunerClicked() {
         startActivity(Intent(this, TunerActivity::class.java))
+    }
+
+    /**
+     * Launches the practice screen.
+     *
+     * @return Unit
+     */
+    private fun onOpenPracticeClicked() {
+        startActivity(Intent(this, PracticeActivity::class.java))
     }
 
     /**

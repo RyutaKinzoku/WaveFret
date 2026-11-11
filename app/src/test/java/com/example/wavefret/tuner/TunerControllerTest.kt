@@ -1,5 +1,10 @@
 package com.example.wavefret.tuner
 
+import com.example.wavefret.common.music.BassTunings
+
+import com.example.wavefret.common.audio.FakePcmAudioSource
+import com.example.wavefret.common.audio.FakePitchDetector
+import com.example.wavefret.common.audio.SilenceGate
 import com.example.wavefret.common.audio.SyntheticSignals
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest

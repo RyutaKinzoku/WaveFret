@@ -1,4 +1,4 @@
-package com.example.wavefret.tuner
+package com.example.wavefret.common.audio
 
 import kotlin.math.sqrt
 
