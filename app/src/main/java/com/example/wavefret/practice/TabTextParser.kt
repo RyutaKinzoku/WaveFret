@@ -1,0 +1,92 @@
+package com.example.wavefret.practice
+
+import com.example.wavefret.common.music.BassTuning
+
+/**
+ * Parses WaveFret's own plain-text tab format into an [Exercise]:
+ *
+ * ```
+ * # comment
+ * title: Open strings
+ * tempo: 80
+ * E0 A0 D0 G0
+ * ```
+ *
+ * Each note token is a string name from the tuning (case-insensitive)
+ * immediately followed by a fret number. Note lines are read in order and
+ * joined into one sequence. `#` starts a comment that runs to end of line.
+ *
+ * @property tuning Tuning whose string names the tab refers to. Type: BassTuning
+ */
+class TabTextParser(private val tuning: BassTuning) {
+
+    /**
+     * @param tabText Full text of the tab. Type: String
+     * @return The parsed exercise. Type: Exercise
+     * @throws TabParseException If any line is malformed or no notes are present.
+     */
+    fun parse(tabText: String): Exercise {
+        var title = UNTITLED_EXERCISE_TITLE
+        var tempoBpm = DEFAULT_TEMPO_BPM
+        val notes = mutableListOf<TabNote>()
+
+        tabText.lines().forEachIndexed { lineIndex, rawLine ->
+            val lineNumber = lineIndex + 1
+            val line = rawLine.substringBefore(COMMENT_MARKER).trim()
+            when {
+                line.isEmpty() -> Unit
+                line.startsWith(TITLE_HEADER, ignoreCase = true) ->
+                    title = line.substring(TITLE_HEADER.length).trim()
+                line.startsWith(TEMPO_HEADER, ignoreCase = true) ->
+                    tempoBpm = parseTempo(line.substring(TEMPO_HEADER.length).trim(), lineNumber)
+                else -> line.split(WHITESPACE).mapTo(notes) { parseNoteToken(it, lineNumber) }
+            }
+        }
+
+        if (notes.isEmpty()) throw TabParseException(null, "Tab contains no notes")
+        return Exercise(title = title, tuning = tuning, tempoBpm = tempoBpm, notes = notes)
+    }
+
+    /**
+     * @param tempoText Text after the tempo header. Type: String
+     * @param lineNumber Line being parsed, for error reporting. Type: Int
+     * @return The tempo in beats per minute. Type: Int
+     */
+    private fun parseTempo(tempoText: String, lineNumber: Int): Int {
+        val tempoBpm = tempoText.toIntOrNull()
+        if (tempoBpm == null || tempoBpm <= 0) {
+            throw TabParseException(lineNumber, "Tempo must be a positive whole number, was '$tempoText'")
+        }
+        return tempoBpm
+    }
+
+    /**
+     * @param noteToken A single token such as "A5". Type: String
+     * @param lineNumber Line being parsed, for error reporting. Type: Int
+     * @return The note the token describes. Type: TabNote
+     */
+    private fun parseNoteToken(noteToken: String, lineNumber: Int): TabNote {
+        val tokenMatch = NOTE_TOKEN_PATTERN.matchEntire(noteToken)
+            ?: throw TabParseException(lineNumber, "'$noteToken' is not a string name followed by a fret")
+        val (stringName, fretText) = tokenMatch.destructured
+        val stringIndex = tuning.strings.indexOfFirst { it.name.equals(stringName, ignoreCase = true) }
+        if (stringIndex < 0) {
+            throw TabParseException(lineNumber, "'$stringName' is not a string in the ${tuning.name} tuning")
+        }
+        return TabNote(stringIndex = stringIndex, fret = fretText.toInt())
+    }
+
+    companion object {
+        /** Tempo used when the tab has no tempo line. Type: Int */
+        const val DEFAULT_TEMPO_BPM = 80
+
+        /** Title used when the tab has no title line. Type: String */
+        const val UNTITLED_EXERCISE_TITLE = "Untitled"
+
+        private const val COMMENT_MARKER = "#"
+        private const val TITLE_HEADER = "title:"
+        private const val TEMPO_HEADER = "tempo:"
+        private val WHITESPACE = Regex("\\s+")
+        private val NOTE_TOKEN_PATTERN = Regex("([A-Za-z]+)(\\d+)")
+    }
+}
