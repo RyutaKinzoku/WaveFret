@@ -56,6 +56,7 @@
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="application/pdf" />
                 <data android:mimeType="image/*" />
+                <data android:mimeType="audio/*" />
             </intent-filter>
             <intent-filter android:label="@string/share_target_label">
                 <action android:name="android.intent.action.VIEW" />
@@ -67,6 +68,11 @@
                 <data android:mimeType="audio/x-midi" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".practice.LessonEditorActivity"
+            android:exported="false"
+            android:parentActivityName=".practice.SongLibraryActivity"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".recording.VideoPlayerActivity"
             android:exported="false"

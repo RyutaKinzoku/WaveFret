@@ -74,6 +74,7 @@ class RecorderActivity : AppCompatActivity() {
             onPlayStopClicked = ::onPlayTakeClicked,
             onDeleteClicked = ::confirmDeleteRecording,
             onShareClicked = { recording -> recordingSharer.share(recording) },
+            onMakeLessonClicked = { recording -> startActivity(recordingSharer.makeLessonIntent(recording)) },
             isPlaying = playbackController::isPlaying
         )
     }

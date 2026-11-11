@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: 0.7.0 — song library, Guitar Pro / MIDI import, video takes and sharing
+## Status: 0.8.0 — audio files become lessons
 
 The current build lets you:
 
@@ -19,6 +19,10 @@ The current build lets you:
   (`.musicxml`, `.xml`, `.mxl`) file. PDFs and photos of sheet music must
   first be converted to MusicXML (e.g. with MuseScore). Songs live in a
   searchable library sorted by difficulty;
+- turn audio into a lesson (0.8): an audio file, shared audio, or one of
+  your takes. Pick "just my bass" (YIN, accurate) or "full song"
+  (on-device basic-pitch model, rough), then fix any wrong notes in the
+  lesson editor;
 - record audio or video takes and share them with any app (0.7);
 - follow a learning path (v4): exercises are rated Beginner /
   Intermediate / Advanced by a heuristic, listed easiest first with your

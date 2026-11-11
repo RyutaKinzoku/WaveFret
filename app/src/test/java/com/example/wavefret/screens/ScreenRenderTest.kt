@@ -9,7 +9,11 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import com.example.wavefret.MainActivity
 import com.example.wavefret.R
+import com.example.wavefret.common.music.BassTunings
+import com.example.wavefret.practice.Exercise
+import com.example.wavefret.practice.LessonEditorActivity
 import com.example.wavefret.practice.PracticeActivity
+import com.example.wavefret.practice.TabNote
 import com.example.wavefret.practice.SongLibraryActivity
 import com.example.wavefret.recording.RecorderActivity
 import com.example.wavefret.tuner.TunerActivity
@@ -67,6 +71,25 @@ class ScreenRenderTest {
     @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
     fun songLibraryShowsTheAddSongButton() =
         renderAndCheck(SongLibraryActivity::class.java, "library_dark", R.id.songLibraryAddSongButton)
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun lessonEditorShowsADraftWithItsNotes() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val draft = Exercise(
+            title = "Seven Nation Army",
+            tuning = BassTunings.STANDARD,
+            tempoBpm = 120,
+            notes = listOf(TabNote(1, 7), TabNote(1, 7), TabNote(1, 10), TabNote(1, 7), TabNote(1, 5), TabNote(1, 3), TabNote(1, 2)),
+            noteOnsetsMillis = listOf(0L, 750L, 1_000L, 1_375L, 1_625L, 1_750L, 2_250L)
+        )
+        ActivityScenario.launch<LessonEditorActivity>(LessonEditorActivity.intentFor(context, draft, originalTitle = null)).use { scenario ->
+            scenario.onActivity { activity ->
+                saveScreenshot(activity.window.decorView, "lesson_editor_dark")
+                assertTrue(activity.findViewById<View>(R.id.lessonEditorSaveButton).isShown)
+            }
+        }
+    }
 
     @Test
     fun practiceShowsTheStartButtonInLightTheme() =

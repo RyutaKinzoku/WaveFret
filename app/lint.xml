@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--
+      LiteRT 2.x is compiled with Kotlin 2.4 metadata, which this project's Kotlin
+      compiler rejects ("incompatible version of Kotlin"). Stay on 1.4.x, which has
+      the same Interpreter API, until the project's Kotlin version is raised.
+    -->
+    <issue id="GradleDependency">
+        <ignore regexp="com\.google\.ai\.edge\.litert:litert" />
+    </issue>
+</lint>

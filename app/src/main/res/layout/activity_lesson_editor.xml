@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/lessonEditorRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".practice.LessonEditorActivity">
+
+    <include layout="@layout/include_top_app_bar" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/lessonEditorNotesRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/space_m" />
+
+    <FrameLayout
+        android:id="@+id/lessonEditorBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerLow"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingVertical="@dimen/space_m">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/lessonEditorSaveButton"
+            style="@style/Widget.WaveFret.PrimaryAction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/lesson_editor_save"
+            app:icon="@drawable/ic_check_circle"
+            app:iconGravity="textStart" />
+    </FrameLayout>
+</LinearLayout>

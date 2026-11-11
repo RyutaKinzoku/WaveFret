@@ -23,7 +23,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
+import com.example.wavefret.common.audio.AudioResampler
+import com.example.wavefret.common.audio.MediaCodecAudioDecoder
+import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.music.BassTunings
+import com.example.wavefret.common.transcription.BasicPitchTranscriber
+import com.example.wavefret.common.transcription.BasicPitchWindowing
+import com.example.wavefret.common.transcription.MonophonicTranscriber
+import com.example.wavefret.common.transcription.PosteriorgramNoteDecoder
+import com.example.wavefret.common.transcription.TempoEstimator
+import com.example.wavefret.common.transcription.TfLiteBasicPitchModel
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.practice.progression.ExercisePickerItem
 import com.example.wavefret.practice.progression.ExercisePickerItemsBuilder
@@ -31,6 +40,8 @@ import com.example.wavefret.practice.progression.SongLibraryQuery
 import com.example.wavefret.practice.progression.SongSortOrder
 import com.example.wavefret.practice.progression.SongSource
 import com.example.wavefret.practice.songimport.AsciiTabParser
+import com.example.wavefret.practice.songimport.AudioLessonBuilder
+import com.example.wavefret.practice.songimport.SongFileFormat
 import com.example.wavefret.practice.songimport.FretboardPositionFinder
 import com.example.wavefret.practice.songimport.GuitarProFileParser
 import com.example.wavefret.practice.songimport.MidiFileParser
@@ -58,7 +69,9 @@ import java.io.IOException
  * The song library: every built-in exercise and imported song, searchable,
  * filterable (all / my songs / exercises) and sorted by difficulty by
  * default. "Add a song" opens files (Guitar Pro, MusicXML, MIDI, tab
- * text), takes a pasted tab, or explains how to convert a PDF or photo.
+ * text), turns audio into a draft lesson (bass-only audio with YIN, full
+ * songs with the basic-pitch model) that opens in the lesson editor, takes
+ * a pasted tab, or explains how to convert a PDF or photo.
  * Files and text shared into WaveFret from other apps land here too.
  * Tapping a song opens it in practice.
  *
@@ -193,7 +206,10 @@ class SongLibraryActivity : AppCompatActivity() {
             pickerItems = visibleItems,
             describeExercise = ::describeSong,
             onExerciseChosen = { libraryItem -> startActivity(PracticeActivity.intentFor(this, libraryItem.exercise.title)) },
-            onDeleteClicked = { libraryItem -> confirmDeleteSong(libraryItem.exercise) }
+            onDeleteClicked = { libraryItem -> confirmDeleteSong(libraryItem.exercise) },
+            onEditClicked = { libraryItem ->
+                startActivity(LessonEditorActivity.intentFor(this, libraryItem.exercise, libraryItem.exercise.title))
+            }
         )
         emptyStateView.isVisible = visibleItems.isEmpty()
         val sortLabel = getString(sortLabelFor(songLibraryQuery.sortOrder))
@@ -242,6 +258,11 @@ class SongLibraryActivity : AppCompatActivity() {
             R.string.add_song_open_file_title, R.string.add_song_open_file_body) {
             addSongSheet.dismiss()
             openSongFileLauncher.launch(arrayOf("*/*"))
+        }
+        bindAddSongOption(sheetView.findViewById(R.id.addSongAudioOption), R.drawable.ic_music_note,
+            R.string.add_song_audio_title, R.string.add_song_audio_body) {
+            addSongSheet.dismiss()
+            openSongFileLauncher.launch(arrayOf("audio/*", "video/mp4"))
         }
         bindAddSongOption(sheetView.findViewById(R.id.addSongPasteTabOption), R.drawable.ic_content_paste,
             R.string.add_song_paste_title, R.string.add_song_paste_body) {
@@ -335,10 +356,21 @@ class SongLibraryActivity : AppCompatActivity() {
             .setAnchorView(addSongButton)
         importingSnackbar.show()
         lifecycleScope.launch {
+            val fileName = withContext(Dispatchers.IO) { runCatching { displayNameOf(songFileUri) }.getOrDefault("") }
+            val mimeType = contentResolver.getType(songFileUri)
+            val leadingBytes = withContext(Dispatchers.IO) {
+                runCatching { contentResolver.openInputStream(songFileUri)?.use { inputStream ->
+                    val leadingBuffer = ByteArray(LEADING_BYTES_COUNT)
+                    leadingBuffer.copyOf(maxOf(0, inputStream.read(leadingBuffer)))
+                } }.getOrNull()
+            } ?: ByteArray(0)
+            if (SongFileFormatDetector().detect(fileName, mimeType, leadingBytes) == SongFileFormat.AUDIO) {
+                importingSnackbar.dismiss()
+                askWhatIsInTheAudio(songFileUri, fileName)
+                return@launch
+            }
             val importOutcome = withContext(Dispatchers.IO) {
                 try {
-                    val fileName = displayNameOf(songFileUri)
-                    val mimeType = contentResolver.getType(songFileUri)
                     val fileBytes = contentResolver.openInputStream(songFileUri)?.use { it.readBytes() }
                         ?: return@withContext SongImportOutcome.Failed(getString(R.string.import_song_unreadable_file))
                     songFileImporter.import(fileName, mimeType, fileBytes, titleOverride = "")
@@ -352,10 +384,93 @@ class SongLibraryActivity : AppCompatActivity() {
             when (importOutcome) {
                 is SongImportOutcome.Imported -> saveImportedSong(importOutcome.exercise)
                 SongImportOutcome.SheetMusicImageNotSupported -> showSheetMusicHelp()
-                SongImportOutcome.NeedsAudioTranscription -> showImportFailure(getString(R.string.import_song_audio_not_yet))
+                SongImportOutcome.NeedsAudioTranscription -> askWhatIsInTheAudio(songFileUri, fileName)
                 is SongImportOutcome.Failed -> showImportFailure(importOutcome.reason)
             }
         }
+    }
+
+    /**
+     * Asks whether the audio is bass only or a full song, which decides the
+     * note detector, then transcribes it.
+     *
+     * @param audioUri Audio file to transcribe. Type: Uri
+     * @param fileName Its display name, used as the lesson title. Type: String
+     * @return Unit
+     */
+    private fun askWhatIsInTheAudio(audioUri: Uri, fileName: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.audio_kind_title)
+            .setItems(arrayOf(getString(R.string.audio_kind_bass_only), getString(R.string.audio_kind_full_song))) { _, choice ->
+                transcribeAudio(audioUri, fileName.substringBeforeLast('.').ifBlank { getString(R.string.add_song_audio_title) },
+                    isFullSong = choice == FULL_SONG_CHOICE)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * Decodes and transcribes audio off the main thread behind a cancellable
+     * progress dialog, then opens the draft lesson in the editor.
+     *
+     * @param audioUri Audio file to transcribe. Type: Uri
+     * @param title Draft lesson title. Type: String
+     * @param isFullSong True to use basic-pitch (full mixes), false for YIN (bass only). Type: Boolean
+     * @return Unit
+     */
+    private fun transcribeAudio(audioUri: Uri, title: String, isFullSong: Boolean) {
+        val progressView = layoutInflater.inflate(R.layout.dialog_transcribing, rootView, false)
+        val stepTextView = progressView.findViewById<TextView>(R.id.transcribingStepTextView)
+        stepTextView.setText(R.string.transcribing_decoding)
+        val progressDialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.transcribing_title)
+            .setView(progressView)
+            .setCancelable(false)
+            .create()
+        val transcriptionJob = lifecycleScope.launch {
+            try {
+                val decodedAudio = withContext(Dispatchers.IO) { MediaCodecAudioDecoder(this@SongLibraryActivity).decode(audioUri) }
+                stepTextView.setText(R.string.transcribing_detecting)
+                val draftLesson = withContext(Dispatchers.Default) {
+                    val tuning = BassTunings.STANDARD
+                    val lessonBuilder = NoteEventsLessonBuilder(tuning, FretboardPositionFinder(tuning))
+                    if (isFullSong) {
+                        TfLiteBasicPitchModel(this@SongLibraryActivity).use { basicPitchModel ->
+                            val transcriber = BasicPitchTranscriber(
+                                basicPitchModel, BasicPitchWindowing(), PosteriorgramNoteDecoder(), AudioResampler()
+                            )
+                            AudioLessonBuilder(transcriber, TempoEstimator(), lessonBuilder)
+                                .build(title, decodedAudio.samples, decodedAudio.sampleRateHz)
+                        }
+                    } else {
+                        AudioLessonBuilder(MonophonicTranscriber(YinPitchDetector()), TempoEstimator(), lessonBuilder)
+                            .build(title, decodedAudio.samples, decodedAudio.sampleRateHz)
+                    }
+                }
+                progressDialog.dismiss()
+                startActivity(LessonEditorActivity.intentFor(this@SongLibraryActivity, draftLesson, originalTitle = null))
+            } catch (transcriptionFailure: IllegalArgumentException) {
+                progressDialog.dismiss()
+                showTranscriptionFailure(transcriptionFailure.message.orEmpty())
+            } catch (securityFailure: SecurityException) {
+                progressDialog.dismiss()
+                showTranscriptionFailure(getString(R.string.import_song_unreadable_file))
+            }
+        }
+        progressDialog.setButton(android.content.DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel)) { _, _ ->
+            transcriptionJob.cancel()
+        }
+        progressDialog.show()
+    }
+
+    /**
+     * @param reason Why transcription failed. Type: String
+     * @return Unit
+     */
+    private fun showTranscriptionFailure(reason: String) {
+        Snackbar.make(rootView, getString(R.string.transcription_failed, reason), Snackbar.LENGTH_LONG)
+            .setAnchorView(addSongButton)
+            .show()
     }
 
     /**
@@ -453,6 +568,8 @@ class SongLibraryActivity : AppCompatActivity() {
     companion object {
         private const val EXTRA_SHOW_ADD_SONG = "com.example.wavefret.practice.SHOW_ADD_SONG"
         private const val DETAIL_SEPARATOR = " · "
+        private const val LEADING_BYTES_COUNT = 512
+        private const val FULL_SONG_CHOICE = 1
 
         /**
          * @param context Context starting the screen. Type: Context

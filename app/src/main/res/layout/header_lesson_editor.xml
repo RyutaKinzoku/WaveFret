@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scrolls with the note list: lesson details, help and the tab preview. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/screen_gutter">
+
+    <TextView
+        android:id="@+id/lessonEditorHelpTextView"
+        style="@style/Widget.WaveFret.SecondaryText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/lesson_editor_help" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/lessonEditorTitleLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_m"
+        android:hint="@string/import_song_title_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/lessonEditorTitleEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textCapSentences" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/lessonEditorTempoLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:hint="@string/lesson_editor_tempo_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/lessonEditorTempoEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:maxLength="3" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_m">
+
+        <com.example.wavefret.practice.TabStaffView
+            android:id="@+id/lessonEditorTabStaffView"
+            android:layout_width="match_parent"
+            android:layout_height="160dp" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/lessonEditorNotesHeading"
+        style="@style/Widget.WaveFret.SectionHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_l"
+        android:layout_marginBottom="@dimen/space_s" />
+</LinearLayout>

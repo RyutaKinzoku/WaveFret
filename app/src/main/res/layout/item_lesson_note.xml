@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_selectable_row"
+    android:foreground="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_target"
+    android:orientation="horizontal"
+    android:paddingHorizontal="@dimen/screen_gutter"
+    android:paddingVertical="@dimen/space_s">
+
+    <TextView
+        android:id="@+id/lessonNoteNumberTextView"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.WaveFret.Label"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:text="12" />
+
+    <TextView
+        android:id="@+id/lessonNoteTimeTextView"
+        android:layout_width="72dp"
+        android:layout_height="wrap_content"
+        android:fontFeatureSettings="tnum"
+        android:textAppearance="@style/TextAppearance.WaveFret.Label"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        tools:text="0:03.4" />
+
+    <TextView
+        android:id="@+id/lessonNotePositionTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="@style/TextAppearance.WaveFret.Body"
+        android:textColor="?attr/colorOnSurface"
+        tools:text="A · fret 5" />
+</LinearLayout>

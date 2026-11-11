@@ -20,6 +20,7 @@ import com.google.android.material.button.MaterialButton
  * @property onPlayStopClicked Called with a take when its play/stop button is tapped. Type: (RecordingInfo) -> Unit
  * @property onDeleteClicked Called with a take when its delete button is tapped. Type: (RecordingInfo) -> Unit
  * @property onShareClicked Called with a take when its share button is tapped. Type: (RecordingInfo) -> Unit
+ * @property onMakeLessonClicked Called with a take when its make-a-lesson button is tapped. Type: (RecordingInfo) -> Unit
  * @property isPlaying Reports whether a given file path is currently playing. Type: (String) -> Boolean
  */
 class RecordingsAdapter(
@@ -27,6 +28,7 @@ class RecordingsAdapter(
     private val onPlayStopClicked: (RecordingInfo) -> Unit,
     private val onDeleteClicked: (RecordingInfo) -> Unit,
     private val onShareClicked: (RecordingInfo) -> Unit,
+    private val onMakeLessonClicked: (RecordingInfo) -> Unit,
     private val isPlaying: (String) -> Boolean
 ) : ListAdapter<RecordingInfo, RecordingsAdapter.RecordingViewHolder>(RecordingDiffCallback()) {
 
@@ -53,7 +55,8 @@ class RecordingsAdapter(
             isCurrentlyPlaying = isPlaying(recording.filePath),
             onPlayStopClicked = { onPlayStopClicked(recording) },
             onDeleteClicked = { onDeleteClicked(recording) },
-            onShareClicked = { onShareClicked(recording) }
+            onShareClicked = { onShareClicked(recording) },
+            onMakeLessonClicked = { onMakeLessonClicked(recording) }
         )
     }
 
@@ -91,6 +94,7 @@ class RecordingsAdapter(
         private val playStopButton: MaterialButton = rootView.findViewById(R.id.recordingPlayStopButton)
         private val deleteButton: MaterialButton = rootView.findViewById(R.id.recordingDeleteButton)
         private val shareButton: MaterialButton = rootView.findViewById(R.id.recordingShareButton)
+        private val makeLessonButton: MaterialButton = rootView.findViewById(R.id.recordingMakeLessonButton)
         private val textContainer: View = rootView.findViewById(R.id.recordingTextContainer)
 
         /**
@@ -100,6 +104,7 @@ class RecordingsAdapter(
          * @param onPlayStopClicked Called when play/stop is tapped. Type: () -> Unit
          * @param onDeleteClicked Called when delete is tapped. Type: () -> Unit
          * @param onShareClicked Called when share is tapped. Type: () -> Unit
+         * @param onMakeLessonClicked Called when make-a-lesson is tapped. Type: () -> Unit
          * @return Unit
          */
         fun bind(
@@ -108,7 +113,8 @@ class RecordingsAdapter(
             isCurrentlyPlaying: Boolean,
             onPlayStopClicked: () -> Unit,
             onDeleteClicked: () -> Unit,
-            onShareClicked: () -> Unit
+            onShareClicked: () -> Unit,
+            onMakeLessonClicked: () -> Unit
         ) {
             val context = itemView.context
             val title = displayFormatter.formatTitle(recording)
@@ -133,6 +139,8 @@ class RecordingsAdapter(
             )
             shareButton.contentDescription = context.getString(R.string.recording_share_description, title)
             shareButton.setOnClickListener { onShareClicked() }
+            makeLessonButton.contentDescription = context.getString(R.string.recording_make_lesson_description, title)
+            makeLessonButton.setOnClickListener { onMakeLessonClicked() }
             deleteButton.contentDescription = context.getString(R.string.recording_delete_description, title)
             playStopButton.setOnClickListener { onPlayStopClicked() }
             deleteButton.setOnClickListener { onDeleteClicked() }

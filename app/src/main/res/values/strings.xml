@@ -148,7 +148,6 @@
     <string name="home_songs_open_library">Library</string>
     <string name="practice_open_library">Song library</string>
     <string name="share_target_label">Add to WaveFret</string>
-    <string name="import_song_audio_not_yet">turning audio into a lesson arrives in the next update</string>
 
     <!-- Recorder camera and sharing -->
     <string name="recorder_camera_on">Turn camera on</string>
@@ -163,4 +162,37 @@
     <string name="recording_play_video_description">Watch video from %1$s</string>
     <string name="recording_share_description">Share take from %1$s</string>
     <string name="recording_share_chooser_title">Share your take</string>
+
+    <!-- Audio to lesson -->
+    <string name="audio_kind_title">What\'s in this audio?</string>
+    <string name="audio_kind_bass_only">Just my bass (most accurate)</string>
+    <string name="audio_kind_full_song">A full song with other instruments (rough, check it after)</string>
+    <string name="transcribing_title">Listening for the notes</string>
+    <string name="transcribing_decoding">Reading the audio…</string>
+    <string name="transcribing_detecting">Finding the bass notes… this can take a minute for a long song.</string>
+    <string name="transcription_failed">Couldn\'t make a lesson: %1$s</string>
+    <string name="add_song_audio_title">Audio file</string>
+    <string name="add_song_audio_body">MP3, M4A, WAV… WaveFret detects the bass notes</string>
+    <string name="recording_make_lesson_description">Make a lesson from the take from %1$s</string>
+
+    <!-- Lesson editor -->
+    <string name="lesson_editor_title">Check your lesson</string>
+    <string name="lesson_editor_help">Notes were detected automatically. Tap any note to fix its string or fret, delete it or add one after it.</string>
+    <string name="lesson_editor_tempo_hint">Tempo in BPM</string>
+    <string name="lesson_editor_notes_heading">Notes (%1$d)</string>
+    <string name="lesson_editor_save">Save lesson</string>
+    <string name="lesson_editor_saved">Saved \"%1$s\"</string>
+    <string name="lesson_editor_title_required">Give the lesson a title</string>
+    <string name="lesson_editor_tempo_invalid">Use a tempo between 20 and 300</string>
+    <string name="lesson_editor_discard_title">Discard changes?</string>
+    <string name="lesson_editor_discard_message">Your edits to this lesson haven\'t been saved.</string>
+    <string name="lesson_editor_discard">Discard</string>
+    <string name="lesson_editor_keep_editing">Keep editing</string>
+    <string name="lesson_editor_note_description">Note %1$s at %2$s: %3$s</string>
+    <string name="edit_note_title">Note %1$s</string>
+    <string name="edit_note_string_label">String</string>
+    <string name="edit_note_fret_label">Fret: %1$d</string>
+    <string name="edit_note_fret_description">Fret</string>
+    <string name="edit_note_insert_after">Add after</string>
+    <string name="edit_song_description">Edit %1$s</string>
 </resources>
