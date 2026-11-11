@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: v4 — Difficulty & progression complete
+## Status: 0.6.0 — redesigned UI on top of v4 (difficulty & progression)
 
 The current build lets you:
 
@@ -49,6 +49,18 @@ wraps a thin Android framework class (`MediaRecorder`, `MediaPlayer`,
 `MediaMetadataRetriever`, `ContextCompat`) is deliberately left
 untested and verified manually on-device instead, since there's no
 meaningful logic left in those wrappers to unit test.
+
+## Design and quality
+
+0.6.0 redesigns every screen with Material 3: a home hub (progress, tools,
+next exercise), a dedicated Recorder, a gauge-based Tuner and a guided
+Practice flow with an end-of-run summary. Light and dark themes, a
+four-size type scale, an 8 dp grid, edge-to-edge insets on every screen
+and screen-reader labels throughout. Quality is tracked against
+ISO/IEC 25010:2023 in [docs/QUALITY.md](docs/QUALITY.md).
+
+`ScreenRenderTest` (Robolectric) launches every screen and writes
+renders to `app/build/screenshots/` on each test run.
 
 ## Architecture
 

@@ -11,8 +11,8 @@ constraintlayout = "2.2.2"
 recyclerview = "1.4.0"
 kotlinxCoroutines = "1.11.0"
 lifecycleRuntimeKtx = "2.11.0"
-robolectric = "4.16.1"
-androidxTestCore = "1.6.1"
+robolectric = "4.17"
+androidxTestCore = "1.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

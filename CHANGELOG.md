@@ -114,3 +114,31 @@
   DifficultyLevel, ExerciseProgression, RankedExercise, PracticeMode,
   PracticeResult, PracticeResultsRepository, ExercisePickerItem,
   ExercisePickerItemsBuilder.
+
+## [0.6.0] - 2026-11-10 - UI/UX redesign
+
+### Changed
+- New home hub: greeting by player stage, streak / runs this week /
+  mastered progress card, Tuner and Recorder cards, and the recommended
+  exercise pinned as the primary action in the thumb zone.
+- Recorder moved to its own screen: large record button, live timer,
+  takes titled by date with play/stop and delete icon buttons, empty state,
+  confirmation before delete, and an unfinished take saved when leaving.
+- Tuner: cents gauge with an in-tune zone and gliding needle, E A D G
+  string badges, plain-language guidance ("Too low · tighten the string").
+- Practice: exercise card opening a picker sheet (level, best score,
+  mastered, recommended; imported songs deletable), mode explanations,
+  tab preview before starting, Start/Stop in the thumb zone, count-in
+  feedback, progress bar, and an end-of-run summary sheet with rating,
+  score, "New best"/"Mastered" badges, "Try again" and "Next".
+- Material 3 colour roles for light and dark, new launcher icon, vector icons.
+
+### Fixed
+- Buttons hidden behind the system navigation bar: every screen now pads
+  for system bars and display cutouts (edge-to-edge).
+- Denied microphone permission now explains itself with a Settings shortcut.
+
+### Added
+- `PracticeStatsCalculator`, `PracticeSummaryBuilder`, `PerformanceRating`.
+- Robolectric `ScreenRenderTest` (every screen, light and dark).
+- `docs/QUALITY.md`: ISO/IEC 25010:2023 quality model.

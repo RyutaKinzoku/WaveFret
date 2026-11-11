@@ -28,7 +28,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
                 android:layout_marginTop="@dimen/space_l"
-                android:maxWidth="@dimen/max_content_width" />
+                />
 
             <TextView
                 android:id="@+id/tunerStringNameTextView"
