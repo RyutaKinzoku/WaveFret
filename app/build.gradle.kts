@@ -25,6 +25,10 @@ android {
             }
         }
     }
+    androidResources {
+        // The transcription model is memory-mapped, which needs it stored uncompressed.
+        noCompress += "tflite"
+    }
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
@@ -54,4 +58,5 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
+    implementation(libs.litert)
 }

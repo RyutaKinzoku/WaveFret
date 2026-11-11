@@ -13,6 +13,7 @@ kotlinxCoroutines = "1.11.0"
 lifecycleRuntimeKtx = "2.11.0"
 robolectric = "4.17"
 camerax = "1.6.2"
+litert = "1.4.2"
 androidxTestCore = "1.7.0"
 
 [libraries]
@@ -37,6 +38,7 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-video = { group = "androidx.camera", name = "camera-video", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
+litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
