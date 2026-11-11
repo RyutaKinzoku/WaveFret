@@ -22,12 +22,14 @@ import com.google.android.material.color.MaterialColors
  * @property describeExercise Builds a row's secondary line. Type: (ExercisePickerItem) -> String
  * @property onExerciseChosen Called when a row is tapped. Type: (ExercisePickerItem) -> Unit
  * @property onDeleteClicked Called when an imported song's delete button is tapped. Type: (ExercisePickerItem) -> Unit
+ * @property onEditClicked Called when an imported song's edit button is tapped, or null to hide it. Type: ((ExercisePickerItem) -> Unit)?
  */
 class ExercisePickerAdapter(
     private val pickerItems: List<ExercisePickerItem>,
     private val describeExercise: (ExercisePickerItem) -> String,
     private val onExerciseChosen: (ExercisePickerItem) -> Unit,
-    private val onDeleteClicked: (ExercisePickerItem) -> Unit
+    private val onDeleteClicked: (ExercisePickerItem) -> Unit,
+    private val onEditClicked: ((ExercisePickerItem) -> Unit)? = null
 ) : RecyclerView.Adapter<ExercisePickerAdapter.ExercisePickerViewHolder>() {
 
     /**
@@ -56,7 +58,8 @@ class ExercisePickerAdapter(
             detailText = describeExercise(pickerItem),
             isDeletable = pickerItem.isImported,
             onChosen = { onExerciseChosen(pickerItem) },
-            onDelete = { onDeleteClicked(pickerItem) }
+            onDelete = { onDeleteClicked(pickerItem) },
+            onEdit = onEditClicked?.let { editCallback -> { editCallback(pickerItem) } }
         )
     }
 
@@ -72,6 +75,7 @@ class ExercisePickerAdapter(
         private val detailTextView: TextView = rowView.findViewById(R.id.exercisePickerDetailTextView)
         private val recommendedTextView: TextView = rowView.findViewById(R.id.exercisePickerRecommendedTextView)
         private val deleteButton: MaterialButton = rowView.findViewById(R.id.exercisePickerDeleteButton)
+        private val editButton: MaterialButton = rowView.findViewById(R.id.exercisePickerEditButton)
 
         /**
          * @param pickerItem Row data. Type: ExercisePickerItem
@@ -79,6 +83,7 @@ class ExercisePickerAdapter(
          * @param isDeletable Whether to show the delete button. Type: Boolean
          * @param onChosen Called when the row is tapped. Type: () -> Unit
          * @param onDelete Called when delete is tapped. Type: () -> Unit
+         * @param onEdit Called when edit is tapped, or null to hide the button. Type: (() -> Unit)?
          * @return Unit
          */
         fun bind(
@@ -86,7 +91,8 @@ class ExercisePickerAdapter(
             detailText: String,
             isDeletable: Boolean,
             onChosen: () -> Unit,
-            onDelete: () -> Unit
+            onDelete: () -> Unit,
+            onEdit: (() -> Unit)?
         ) {
             val context = rowView.context
             titleTextView.text = pickerItem.exercise.title
@@ -108,6 +114,9 @@ class ExercisePickerAdapter(
             deleteButton.contentDescription = context.getString(R.string.exercise_picker_delete_description, pickerItem.exercise.title)
             rowView.setOnClickListener { onChosen() }
             deleteButton.setOnClickListener { onDelete() }
+            editButton.isVisible = isDeletable && onEdit != null
+            editButton.contentDescription = context.getString(R.string.edit_song_description, pickerItem.exercise.title)
+            editButton.setOnClickListener { onEdit?.invoke() }
         }
     }
 }

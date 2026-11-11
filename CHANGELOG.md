@@ -172,3 +172,34 @@
   `SongLibraryQuery`, `RecordingMediaType`, `CameraXVideoRecorder`,
   `RecordingSharer`, `VideoPlayerActivity`, `SongLibraryActivity`.
 - New dependency: CameraX 1.6.2.
+
+## [0.8.0] - 2026-11-11 - Audio to lesson
+
+### Added
+- Audio files (MP3, M4A, WAV, OGG, FLAC… or the sound of a video) become
+  lessons: Add a song → Audio file, share audio into WaveFret, or tap
+  "make a lesson" on any Recorder take.
+- Two note detectors, chosen per file:
+  - **Just my bass**: the app's YIN detector, frame by frame, for clean
+    bass recordings or isolated bass stems (most accurate).
+  - **Full song**: Spotify's basic-pitch model (Apache-2.0, 200 KB,
+    bundled in `assets/basic_pitch`) running on-device with LiteRT;
+    only bass-register notes are kept. Rough on busy mixes.
+- Tempo is estimated from the spacing of the detected notes.
+- Lesson editor: rename, set tempo, preview as tab, and tap any note to
+  change string/fret, delete it, or add one after it. Unsaved edits are
+  protected. Imported songs can be edited from the library at any time.
+
+### Architecture
+- New `common/transcription` package: `NoteTranscriber`,
+  `MonophonicTranscriber`, `BasicPitchModel`/`TfLiteBasicPitchModel`,
+  `BasicPitchTranscriber`, `BasicPitchWindowing`, `PosteriorgramNoteDecoder`,
+  `BasicPitchOutputRoles`, `TempoEstimator`.
+- `AudioResampler`, `MediaCodecAudioDecoder` (decodes up to 6 minutes),
+  `AudioLessonBuilder`, `LessonEditor`, `LessonNoteFormatter`,
+  `LessonEditorActivity`.
+- New dependency: LiteRT 1.4.2 (2.x needs a newer Kotlin; see `app/lint.xml`).
+
+### Known limits
+- Transcription quality on full mixes has not been measured on real
+  songs on a device yet; expect to fix notes in the editor.

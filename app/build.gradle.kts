@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.wavefret"
         minSdk = 24
         targetSdk = 37
-        versionCode = 7
-        versionName = "0.7.0"
+        versionCode = 8
+        versionName = "0.8.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -24,6 +24,10 @@ android {
                 enable = false
             }
         }
+    }
+    androidResources {
+        // The transcription model is memory-mapped, which needs it stored uncompressed.
+        noCompress += "tflite"
     }
     testOptions {
         unitTests.isIncludeAndroidResources = true
@@ -54,4 +58,5 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
+    implementation(libs.litert)
 }

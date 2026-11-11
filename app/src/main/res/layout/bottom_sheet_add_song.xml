@@ -22,6 +22,10 @@
         layout="@layout/item_add_song_option" />
 
     <include
+        android:id="@+id/addSongAudioOption"
+        layout="@layout/item_add_song_option" />
+
+    <include
         android:id="@+id/addSongPasteTabOption"
         layout="@layout/item_add_song_option" />
 
