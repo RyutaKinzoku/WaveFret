@@ -1,9 +1,8 @@
 package com.example.wavefret.practice.songimport
 
 import com.example.wavefret.common.music.NoteEvent
+import com.example.wavefret.common.storage.ZipArchiveReader
 import org.w3c.dom.Element
-import java.io.ByteArrayInputStream
-import java.util.zip.ZipInputStream
 import kotlin.math.pow
 import kotlin.math.roundToLong
 
@@ -16,8 +15,12 @@ import kotlin.math.roundToLong
  * and not supported.
  *
  * @property safeXmlDocumentParser Parses the score XML safely. Type: SafeXmlDocumentParser
+ * @property zipArchiveReader Opens the .gp archive, tolerating its unusual zip headers. Type: ZipArchiveReader
  */
-class GuitarProFileParser(private val safeXmlDocumentParser: SafeXmlDocumentParser = SafeXmlDocumentParser()) {
+class GuitarProFileParser(
+    private val safeXmlDocumentParser: SafeXmlDocumentParser = SafeXmlDocumentParser(),
+    private val zipArchiveReader: ZipArchiveReader = ZipArchiveReader()
+) {
 
     /**
      * @param guitarProBytes Full contents of the .gp file. Type: ByteArray
@@ -80,12 +83,10 @@ class GuitarProFileParser(private val safeXmlDocumentParser: SafeXmlDocumentPars
      * @return Text of the archive's score.gpif entry. Type: String
      */
     private fun readScoreEntry(guitarProBytes: ByteArray): String {
-        ZipInputStream(ByteArrayInputStream(guitarProBytes)).use { zipInputStream ->
-            generateSequence { zipInputStream.nextEntry }.forEach { zipEntry ->
-                if (zipEntry.name.endsWith(SCORE_ENTRY_NAME)) return zipInputStream.readBytes().toString(Charsets.UTF_8)
-            }
-        }
-        throw IllegalArgumentException("Not a Guitar Pro 7+ file: no score inside")
+        val scoreBytes = zipArchiveReader.readEntries(guitarProBytes).entries
+            .firstOrNull { (entryPath, _) -> entryPath.endsWith(SCORE_ENTRY_NAME) }?.value
+            ?: throw IllegalArgumentException("Not a Guitar Pro 7+ file: no score inside")
+        return scoreBytes.toString(Charsets.UTF_8)
     }
 
     /**
