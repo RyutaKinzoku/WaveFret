@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: v2 — Practice engine complete
+## Status: v3 — Song import complete (text tabs and MusicXML)
 
 The current build lets you:
 
@@ -13,7 +13,10 @@ The current build lets you:
 - practice built-in exercises against a scrolling tab (v2), either in
   **wait mode** (the tab only advances once you play the right note) or
   **tempo mode** (a metronome counts you in and each note is scored as
-  hit or missed on its beat).
+  hit or missed on its beat);
+- import songs to practice (v3): paste an ASCII bass tab from the
+  internet or WaveFret tab text, or open a MusicXML (`.musicxml`, `.xml`,
+  `.mxl`) file. Imported songs are stored as text in app storage.
 
 ## Requirements
 
@@ -55,7 +58,8 @@ Top-level packages under `com.example.wavefret`:
 - **`tuner`** — the live tuner pipeline and needle display.
 - **`practice`** — the tab model and text-tab parser, built-in
   exercises, wait/tempo practice sessions, the practice pipeline and the
-  scrolling tab display.
+  scrolling tab display; `practice.songimport` holds the ASCII-tab and
+  MusicXML importers and the imported-songs repository.
 
 The dependency direction is one-way: feature packages depend on
 `common`, never the reverse, and never on each other. This keeps generic pieces reusable by future
@@ -75,6 +79,7 @@ hardware.
 - **v1** — Tuner (done): pitch detection via YIN algorithm
 - **v2** — Practice engine (done): follow a tab note by note in wait
   mode, or in time with a metronome in tempo mode
-- **v3** — Song import: text tabs, MusicXML, and (longer-term) audio
-  transcription from YouTube via Demucs + basic-pitch
+- **v3** — Song import (done): text tabs and MusicXML. Audio
+  transcription from YouTube via Demucs + basic-pitch is deferred: both
+  are Python ML models that need a desktop/server step, not on-device code.
 - **v4** — Difficulty scoring and progressive song ordering
