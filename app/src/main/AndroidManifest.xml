@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -62,6 +67,21 @@
                 <data android:mimeType="audio/x-midi" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".recording.VideoPlayerActivity"
+            android:exported="false"
+            android:parentActivityName=".recording.RecorderActivity" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.recordings"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/recording_file_paths" />
+        </provider>
+
         <activity
             android:name=".recording.RecorderActivity"
             android:exported="false"

@@ -149,4 +149,18 @@
     <string name="practice_open_library">Song library</string>
     <string name="share_target_label">Add to WaveFret</string>
     <string name="import_song_audio_not_yet">turning audio into a lesson arrives in the next update</string>
+
+    <!-- Recorder camera and sharing -->
+    <string name="recorder_camera_on">Turn camera on</string>
+    <string name="recorder_camera_off">Turn camera off</string>
+    <string name="recorder_flip_camera">Switch camera</string>
+    <string name="recorder_camera_preview_description">Camera preview</string>
+    <string name="recorder_status_idle_video">Tap the button to start a video take</string>
+    <string name="recorder_start_video_description">Start video recording</string>
+    <string name="recorder_camera_permission_needed">WaveFret needs the camera to record video.</string>
+    <string name="recorder_video_failed">The video couldn\'t be saved</string>
+    <string name="recording_video_label">Video · %1$s</string>
+    <string name="recording_play_video_description">Watch video from %1$s</string>
+    <string name="recording_share_description">Share take from %1$s</string>
+    <string name="recording_share_chooser_title">Share your take</string>
 </resources>

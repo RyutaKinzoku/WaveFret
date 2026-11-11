@@ -10,6 +10,31 @@
 
     <include layout="@layout/include_top_app_bar" />
 
+    <!-- Camera preview, shown only when the camera is switched on. -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/recorderCameraCard"
+        android:layout_width="match_parent"
+        android:layout_height="280dp"
+        android:layout_marginHorizontal="@dimen/screen_gutter"
+        android:visibility="gone">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/recorderCameraPreviewView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/recorder_camera_preview_description" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/recorderFlipCameraButton"
+            style="?attr/materialIconButtonFilledTonalStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_margin="@dimen/space_s"
+            android:contentDescription="@string/recorder_flip_camera"
+            app:icon="@drawable/ic_flip_camera" />
+    </com.google.android.material.card.MaterialCardView>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
