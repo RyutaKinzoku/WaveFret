@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One string badge in the tuner's E A D G row; highlighted when detected. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="@dimen/touch_target"
+    android:layout_height="@dimen/touch_target"
+    android:layout_marginHorizontal="@dimen/space_xs"
+    android:background="@drawable/bg_string_badge"
+    android:gravity="center"
+    android:importantForAccessibility="no"
+    android:textAppearance="@style/TextAppearance.WaveFret.Title"
+    android:textColor="?attr/colorOnSurfaceVariant" />

@@ -1,9 +1,64 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+<resources>
+    <!--
+      Single app theme for light and dark. Every screen reads colours through
+      these roles (?attr/colorPrimary, ?attr/colorSurfaceContainer, …), never raw hex.
+    -->
     <style name="Base.Theme.WaveFret" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/wf_primary</item>
+        <item name="colorOnPrimary">@color/wf_on_primary</item>
+        <item name="colorPrimaryContainer">@color/wf_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/wf_on_primary_container</item>
+        <item name="colorSecondary">@color/wf_secondary</item>
+        <item name="colorOnSecondary">@color/wf_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/wf_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/wf_on_secondary_container</item>
+        <item name="colorTertiary">@color/wf_secondary</item>
+        <item name="colorError">@color/wf_error</item>
+        <item name="colorOnError">@color/wf_on_error</item>
+        <item name="colorErrorContainer">@color/wf_error_container</item>
+        <item name="colorOnErrorContainer">@color/wf_on_error_container</item>
+        <item name="colorSurface">@color/wf_surface</item>
+        <item name="colorOnSurface">@color/wf_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/wf_on_surface_variant</item>
+        <item name="colorOutline">@color/wf_outline</item>
+        <item name="colorOutlineVariant">@color/wf_outline_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/wf_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/wf_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/wf_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/wf_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/wf_surface_container_highest</item>
+        <item name="android:colorBackground">@color/wf_surface</item>
+        <item name="android:windowBackground">@color/wf_surface</item>
+        <item name="materialCardViewStyle">@style/Widget.WaveFret.Card</item>
     </style>
 
     <style name="Theme.WaveFret" parent="Base.Theme.WaveFret" />
+
+    <!-- Filled tonal card: elevation by surface tone, not shadow. -->
+    <style name="Widget.WaveFret.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainer</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.Material3.Corner.Large</item>
+    </style>
+
+    <!-- The four text sizes the app uses: display (hero values), title, body, label. -->
+    <style name="TextAppearance.WaveFret.Display" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="android:fontFeatureSettings">tnum</item>
+    </style>
+    <style name="TextAppearance.WaveFret.Title" parent="TextAppearance.Material3.TitleLarge" />
+    <style name="TextAppearance.WaveFret.Body" parent="TextAppearance.Material3.BodyMedium" />
+    <style name="TextAppearance.WaveFret.Label" parent="TextAppearance.Material3.LabelMedium" />
+
+    <style name="Widget.WaveFret.SectionHeader" parent="">
+        <item name="android:textAppearance">@style/TextAppearance.WaveFret.Title</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="Widget.WaveFret.SecondaryText" parent="">
+        <item name="android:textAppearance">@style/TextAppearance.WaveFret.Body</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="Widget.WaveFret.PrimaryAction" parent="Widget.Material3.Button">
+        <item name="android:minHeight">56dp</item>
+    </style>
 </resources>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/exercisePickerRow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="72dp"
+    android:orientation="horizontal"
+    android:paddingVertical="@dimen/space_s"
+    android:paddingStart="@dimen/screen_gutter"
+    android:paddingEnd="@dimen/space_xs">
+
+    <ImageView
+        android:id="@+id/exercisePickerStatusImageView"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_music_note"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_m"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/exercisePickerTitleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.WaveFret.Body"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold"
+            tools:text="Open strings" />
+
+        <TextView
+            android:id="@+id/exercisePickerDetailTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:textAppearance="@style/TextAppearance.WaveFret.Label"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="Beginner · 60 BPM · Best 85%" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/exercisePickerRecommendedTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_recommended_badge"
+        android:paddingHorizontal="@dimen/space_s"
+        android:paddingVertical="@dimen/space_xs"
+        android:text="@string/exercise_picker_recommended"
+        android:textAppearance="@style/TextAppearance.WaveFret.Label"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/exercisePickerDeleteButton"
+        style="?attr/materialIconButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:icon="@drawable/ic_delete"
+        app:iconTint="?attr/colorOnSurfaceVariant" />
+</LinearLayout>

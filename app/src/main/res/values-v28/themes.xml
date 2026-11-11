@@ -1,0 +1,8 @@
+<resources>
+    <!-- From API 28, section headers are announced as headings so TalkBack users can jump between them. -->
+    <style name="Widget.WaveFret.SectionHeader" parent="">
+        <item name="android:textAppearance">@style/TextAppearance.WaveFret.Title</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:accessibilityHeading">true</item>
+    </style>
+</resources>

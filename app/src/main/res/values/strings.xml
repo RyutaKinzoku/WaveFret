@@ -1,44 +1,121 @@
 <resources>
-    <string name="app_name">Wave &amp; Fret</string>
-    <string name="record">Record</string>
-    <string name="stop_playback">Stop Playback</string>
-    <string name="play">Play</string>
-    <string name="stop">Stop</string>
-    <string name="delete">Delete</string>
-    <string name="delete_recording_title">Delete recording?</string>
-    <string name="delete_recording_message">Delete %1$s? This cannot be undone.</string>
+    <string name="app_name">WaveFret</string>
+    <string name="navigate_up">Back</string>
     <string name="cancel">Cancel</string>
-    <string name="tuner_listening_prompt">Play a note</string>
-    <string name="tuner_needle_description">Tuning needle</string>
-    <string name="open_tuner">Open Tuner</string>
-    <string name="open_practice">Practice</string>
-    <string name="practice_exercise_picker_description">Exercise</string>
+    <string name="delete">Delete</string>
+    <string name="open_settings">Settings</string>
+
+    <!-- Home -->
+    <string name="home_greeting_new">Welcome! Tune up, then play your first exercise.</string>
+    <string name="home_greeting_streak">Welcome back. Keep your %1$d-day streak going.</string>
+    <string name="home_greeting_returning">Welcome back. Ready for today\'s practice?</string>
+    <string name="home_progress_heading">Your progress</string>
+    <string name="home_stat_streak">Day streak</string>
+    <string name="home_stat_week">Runs this week</string>
+    <string name="home_stat_mastered">Mastered</string>
+    <string name="home_stat_mastered_value">%1$d/%2$d</string>
+    <string name="home_mastery_progress_description">Exercises mastered: %1$d of %2$d</string>
+    <string name="home_tools_heading">Tools</string>
+    <string name="home_tuner_title">Tuner</string>
+    <string name="home_tuner_body">Tune each string before you play</string>
+    <string name="home_recorder_title">Recorder</string>
+    <string name="home_recorder_body">Record a take and listen back</string>
+    <string name="home_continue_label_new">Start here</string>
+    <string name="home_continue_label">Up next</string>
+    <string name="home_continue_label_all_mastered">Everything mastered</string>
+    <string name="home_continue_all_mastered_body">Import a song or replay a favourite.</string>
+    <string name="home_practice_button">Practise %1$s</string>
+    <string name="home_open_practice_button">Open practice</string>
+
+    <!-- Recorder -->
+    <string name="recorder_title">Recorder</string>
+    <string name="recorder_timer_zero" translatable="false">0:00</string>
+    <string name="recorder_status_idle">Tap the button to start a take</string>
+    <string name="recorder_status_recording">Recording…</string>
+    <string name="recorder_start_description">Start recording</string>
+    <string name="recorder_stop_description">Stop recording</string>
+    <string name="recorder_takes_heading">Your takes</string>
+    <string name="recorder_empty_title">No takes yet</string>
+    <string name="recorder_empty_body">Record yourself playing to hear how you really sound.</string>
+    <string name="recorder_permission_needed">WaveFret needs the microphone to record.</string>
+    <string name="recording_play_description">Play take from %1$s</string>
+    <string name="recording_stop_description">Stop take from %1$s</string>
+    <string name="recording_delete_description">Delete take from %1$s</string>
+    <string name="delete_recording_title">Delete this take?</string>
+    <string name="delete_recording_message">The take from %1$s will be removed. This cannot be undone.</string>
+    <string name="recording_saved">Take saved</string>
+
+    <!-- Tuner -->
+    <string name="tuner_title">Tuner</string>
+    <string name="tuner_subtitle">Standard tuning · E A D G</string>
+    <string name="tuner_listening_prompt">Pluck an open string</string>
+    <string name="tuner_no_note" translatable="false">–</string>
+    <string name="tuner_hint">Pluck one string at a time and let it ring.</string>
+    <string name="tuner_status_in_tune">In tune</string>
+    <string name="tuner_status_flat">Too low · tighten the string</string>
+    <string name="tuner_status_sharp">Too high · loosen the string</string>
+    <string name="tuner_gauge_description">Tuning gauge: %1$s</string>
+    <string name="tuner_permission_needed">WaveFret needs the microphone to hear your bass.</string>
+    <string name="tuner_strings_description">Strings: E, A, D, G</string>
+
+    <!-- Practice -->
+    <string name="practice_title">Practice</string>
+    <string name="practice_import_song">Import a song</string>
+    <string name="practice_choose_exercise_description">Choose exercise, currently %1$s</string>
+    <string name="practice_exercise_tempo">%1$d BPM</string>
+    <string name="practice_exercise_best">Best %1$d%%</string>
     <string name="practice_mode_wait">Wait</string>
     <string name="practice_mode_tempo">Tempo</string>
+    <string name="practice_mode_wait_help">The tab waits until you play each note.</string>
+    <string name="practice_mode_tempo_help">Play along with the metronome. Each note counts on its beat.</string>
     <string name="practice_start">Start</string>
-    <string name="practice_restart">Restart</string>
+    <string name="practice_stop">Stop</string>
     <string name="practice_current_note">%1$s · fret %2$d</string>
+    <string name="practice_current_note_description">%1$s string, fret %2$d</string>
     <string name="practice_note_progress">Note %1$d of %2$d</string>
-    <string name="practice_score">%1$d%%</string>
+    <string name="practice_feedback_ready">Press Start, then play the highlighted note.</string>
     <string name="practice_feedback_listening">Listening…</string>
     <string name="practice_feedback_correct">Nice!</string>
-    <string name="practice_feedback_wrong_note">Not quite — try again</string>
+    <string name="practice_feedback_wrong_note">Not quite. Try again</string>
     <string name="practice_feedback_complete">Exercise complete</string>
-    <string name="practice_import_song">Import tab</string>
-    <string name="import_song_dialog_title">Import a tab</string>
-    <string name="import_song_title_hint">Title</string>
-    <string name="import_song_tempo_hint">Tempo (BPM, optional)</string>
-    <string name="import_song_tab_hint">Paste an ASCII bass tab or WaveFret tab text</string>
-    <string name="import_song_confirm">Import</string>
-    <string name="import_song_saved">Imported \"%1$s\"</string>
-    <string name="import_song_failed">Couldn\'t read that tab: %1$s</string>
-    <string name="import_song_open_music_xml">Open MusicXML…</string>
-    <string name="import_song_unreadable_file">the file could not be opened</string>
-    <string name="exercise_picker_label">%1$s · %2$s</string>
-    <string name="exercise_picker_label_with_best">%1$s · %2$s · best %3$d%%</string>
-    <string name="exercise_picker_mastered">✓ %1$s</string>
-    <string name="exercise_picker_recommended">→ %1$s</string>
+    <string name="practice_feedback_count_in">Count-in…</string>
+    <string name="practice_tab_description">Tab for %1$s</string>
+    <string name="practice_permission_needed">WaveFret needs the microphone to hear your notes.</string>
+    <string name="exercise_picker_title">Choose an exercise</string>
+    <string name="exercise_picker_recommended">Recommended</string>
+    <string name="exercise_picker_mastered_description">Mastered</string>
+    <string name="exercise_picker_delete_description">Delete %1$s</string>
+    <string name="delete_song_title">Delete this song?</string>
+    <string name="delete_song_message">%1$s will be removed from your songs. Your scores are kept.</string>
     <string name="difficulty_beginner">Beginner</string>
     <string name="difficulty_intermediate">Intermediate</string>
     <string name="difficulty_advanced">Advanced</string>
+
+    <!-- Practice summary -->
+    <string name="summary_perfect">Perfect!</string>
+    <string name="summary_great">Great run!</string>
+    <string name="summary_good">Good work</string>
+    <string name="summary_keep_practicing">Keep at it</string>
+    <string name="summary_score">%1$d%%</string>
+    <string name="summary_hits_misses">Hit %1$d · Missed %2$d</string>
+    <string name="summary_new_best">New best</string>
+    <string name="summary_mastered">Mastered</string>
+    <string name="summary_try_again">Try again</string>
+    <string name="summary_next">Next: %1$s</string>
+    <string name="summary_done">Done</string>
+
+    <!-- Import -->
+    <string name="import_song_dialog_title">Import a song</string>
+    <string name="import_song_title_hint">Title</string>
+    <string name="import_song_tempo_hint">Tempo in BPM (optional)</string>
+    <string name="import_song_tab_hint">Paste an ASCII bass tab or WaveFret tab text</string>
+    <string name="import_song_confirm">Import</string>
+    <string name="import_song_open_music_xml">Open MusicXML…</string>
+    <string name="import_song_saved">Imported \"%1$s\"</string>
+    <string name="import_song_failed">Couldn\'t read that tab: %1$s</string>
+    <string name="import_song_unreadable_file">the file could not be opened</string>
+    <plurals name="practice_exercise_notes">
+        <item quantity="one">%1$d note</item>
+        <item quantity="other">%1$d notes</item>
+    </plurals>
 </resources>
