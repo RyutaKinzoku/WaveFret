@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/space_l">
+
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        style="@style/Widget.WaveFret.SectionHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_gutter"
+        android:layout_marginBottom="@dimen/space_s"
+        android:text="@string/add_song_title" />
+
+    <include
+        android:id="@+id/addSongOpenFileOption"
+        layout="@layout/item_add_song_option" />
+
+    <include
+        android:id="@+id/addSongPasteTabOption"
+        layout="@layout/item_add_song_option" />
+
+    <include
+        android:id="@+id/addSongSheetMusicOption"
+        layout="@layout/item_add_song_option" />
+</LinearLayout>

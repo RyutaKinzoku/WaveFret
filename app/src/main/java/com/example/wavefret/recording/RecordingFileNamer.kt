@@ -10,9 +10,10 @@ import com.example.wavefret.common.time.Clock
 class RecordingFileNamer(private val clock: Clock) {
 
     /**
-     * @return A timestamped .m4a file name, e.g. "recording_1700000000000.m4a". Type: String
+     * @param mediaType Whether the take is audio or video. Type: RecordingMediaType
+     * @return A timestamped file name, e.g. "recording_1700000000000.m4a". Type: String
      */
-    fun generateFileName(): String {
-        return "recording_${clock.currentTimeMillis()}.m4a"
+    fun generateFileName(mediaType: RecordingMediaType = RecordingMediaType.AUDIO): String {
+        return "recording_${clock.currentTimeMillis()}.${mediaType.fileExtension}"
     }
 }

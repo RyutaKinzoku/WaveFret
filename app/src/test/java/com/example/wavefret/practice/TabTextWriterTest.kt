@@ -33,4 +33,11 @@ class TabTextWriterTest {
 
         assertEquals(exercise, TabTextParser(BassTunings.STANDARD).parse(tabText))
     }
+
+    @Test
+    fun timedExerciseRoundTripsWithItsTimings() {
+        val timedExercise = exercise.copy(noteOnsetsMillis = listOf(0L, 500L, 1_000L, 1_500L))
+
+        assertEquals(timedExercise, TabTextParser(BassTunings.STANDARD).parse(TabTextWriter().write(timedExercise)))
+    }
 }

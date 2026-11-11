@@ -39,4 +39,18 @@ class ExerciseTest {
 
         assertEquals(2, exercise.noteCount)
     }
+
+    @Test
+    fun timingsMustMatchTheNotes() {
+        assertThrows(IllegalArgumentException::class.java) {
+            Exercise("Bad", BassTunings.STANDARD, 80, listOf(TabNote(0, 0), TabNote(1, 0)), noteOnsetsMillis = listOf(0L))
+        }
+    }
+
+    @Test
+    fun timingsMustNotGoBackwards() {
+        assertThrows(IllegalArgumentException::class.java) {
+            Exercise("Bad", BassTunings.STANDARD, 80, listOf(TabNote(0, 0), TabNote(1, 0)), noteOnsetsMillis = listOf(500L, 100L))
+        }
+    }
 }

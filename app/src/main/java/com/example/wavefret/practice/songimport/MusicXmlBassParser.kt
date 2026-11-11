@@ -6,10 +6,6 @@ import com.example.wavefret.practice.TabNote
 import com.example.wavefret.practice.TabTextParser
 import org.w3c.dom.Document
 import org.w3c.dom.Element
-import org.xml.sax.InputSource
-import org.xml.sax.SAXException
-import java.io.StringReader
-import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * Reads the first part of an uncompressed MusicXML (`score-partwise`) file
@@ -22,10 +18,12 @@ import javax.xml.parsers.DocumentBuilderFactory
  *
  * @property tuning Tuning the bass line is played in. Type: BassTuning
  * @property fretboardPositionFinder Places pitches that come without tab. Type: FretboardPositionFinder
+ * @property safeXmlDocumentParser Parses the score XML safely. Type: SafeXmlDocumentParser
  */
 class MusicXmlBassParser(
     private val tuning: BassTuning,
-    private val fretboardPositionFinder: FretboardPositionFinder
+    private val fretboardPositionFinder: FretboardPositionFinder,
+    private val safeXmlDocumentParser: SafeXmlDocumentParser = SafeXmlDocumentParser()
 ) {
 
     /**
@@ -34,7 +32,7 @@ class MusicXmlBassParser(
      * @throws IllegalArgumentException If the XML is malformed or holds no playable notes.
      */
     fun parse(musicXmlText: String): Exercise {
-        val scoreDocument = parseDocument(musicXmlText)
+        val scoreDocument = safeXmlDocumentParser.parse(musicXmlText)
         val firstPart = scoreDocument.getElementsByTagName("part").item(0) as? Element
             ?: throw IllegalArgumentException("MusicXML has no part")
         val semitoneTransposition = semitoneTranspositionOf(firstPart)
@@ -57,34 +55,12 @@ class MusicXmlBassParser(
     }
 
     /**
-     * Parses XML without fetching external DTDs or expanding entities.
-     * Leading whitespace and a byte-order mark are dropped first, since an
-     * XML declaration must be the very first thing in a document.
-     *
-     * @param musicXmlText Document text. Type: String
-     * @return The parsed DOM document. Type: Document
-     */
-    private fun parseDocument(musicXmlText: String): Document {
-        val documentBuilderFactory = DocumentBuilderFactory.newInstance().apply {
-            isExpandEntityReferences = false
-            isNamespaceAware = false
-            runCatching { setFeature(LOAD_EXTERNAL_DTD_FEATURE, false) }
-        }
-        val documentText = musicXmlText.trimStart(BYTE_ORDER_MARK, ' ', '\t', '\r', '\n')
-        return try {
-            documentBuilderFactory.newDocumentBuilder().parse(InputSource(StringReader(documentText)))
-        } catch (malformedXml: SAXException) {
-            throw IllegalArgumentException("Not valid MusicXML: ${malformedXml.message}", malformedXml)
-        }
-    }
-
-    /**
      * @param noteElement A `<note>` element. Type: Element
      * @return True for a newly plucked note: not a rest, chord tone or tie continuation. Type: Boolean
      */
     private fun isPluckedNote(noteElement: Element): Boolean {
-        if (childElement(noteElement, "rest") != null) return false
-        if (childElement(noteElement, "chord") != null) return false
+        if (noteElement.childElement("rest") != null) return false
+        if (noteElement.childElement("chord") != null) return false
         val tieElements = noteElement.getElementsByTagName("tie")
         val isTieContinuation = (0 until tieElements.length).any { tieIndex ->
             (tieElements.item(tieIndex) as Element).getAttribute("type") == "stop"
@@ -99,12 +75,12 @@ class MusicXmlBassParser(
      * @return Where to play the note. Type: TabNote
      */
     private fun tabNoteFor(noteElement: Element, semitoneTransposition: Int, previousNote: TabNote?): TabNote {
-        val stringNumber = descendantText(noteElement, "string")?.toIntOrNull()
-        val fret = descendantText(noteElement, "fret")?.toIntOrNull()
+        val stringNumber = noteElement.descendantText("string")?.toIntOrNull()
+        val fret = noteElement.descendantText("fret")?.toIntOrNull()
         if (stringNumber != null && fret != null && stringNumber in 1..tuning.strings.size) {
             return TabNote(stringIndex = tuning.strings.size - stringNumber, fret = fret)
         }
-        val pitchElement = childElement(noteElement, "pitch")
+        val pitchElement = noteElement.childElement("pitch")
             ?: throw IllegalArgumentException("A note has neither tab nor pitch")
         return fretboardPositionFinder.positionFor(midiNumberOf(pitchElement) + semitoneTransposition, previousNote)
     }
@@ -114,10 +90,10 @@ class MusicXmlBassParser(
      * @return Its MIDI note number. Type: Int
      */
     private fun midiNumberOf(pitchElement: Element): Int {
-        val step = descendantText(pitchElement, "step")
+        val step = pitchElement.descendantText("step")
         val stepSemitone = STEP_SEMITONES[step] ?: throw IllegalArgumentException("Unknown pitch step '$step'")
-        val alter = descendantText(pitchElement, "alter")?.toDoubleOrNull()?.toInt() ?: 0
-        val octave = descendantText(pitchElement, "octave")?.toIntOrNull()
+        val alter = pitchElement.descendantText("alter")?.toDoubleOrNull()?.toInt() ?: 0
+        val octave = pitchElement.descendantText("octave")?.toIntOrNull()
             ?: throw IllegalArgumentException("Pitch without octave")
         return (octave + 1) * SEMITONES_PER_OCTAVE + stepSemitone + alter
     }
@@ -128,8 +104,8 @@ class MusicXmlBassParser(
      */
     private fun semitoneTranspositionOf(partElement: Element): Int {
         val transposeElement = partElement.getElementsByTagName("transpose").item(0) as? Element ?: return 0
-        val chromatic = descendantText(transposeElement, "chromatic")?.toIntOrNull() ?: 0
-        val octaveChange = descendantText(transposeElement, "octave-change")?.toIntOrNull() ?: 0
+        val chromatic = transposeElement.descendantText("chromatic")?.toIntOrNull() ?: 0
+        val octaveChange = transposeElement.descendantText("octave-change")?.toIntOrNull() ?: 0
         return chromatic + octaveChange * SEMITONES_PER_OCTAVE
     }
 
@@ -139,7 +115,7 @@ class MusicXmlBassParser(
      */
     private fun titleOf(scoreDocument: Document): String {
         val root = scoreDocument.documentElement
-        return (descendantText(root, "work-title") ?: descendantText(root, "movement-title"))
+        return (root.descendantText("work-title") ?: root.descendantText("movement-title"))
             ?.takeIf { it.isNotBlank() } ?: SongImporter.DEFAULT_IMPORTED_TITLE
     }
 
@@ -156,30 +132,8 @@ class MusicXmlBassParser(
         return TabTextParser.DEFAULT_TEMPO_BPM
     }
 
-    /**
-     * @param parent Element to look in. Type: Element
-     * @param tagName Tag of the direct child wanted. Type: String
-     * @return The first direct child with that tag, or null. Type: Element?
-     */
-    private fun childElement(parent: Element, tagName: String): Element? {
-        val children = parent.childNodes
-        return (0 until children.length).map { children.item(it) }
-            .firstOrNull { it is Element && it.tagName == tagName } as? Element
-    }
-
-    /**
-     * @param parent Element to look in. Type: Element
-     * @param tagName Tag of the descendant wanted. Type: String
-     * @return Trimmed text of the first descendant with that tag, or null. Type: String?
-     */
-    private fun descendantText(parent: Element, tagName: String): String? {
-        return parent.getElementsByTagName(tagName).item(0)?.textContent?.trim()
-    }
-
     private companion object {
         const val SEMITONES_PER_OCTAVE = 12
-        const val BYTE_ORDER_MARK = '\uFEFF'
-        const val LOAD_EXTERNAL_DTD_FEATURE = "http://apache.org/xml/features/nonvalidating/load-external-dtd"
         val STEP_SEMITONES = mapOf("C" to 0, "D" to 2, "E" to 4, "F" to 5, "G" to 7, "A" to 9, "B" to 11)
     }
 }

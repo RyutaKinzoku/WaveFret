@@ -60,7 +60,6 @@
 
     <!-- Practice -->
     <string name="practice_title">Practice</string>
-    <string name="practice_import_song">Import a song</string>
     <string name="practice_choose_exercise_description">Choose exercise, currently %1$s</string>
     <string name="practice_exercise_tempo">%1$d BPM</string>
     <string name="practice_exercise_best">Best %1$d%%</string>
@@ -107,12 +106,10 @@
     <string name="summary_done">Done</string>
 
     <!-- Import -->
-    <string name="import_song_dialog_title">Import a song</string>
     <string name="import_song_title_hint">Title</string>
     <string name="import_song_tempo_hint">Tempo in BPM (optional)</string>
     <string name="import_song_tab_hint">Paste an ASCII bass tab or WaveFret tab text</string>
     <string name="import_song_confirm">Import</string>
-    <string name="import_song_open_music_xml">Open MusicXML…</string>
     <string name="import_song_saved">Imported \"%1$s\"</string>
     <string name="import_song_failed">Couldn\'t read that tab: %1$s</string>
     <string name="import_song_unreadable_file">the file could not be opened</string>
@@ -120,4 +117,50 @@
         <item quantity="one">%1$d note</item>
         <item quantity="other">%1$d notes</item>
     </plurals>
+
+    <!-- Song library -->
+    <string name="song_library_title">Songs</string>
+    <string name="song_library_search_hint">Search songs</string>
+    <string name="song_library_source_all">All</string>
+    <string name="song_library_source_mine">My songs</string>
+    <string name="song_library_source_built_in">Exercises</string>
+    <string name="song_library_sort_easiest">Easiest first</string>
+    <string name="song_library_sort_hardest">Hardest first</string>
+    <string name="song_library_sort_title">A–Z</string>
+    <string name="song_library_sort_description">Sort: %1$s</string>
+    <string name="song_library_add_song">Add a song</string>
+    <string name="song_library_empty_title">No songs here yet</string>
+    <string name="song_library_empty_body">Add a tab, sheet music, MIDI or Guitar Pro file and it will be sorted by difficulty for you.</string>
+    <string name="add_song_title">Add a song</string>
+    <string name="add_song_open_file_title">Open a file</string>
+    <string name="add_song_open_file_body">Guitar Pro (.gp), MusicXML, MIDI or a text tab</string>
+    <string name="add_song_paste_title">Paste a tab</string>
+    <string name="add_song_paste_body">Copy a bass tab from a website and paste it</string>
+    <string name="add_song_sheet_music_title">Sheet music (PDF or photo)</string>
+    <string name="add_song_sheet_music_body">See how to turn it into a lesson</string>
+    <string name="sheet_music_help_title">PDFs and photos need one extra step</string>
+    <string name="sheet_music_help_message">WaveFret can\'t read notes from a picture yet. Open the PDF or photo in MuseScore (free), check the notes, then export it as MusicXML and add that file here.</string>
+    <string name="ok">OK</string>
+    <string name="importing_song">Importing…</string>
+    <string name="home_songs_title">Your songs</string>
+    <string name="home_songs_body">Add the songs you want to learn. WaveFret sorts them by difficulty.</string>
+    <string name="home_songs_add">Add a song</string>
+    <string name="home_songs_open_library">Library</string>
+    <string name="practice_open_library">Song library</string>
+    <string name="share_target_label">Add to WaveFret</string>
+    <string name="import_song_audio_not_yet">turning audio into a lesson arrives in the next update</string>
+
+    <!-- Recorder camera and sharing -->
+    <string name="recorder_camera_on">Turn camera on</string>
+    <string name="recorder_camera_off">Turn camera off</string>
+    <string name="recorder_flip_camera">Switch camera</string>
+    <string name="recorder_camera_preview_description">Camera preview</string>
+    <string name="recorder_status_idle_video">Tap the button to start a video take</string>
+    <string name="recorder_start_video_description">Start video recording</string>
+    <string name="recorder_camera_permission_needed">WaveFret needs the camera to record video.</string>
+    <string name="recorder_video_failed">The video couldn\'t be saved</string>
+    <string name="recording_video_label">Video · %1$s</string>
+    <string name="recording_play_video_description">Watch video from %1$s</string>
+    <string name="recording_share_description">Share take from %1$s</string>
+    <string name="recording_share_chooser_title">Share your take</string>
 </resources>

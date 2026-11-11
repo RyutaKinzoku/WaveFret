@@ -6,9 +6,11 @@ import android.graphics.Canvas
 import android.view.View
 import android.widget.Button
 import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
 import com.example.wavefret.MainActivity
 import com.example.wavefret.R
 import com.example.wavefret.practice.PracticeActivity
+import com.example.wavefret.practice.SongLibraryActivity
 import com.example.wavefret.recording.RecorderActivity
 import com.example.wavefret.tuner.TunerActivity
 import org.junit.Assert.assertEquals
@@ -43,11 +45,28 @@ class ScreenRenderTest {
 
     @Test
     @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun recorderListsAudioAndVideoTakesWithShareButtons() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val storageFolder = context.getExternalFilesDir(null) ?: context.filesDir
+        File(storageFolder, "recordings").apply { mkdirs() }.let { recordingsFolder ->
+            File(recordingsFolder, "recording_1.m4a").writeBytes(byteArrayOf(0))
+            File(recordingsFolder, "recording_2.mp4").writeBytes(byteArrayOf(0))
+        }
+        renderAndCheck(RecorderActivity::class.java, "recorder_takes_dark", R.id.recorderTakesRecyclerView)
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
     fun tunerShowsTheGauge() = renderAndCheck(TunerActivity::class.java, "tuner_dark", R.id.tunerGaugeView)
 
     @Test
     @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
     fun practiceShowsTheStartButton() = renderAndCheck(PracticeActivity::class.java, "practice_dark", R.id.practiceStartButton)
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun songLibraryShowsTheAddSongButton() =
+        renderAndCheck(SongLibraryActivity::class.java, "library_dark", R.id.songLibraryAddSongButton)
 
     @Test
     fun practiceShowsTheStartButtonInLightTheme() =

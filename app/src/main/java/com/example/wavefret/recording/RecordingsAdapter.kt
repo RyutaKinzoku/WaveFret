@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -18,12 +19,14 @@ import com.google.android.material.button.MaterialButton
  * @property displayFormatter Builds each take's title, length and spoken description. Type: RecordingDisplayFormatter
  * @property onPlayStopClicked Called with a take when its play/stop button is tapped. Type: (RecordingInfo) -> Unit
  * @property onDeleteClicked Called with a take when its delete button is tapped. Type: (RecordingInfo) -> Unit
+ * @property onShareClicked Called with a take when its share button is tapped. Type: (RecordingInfo) -> Unit
  * @property isPlaying Reports whether a given file path is currently playing. Type: (String) -> Boolean
  */
 class RecordingsAdapter(
     private val displayFormatter: RecordingDisplayFormatter,
     private val onPlayStopClicked: (RecordingInfo) -> Unit,
     private val onDeleteClicked: (RecordingInfo) -> Unit,
+    private val onShareClicked: (RecordingInfo) -> Unit,
     private val isPlaying: (String) -> Boolean
 ) : ListAdapter<RecordingInfo, RecordingsAdapter.RecordingViewHolder>(RecordingDiffCallback()) {
 
@@ -49,7 +52,8 @@ class RecordingsAdapter(
             displayFormatter = displayFormatter,
             isCurrentlyPlaying = isPlaying(recording.filePath),
             onPlayStopClicked = { onPlayStopClicked(recording) },
-            onDeleteClicked = { onDeleteClicked(recording) }
+            onDeleteClicked = { onDeleteClicked(recording) },
+            onShareClicked = { onShareClicked(recording) }
         )
     }
 
@@ -86,6 +90,7 @@ class RecordingsAdapter(
         private val durationTextView: TextView = rootView.findViewById(R.id.recordingDurationTextView)
         private val playStopButton: MaterialButton = rootView.findViewById(R.id.recordingPlayStopButton)
         private val deleteButton: MaterialButton = rootView.findViewById(R.id.recordingDeleteButton)
+        private val shareButton: MaterialButton = rootView.findViewById(R.id.recordingShareButton)
         private val textContainer: View = rootView.findViewById(R.id.recordingTextContainer)
 
         /**
@@ -94,6 +99,7 @@ class RecordingsAdapter(
          * @param isCurrentlyPlaying Whether this take is playing. Type: Boolean
          * @param onPlayStopClicked Called when play/stop is tapped. Type: () -> Unit
          * @param onDeleteClicked Called when delete is tapped. Type: () -> Unit
+         * @param onShareClicked Called when share is tapped. Type: () -> Unit
          * @return Unit
          */
         fun bind(
@@ -101,17 +107,32 @@ class RecordingsAdapter(
             displayFormatter: RecordingDisplayFormatter,
             isCurrentlyPlaying: Boolean,
             onPlayStopClicked: () -> Unit,
-            onDeleteClicked: () -> Unit
+            onDeleteClicked: () -> Unit,
+            onShareClicked: () -> Unit
         ) {
             val context = itemView.context
             val title = displayFormatter.formatTitle(recording)
             titleTextView.text = title
-            durationTextView.text = displayFormatter.formatDuration(recording)
+            val isVideo = recording.mediaType == RecordingMediaType.VIDEO
+            val duration = displayFormatter.formatDuration(recording)
+            durationTextView.text = if (isVideo) context.getString(R.string.recording_video_label, duration) else duration
+            val videoIcon = if (isVideo) AppCompatResources.getDrawable(context, R.drawable.ic_videocam) else null
+            val iconSizePx = context.resources.getDimensionPixelSize(R.dimen.space_m)
+            videoIcon?.setBounds(0, 0, iconSizePx, iconSizePx)
+            durationTextView.setCompoundDrawablesRelative(videoIcon, null, null, null)
+            durationTextView.compoundDrawablePadding = context.resources.getDimensionPixelSize(R.dimen.space_xs)
             textContainer.contentDescription = displayFormatter.formatAccessibilityDescription(recording)
             playStopButton.setIconResource(if (isCurrentlyPlaying) R.drawable.ic_stop else R.drawable.ic_play)
             playStopButton.contentDescription = context.getString(
-                if (isCurrentlyPlaying) R.string.recording_stop_description else R.string.recording_play_description, title
+                when {
+                    isVideo -> R.string.recording_play_video_description
+                    isCurrentlyPlaying -> R.string.recording_stop_description
+                    else -> R.string.recording_play_description
+                },
+                title
             )
+            shareButton.contentDescription = context.getString(R.string.recording_share_description, title)
+            shareButton.setOnClickListener { onShareClicked() }
             deleteButton.contentDescription = context.getString(R.string.recording_delete_description, title)
             playStopButton.setOnClickListener { onPlayStopClicked() }
             deleteButton.setOnClickListener { onDeleteClicked() }

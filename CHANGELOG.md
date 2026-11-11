@@ -142,3 +142,33 @@
 - `PracticeStatsCalculator`, `PracticeSummaryBuilder`, `PerformanceRating`.
 - Robolectric `ScreenRenderTest` (every screen, light and dark).
 - `docs/QUALITY.md`: ISO/IEC 25010:2023 quality model.
+
+## [0.7.0] - 2026-11-11 - Song library, more formats, video and sharing
+
+### Added
+- Song library (Home → Your songs → Library): search, All / My songs /
+  Exercises filters, and sorting by easiest, hardest or A–Z. Every song
+  shows its level, tempo, length and best score.
+- "Add a song": open a file, paste a tab, or get help with sheet-music
+  PDFs and photos (convert to MusicXML with MuseScore, then add it).
+- New formats: Guitar Pro 7+ (`.gp`) and MIDI (`.mid`). The bass track is
+  picked automatically (named "bass", bass instrument, or lowest part).
+- "Share to WaveFret": tabs, MusicXML, MIDI and Guitar Pro files (and
+  copied tab text) can be shared into WaveFret from any app.
+- Lessons keep each note's original timing (`timing:` line in tab text),
+  ready for play-along in a later version.
+- Recorder: camera switch for video takes with sound (front or back
+  camera, live preview), a video player, and a Share button on every take
+  that opens Android's share sheet.
+
+### Fixed
+- Guitar Pro archives with unusual zip headers are now read correctly
+  (`ZipArchiveReader` reads the central directory).
+
+### Architecture
+- `NoteEvent`, `TimedScore`, `NoteEventsLessonBuilder` (shared by every
+  timed source), `MidiFileParser`, `GuitarProFileParser`,
+  `SongFileFormatDetector`, `SongFileImporter`, `SafeXmlDocumentParser`,
+  `SongLibraryQuery`, `RecordingMediaType`, `CameraXVideoRecorder`,
+  `RecordingSharer`, `VideoPlayerActivity`, `SongLibraryActivity`.
+- New dependency: CameraX 1.6.2.

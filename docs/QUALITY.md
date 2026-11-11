@@ -2,7 +2,7 @@
 
 This document maps each product-quality characteristic of ISO/IEC 25010:2023
 to what WaveFret does about it, how that is verified, and what is still
-open. It is updated with every release; the current state is **0.6.0**.
+open. It is updated with every release; the current state is **0.7.0**.
 
 Verification legend: **UT** = JUnit unit test, **RT** = Robolectric screen
 test (`ScreenRenderTest`, renders every screen in light/dark),
@@ -31,7 +31,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Sub-characteristic | How | Verified by |
 |---|---|---|
 | Co-existence | Mic is held only while Tuner/Practice/Recorder are visible; playback stops when leaving the recorder. | DEV |
-| Interoperability | Imports the two common bass formats: ASCII tabs as posted online and MusicXML 4.0 (plain or `.mxl`). Exports its own human-readable tab text. | UT (`AsciiTabParser`, `MusicXmlBassParser`, `MusicXmlFileReader`, `TabTextWriter` round trip) |
+| Interoperability | Imports ASCII tabs, MusicXML 4.0 (plain or `.mxl`), Guitar Pro 7+ (`.gp`) and MIDI; receives files and text from any app through the share sheet; shares takes out through the share sheet. Exports its own human-readable tab text. | UT (all parsers, `ZipArchiveReader`, `SongFileImporter`, `TabTextWriter` round trip), DEV (share sheet) |
 
 ## 4. Interaction capability (usability)
 
@@ -59,8 +59,8 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 
 | Sub-characteristic | How | Verified by |
 |---|---|---|
-| Confidentiality | Only `RECORD_AUDIO` is requested, and only when a screen needs it; no `INTERNET` permission, so nothing can leave the device; data lives in app-specific storage. | Manifest review |
-| Integrity | The MusicXML parser does not expand entities or fetch external DTDs (XXE-safe); file names are URL-encoded so titles can't escape the storage folder. | UT |
+| Confidentiality | `RECORD_AUDIO` and `CAMERA` are requested only when a screen needs them; no `INTERNET` permission. Takes leave the device only when the player shares one: a FileProvider exposes just that file, read-only, to the app they pick. | Manifest review |
+| Integrity | All XML (MusicXML, Guitar Pro) goes through `SafeXmlDocumentParser` (no entity expansion, no external DTDs); file names are URL-encoded so titles can't escape the storage folder; shared files are parsed, never executed. | UT |
 | Accountability / authenticity | Not applicable: single-user, no accounts. | — |
 
 ## 7. Maintainability

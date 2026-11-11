@@ -16,4 +16,10 @@ class RecordingFileNamerTest {
         val fileNamer = RecordingFileNamer(clock = FakeClock(fixedTimeMillis = 42L))
         assertEquals("recording_42.m4a", fileNamer.generateFileName())
     }
+
+    @Test
+    fun videoTakesGetAnMp4Name() {
+        val namer = RecordingFileNamer(FakeClock(fixedTimeMillis = 42L))
+        assertEquals("recording_42.mp4", namer.generateFileName(RecordingMediaType.VIDEO))
+    }
 }

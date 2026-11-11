@@ -19,14 +19,12 @@ import com.google.android.material.color.MaterialColors
  * [com.example.wavefret.practice.progression.ExercisePickerItemsBuilder].
  *
  * @property pickerItems Rows to show, easiest first. Type: List<ExercisePickerItem>
- * @property importedTitles Titles of imported songs, which can be deleted. Type: Set<String>
  * @property describeExercise Builds a row's secondary line. Type: (ExercisePickerItem) -> String
  * @property onExerciseChosen Called when a row is tapped. Type: (ExercisePickerItem) -> Unit
  * @property onDeleteClicked Called when an imported song's delete button is tapped. Type: (ExercisePickerItem) -> Unit
  */
 class ExercisePickerAdapter(
     private val pickerItems: List<ExercisePickerItem>,
-    private val importedTitles: Set<String>,
     private val describeExercise: (ExercisePickerItem) -> String,
     private val onExerciseChosen: (ExercisePickerItem) -> Unit,
     private val onDeleteClicked: (ExercisePickerItem) -> Unit
@@ -56,7 +54,7 @@ class ExercisePickerAdapter(
         holder.bind(
             pickerItem = pickerItem,
             detailText = describeExercise(pickerItem),
-            isDeletable = pickerItem.exercise.title in importedTitles,
+            isDeletable = pickerItem.isImported,
             onChosen = { onExerciseChosen(pickerItem) },
             onDelete = { onDeleteClicked(pickerItem) }
         )

@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: 0.6.0 — redesigned UI on top of v4 (difficulty & progression)
+## Status: 0.7.0 — song library, Guitar Pro / MIDI import, video takes and sharing
 
 The current build lets you:
 
@@ -14,9 +14,12 @@ The current build lets you:
   **wait mode** (the tab only advances once you play the right note) or
   **tempo mode** (a metronome counts you in and each note is scored as
   hit or missed on its beat);
-- import songs to practice (v3): paste an ASCII bass tab from the
-  internet or WaveFret tab text, or open a MusicXML (`.musicxml`, `.xml`,
-  `.mxl`) file. Imported songs are stored as text in app storage;
+- add the songs you want to learn (v3, 0.7): paste an ASCII bass tab,
+  or open/share a Guitar Pro 7+ (`.gp`), MIDI (`.mid`) or MusicXML
+  (`.musicxml`, `.xml`, `.mxl`) file. PDFs and photos of sheet music must
+  first be converted to MusicXML (e.g. with MuseScore). Songs live in a
+  searchable library sorted by difficulty;
+- record audio or video takes and share them with any app (0.7);
 - follow a learning path (v4): exercises are rated Beginner /
   Intermediate / Advanced by a heuristic, listed easiest first with your
   best score, and the easiest one not yet mastered (90%+ in tempo mode)
