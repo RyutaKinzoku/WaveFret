@@ -71,3 +71,28 @@
   SilenceGate to `common/audio`, so `practice` never depends on `tuner`.
 - Moved the audio test doubles out of the shipped source set into
   `test/common/audio`.
+
+## [0.4.0] - 2026-11-10 - v3: Song import
+
+### Added
+- "Import tab" on the practice screen: paste an ASCII bass tab as found
+  online (`G|--…`, `D|--…`, `A|--…`, `E|--…` systems; surrounding text,
+  lyrics and technique marks like `h`, `p`, `/`, `~` are ignored) or
+  WaveFret tab text, with an optional title and tempo.
+- "Open MusicXML…" in the import dialog: reads the first part of a
+  `.musicxml`/`.xml` file or compressed `.mxl` archive. Tab string/fret
+  markings are kept; plain notation is placed on the fretboard near the
+  previous note's hand position. Rests, chord tones and tied
+  continuations are skipped and `<transpose>` is applied.
+- Imported songs are saved as WaveFret tab text in `imported_tabs/` and
+  listed after the built-in exercises.
+
+### Architecture
+- New `practice.songimport` package: AsciiTabParser, SongImporter,
+  ImportedExercisesRepository, FretboardPositionFinder,
+  MusicXmlBassParser, MusicXmlFileReader.
+- New TabTextWriter, the inverse of TabTextParser.
+
+### Not included
+- YouTube transcription (Demucs + basic-pitch) is deferred: it needs an
+  off-device ML step. PDF/photo OCR remains ruled out.
