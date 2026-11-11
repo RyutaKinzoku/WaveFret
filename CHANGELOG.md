@@ -42,3 +42,32 @@
   PcmAudioSource/AudioRecordPcmSource) and `common/music`
   (NoteMapper, Cents) — all reachable only from `recording`/`tuner`,
   never the reverse.
+
+## [0.3.0] - 2026-11-10 - v2: Practice engine
+
+### Added
+- Practice screen, opened from a new main-screen button: pick a built-in
+  exercise, choose Wait or Tempo mode, and play along on a scrolling tab.
+- Wait mode: the expected note is shown and the tab does not advance
+  until it is heard (within 40 cents). A sustained note never counts for
+  a repeat of the same note — it must be re-plucked — while a legato
+  move to a different note registers immediately.
+- Tempo mode: a metronome count-in, then one note per beat; each note
+  can be hit within half a beat of its beat and is otherwise scored as a
+  miss. Final score shown as a percentage of notes hit.
+- WaveFret's own plain-text tab format (`title:`, `tempo:`, then tokens
+  like `E0 A2 D5`, `#` comments) and five built-in exercises written in it.
+
+### Architecture
+- New `practice` package: TabNote, Exercise, TabTextParser,
+  BuiltInExercises, NoteMatcher, HitConfirmer, ExpectedNoteJudge,
+  PracticeSession with WaitModePracticeSession and
+  TempoModePracticeSession, PracticeController, PracticeDisplayFormatter,
+  TabStaffLayout, TabStaffView, PracticeActivity.
+- New common pieces: `fretFrequencyHz`, `BeatClock`,
+  `ElapsedRealtimeClock`, `Metronome`/`MetronomeClickPlayer`/
+  `ToneGeneratorClickPlayer`.
+- Moved BassString/BassTuning/BassTunings to `common/music` and
+  SilenceGate to `common/audio`, so `practice` never depends on `tuner`.
+- Moved the audio test doubles out of the shipped source set into
+  `test/common/audio`.

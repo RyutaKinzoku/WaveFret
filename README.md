@@ -4,11 +4,16 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: v0 — Recorder MVP complete
+## Status: v2 — Practice engine complete
 
-The current build lets you record practice clips, browse them in a list
-with duration and timestamp, play them back one at a time, and delete
-the ones you don't need.
+The current build lets you:
+
+- record practice clips, browse, play back and delete them (v0);
+- tune your bass with a live needle tuner (v1);
+- practice built-in exercises against a scrolling tab (v2), either in
+  **wait mode** (the tab only advances once you play the right note) or
+  **tempo mode** (a metronome counts you in and each note is scored as
+  hit or missed on its beat).
 
 ## Requirements
 
@@ -39,17 +44,21 @@ meaningful logic left in those wrappers to unit test.
 
 ## Architecture
 
-Two top-level packages under `com.example.wavefret`:
+Top-level packages under `com.example.wavefret`:
 
-- **`common`** — generic infrastructure with no knowledge of recording:
-  `time` (Clock, DateFormatter, DurationFormatter), `permission`
-  (PermissionChecker), `storage` (AppStorageDirectoryProvider).
-- **`recording`** — everything specific to recording bass practice:
-  session control, the recordings list, playback, and the
-  recording-specific use of permissions.
+- **`common`** — generic infrastructure with no knowledge of any one
+  feature: `audio` (PCM source, YIN pitch detection, low-pass filter,
+  silence gate, metronome), `music` (notes, cents, fret frequencies,
+  bass tunings), `time` (Clock, BeatClock, formatters), `permission`,
+  `storage`.
+- **`recording`** — recording, listing, playback and deletion of clips.
+- **`tuner`** — the live tuner pipeline and needle display.
+- **`practice`** — the tab model and text-tab parser, built-in
+  exercises, wait/tempo practice sessions, the practice pipeline and the
+  scrolling tab display.
 
-The dependency direction is one-way: `recording` depends on `common`,
-never the reverse. This keeps generic pieces reusable by future
+The dependency direction is one-way: feature packages depend on
+`common`, never the reverse, and never on each other. This keeps generic pieces reusable by future
 features (e.g. a tuner or practice-tracking module) without those
 features reaching into `recording`'s internals.
 
@@ -63,9 +72,9 @@ hardware.
 ## Roadmap
 
 - **v0** — Recorder (done): record, list, play back, delete
-- **v1** — Tuner: pitch detection via YIN algorithm
-- **v2** — Practice engine: follow a tab, note by note, waiting for the
-  correct pitch before advancing
+- **v1** — Tuner (done): pitch detection via YIN algorithm
+- **v2** — Practice engine (done): follow a tab note by note in wait
+  mode, or in time with a metronome in tempo mode
 - **v3** — Song import: text tabs, MusicXML, and (longer-term) audio
   transcription from YouTube via Demucs + basic-pitch
 - **v4** — Difficulty scoring and progressive song ordering
