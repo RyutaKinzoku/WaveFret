@@ -6,8 +6,7 @@ import android.graphics.Paint
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
-import androidx.core.content.ContextCompat
-import com.example.wavefret.R
+import com.google.android.material.color.MaterialColors
 
 /**
  * Draws the exercise as a horizontally scrolling bass tab: one line per
@@ -24,8 +23,8 @@ class TabStaffView @JvmOverloads constructor(
 ) : View(context, attributeSet) {
 
     private val density = resources.displayMetrics.density
-    private val stringLinePaint = strokePaint(R.color.tab_staff_string_line, STRING_LINE_WIDTH_DP)
-    private val playheadPaint = strokePaint(R.color.tab_staff_playhead, PLAYHEAD_WIDTH_DP)
+    private val stringLinePaint = strokePaint(com.google.android.material.R.attr.colorOutlineVariant, STRING_LINE_WIDTH_DP)
+    private val playheadPaint = strokePaint(androidx.appcompat.R.attr.colorPrimary, PLAYHEAD_WIDTH_DP)
     private val noteBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val fretNumberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
@@ -128,31 +127,43 @@ class TabStaffView @JvmOverloads constructor(
      * @return Unit
      */
     private fun drawNote(canvas: Canvas, centerX: Float, centerY: Float, fret: Int, tabNoteStatus: TabNoteStatus) {
-        noteBackgroundPaint.color = ContextCompat.getColor(context, backgroundColorFor(tabNoteStatus))
-        canvas.drawCircle(centerX, centerY, NOTE_RADIUS_DP * density, noteBackgroundPaint)
-        fretNumberPaint.color = ContextCompat.getColor(context, R.color.tab_staff_fret_text)
+        noteBackgroundPaint.color = MaterialColors.getColor(this, backgroundColorAttributeFor(tabNoteStatus))
+        val radius = (if (tabNoteStatus == TabNoteStatus.CURRENT) CURRENT_NOTE_RADIUS_DP else NOTE_RADIUS_DP) * density
+        canvas.drawCircle(centerX, centerY, radius, noteBackgroundPaint)
+        fretNumberPaint.color = MaterialColors.getColor(this, textColorAttributeFor(tabNoteStatus))
         val baselineY = centerY - (fretNumberPaint.descent() + fretNumberPaint.ascent()) / 2
         canvas.drawText(fret.toString(), centerX, baselineY, fretNumberPaint)
     }
 
     /**
      * @param tabNoteStatus Status of a note. Type: TabNoteStatus
-     * @return Color resource for that note's background. Type: Int
+     * @return Theme colour role for that note's background. Type: Int
      */
-    private fun backgroundColorFor(tabNoteStatus: TabNoteStatus): Int = when (tabNoteStatus) {
-        TabNoteStatus.HIT -> R.color.tab_note_hit
-        TabNoteStatus.MISSED -> R.color.tab_note_missed
-        TabNoteStatus.CURRENT -> R.color.tab_note_current
-        TabNoteStatus.UPCOMING -> R.color.tab_note_upcoming
+    private fun backgroundColorAttributeFor(tabNoteStatus: TabNoteStatus): Int = when (tabNoteStatus) {
+        TabNoteStatus.HIT -> com.google.android.material.R.attr.colorSecondary
+        TabNoteStatus.MISSED -> androidx.appcompat.R.attr.colorError
+        TabNoteStatus.CURRENT -> androidx.appcompat.R.attr.colorPrimary
+        TabNoteStatus.UPCOMING -> com.google.android.material.R.attr.colorSurfaceContainerHighest
     }
 
     /**
-     * @param colorRes Color resource for the stroke. Type: Int
+     * @param tabNoteStatus Status of a note. Type: TabNoteStatus
+     * @return Theme colour role for that note's fret number, contrasting with its background. Type: Int
+     */
+    private fun textColorAttributeFor(tabNoteStatus: TabNoteStatus): Int = when (tabNoteStatus) {
+        TabNoteStatus.HIT -> com.google.android.material.R.attr.colorOnSecondary
+        TabNoteStatus.MISSED -> com.google.android.material.R.attr.colorOnError
+        TabNoteStatus.CURRENT -> com.google.android.material.R.attr.colorOnPrimary
+        TabNoteStatus.UPCOMING -> com.google.android.material.R.attr.colorOnSurface
+    }
+
+    /**
+     * @param colorAttribute Theme colour role for the stroke. Type: Int
      * @param strokeWidthDp Stroke width, in dp. Type: Float
      * @return A configured stroke paint. Type: Paint
      */
-    private fun strokePaint(colorRes: Int, strokeWidthDp: Float) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = ContextCompat.getColor(context, colorRes)
+    private fun strokePaint(colorAttribute: Int, strokeWidthDp: Float) = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = MaterialColors.getColor(this@TabStaffView, colorAttribute)
         strokeWidth = strokeWidthDp * density
         style = Paint.Style.STROKE
     }
@@ -160,6 +171,7 @@ class TabStaffView @JvmOverloads constructor(
     private companion object {
         const val NOTE_SPACING_DP = 72f
         const val NOTE_RADIUS_DP = 16f
+        const val CURRENT_NOTE_RADIUS_DP = 20f
         const val VERTICAL_PADDING_DP = 24f
         const val STRING_LINE_WIDTH_DP = 2f
         const val PLAYHEAD_WIDTH_DP = 3f

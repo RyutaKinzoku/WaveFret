@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- WaveFret colour scheme (dark). -->
+<resources>
+    <color name="wf_primary">#FFB95C</color>
+    <color name="wf_on_primary">#482900</color>
+    <color name="wf_primary_container">#673D00</color>
+    <color name="wf_on_primary_container">#FFDDB7</color>
+    <color name="wf_secondary">#80D4D6</color>
+    <color name="wf_on_secondary">#003738</color>
+    <color name="wf_secondary_container">#004F51</color>
+    <color name="wf_on_secondary_container">#9CF1F2</color>
+    <color name="wf_error">#FFB4AB</color>
+    <color name="wf_on_error">#690005</color>
+    <color name="wf_error_container">#93000A</color>
+    <color name="wf_on_error_container">#FFDAD6</color>
+    <color name="wf_surface">#17130F</color>
+    <color name="wf_on_surface">#ECE0D7</color>
+    <color name="wf_on_surface_variant">#D4C4B5</color>
+    <color name="wf_outline">#9C8E80</color>
+    <color name="wf_outline_variant">#50453A</color>
+    <color name="wf_surface_container_lowest">#110D0A</color>
+    <color name="wf_surface_container_low">#201B16</color>
+    <color name="wf_surface_container">#241F1A</color>
+    <color name="wf_surface_container_high">#2F2924</color>
+    <color name="wf_surface_container_highest">#3A342E</color>
+</resources>

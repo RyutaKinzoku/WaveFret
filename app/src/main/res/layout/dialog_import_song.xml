@@ -7,35 +7,52 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingHorizontal="@dimen/space_l"
+        android:paddingTop="@dimen/space_s">
 
-        <EditText
-            android:id="@+id/importSongTitleEditText"
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:autofillHints=""
-            android:hint="@string/import_song_title_hint"
-            android:inputType="textCapSentences" />
+            android:hint="@string/import_song_title_hint">
 
-        <EditText
-            android:id="@+id/importSongTempoEditText"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/importSongTitleEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapSentences" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:autofillHints=""
-            android:hint="@string/import_song_tempo_hint"
-            android:inputType="number" />
+            android:layout_marginTop="@dimen/space_s"
+            android:hint="@string/import_song_tempo_hint">
 
-        <EditText
-            android:id="@+id/importSongTabEditText"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/importSongTempoEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLength="3" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minLines="6"
-            android:gravity="top|start"
-            android:autofillHints=""
-            android:fontFamily="monospace"
-            android:hint="@string/import_song_tab_hint"
-            android:inputType="textMultiLine|textNoSuggestions" />
+            android:layout_marginTop="@dimen/space_s"
+            android:hint="@string/import_song_tab_hint">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/importSongTabEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:gravity="top|start"
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:minLines="6" />
+        </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 </ScrollView>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- End-of-run card: the peak moment of a session. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/practiceSummaryRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/space_l"
+    android:paddingBottom="@dimen/space_l">
+
+    <com.google.android.material.bottomsheet.BottomSheetDragHandleView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <ImageView
+        android:id="@+id/practiceSummaryTrophyImageView"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/bg_icon_badge"
+        android:importantForAccessibility="no"
+        android:padding="@dimen/space_m"
+        android:src="@drawable/ic_trophy"
+        app:tint="?attr/colorOnPrimaryContainer" />
+
+    <TextView
+        android:id="@+id/practiceSummaryRatingTextView"
+        style="@style/Widget.WaveFret.SectionHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_m"
+        tools:text="Great run!" />
+
+    <TextView
+        android:id="@+id/practiceSummaryScoreTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:textAppearance="@style/TextAppearance.WaveFret.Display"
+        android:textColor="?attr/colorPrimary"
+        tools:text="85%" />
+
+    <TextView
+        android:id="@+id/practiceSummaryHitsTextView"
+        style="@style/Widget.WaveFret.SecondaryText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:text="7 hit · 1 missed" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/practiceSummaryBadgeGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_m">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/practiceSummaryNewBestChip"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:text="@string/summary_new_best"
+            app:chipIcon="@drawable/ic_streak" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/practiceSummaryMasteredChip"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:text="@string/summary_mastered"
+            app:chipIcon="@drawable/ic_check_circle" />
+    </com.google.android.material.chip.ChipGroup>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/practiceSummaryNextButton"
+        style="@style/Widget.WaveFret.PrimaryAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_l"
+        app:icon="@drawable/ic_chevron_right"
+        app:iconGravity="textEnd"
+        tools:text="Next: Root-fifth groove" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/practiceSummaryTryAgainButton"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:minHeight="56dp"
+        android:text="@string/summary_try_again"
+        app:icon="@drawable/ic_replay"
+        app:iconGravity="textStart" />
+</LinearLayout>

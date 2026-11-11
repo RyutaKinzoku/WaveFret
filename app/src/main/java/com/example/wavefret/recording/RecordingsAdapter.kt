@@ -3,22 +3,22 @@ package com.example.wavefret.recording
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.R
+import com.google.android.material.button.MaterialButton
 
 /**
- * RecyclerView adapter that displays a list of recordings, delegating each
- * item's text to RecordingDisplayFormatter and each row's Play/Stop and
- * Delete button taps upward.
+ * RecyclerView adapter showing each take as a card with a play/stop icon
+ * button, its date and length, and a delete icon button. Taps are passed
+ * upward; text comes from the tested [RecordingDisplayFormatter].
  *
- * @property displayFormatter Builds each item's display string. Type: RecordingDisplayFormatter
- * @property onPlayStopClicked Called with a recording when its Play/Stop button is tapped. Type: (RecordingInfo) -> Unit
- * @property onDeleteClicked Called with a recording when its Delete button is tapped. Type: (RecordingInfo) -> Unit
- * @property isPlaying Reports whether a given file path is currently playing, to choose the button label. Type: (String) -> Boolean
+ * @property displayFormatter Builds each take's title, length and spoken description. Type: RecordingDisplayFormatter
+ * @property onPlayStopClicked Called with a take when its play/stop button is tapped. Type: (RecordingInfo) -> Unit
+ * @property onDeleteClicked Called with a take when its delete button is tapped. Type: (RecordingInfo) -> Unit
+ * @property isPlaying Reports whether a given file path is currently playing. Type: (String) -> Boolean
  */
 class RecordingsAdapter(
     private val displayFormatter: RecordingDisplayFormatter,
@@ -33,14 +33,13 @@ class RecordingsAdapter(
      * @return A new RecordingViewHolder wrapping the inflated item layout. Type: RecordingViewHolder
      */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecordingViewHolder {
-        val inflatedView = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_recording, parent, false)
+        val inflatedView = LayoutInflater.from(parent.context).inflate(R.layout.item_recording, parent, false)
         return RecordingViewHolder(inflatedView)
     }
 
     /**
      * @param holder ViewHolder to bind data into. Type: RecordingViewHolder
-     * @param position Index of the recording to bind. Type: Int
+     * @param position Index of the take to bind. Type: Int
      * @return Unit
      */
     override fun onBindViewHolder(holder: RecordingViewHolder, position: Int) {
@@ -55,8 +54,7 @@ class RecordingsAdapter(
     }
 
     /**
-     * Refreshes only the rows for the given file paths, instead of redrawing
-     * the whole list, since only their Play/Stop label needs to change.
+     * Refreshes only the rows whose play state changed.
      *
      * @param previousFilePath File that was playing before the change, or null. Type: String?
      * @param currentFilePath File that is playing now, or null. Type: String?
@@ -64,36 +62,38 @@ class RecordingsAdapter(
      */
     fun notifyPlaybackChanged(previousFilePath: String?, currentFilePath: String?) {
         notifyRowForFilePath(previousFilePath)
-        notifyRowForFilePath(currentFilePath)
+        if (currentFilePath != previousFilePath) notifyRowForFilePath(currentFilePath)
     }
 
     /**
-     * @param filePath File path to locate in the current list, or null to no-op. Type: String?
+     * @param filePath File whose row should be redrawn, or null for none. Type: String?
      * @return Unit
      */
     private fun notifyRowForFilePath(filePath: String?) {
         if (filePath == null) return
-        val index = currentList.indexOfFirst { it.filePath == filePath }
-        if (index != -1) notifyItemChanged(index)
+        val rowIndex = currentList.indexOfFirst { it.filePath == filePath }
+        if (rowIndex >= 0) notifyItemChanged(rowIndex)
     }
 
     /**
-     * Holds the views for a single recording list item.
+     * Holds one take card's views.
      *
-     * @property rootView Root view of the inflated item layout. Type: View
+     * @param rootView The inflated item layout. Type: View
      */
-    class RecordingViewHolder(private val rootView: View) : RecyclerView.ViewHolder(rootView) {
+    class RecordingViewHolder(rootView: View) : RecyclerView.ViewHolder(rootView) {
 
-        private val tvRecordingLabel: TextView = rootView.findViewById(R.id.tvRecordingLabel)
-        private val btnPlayStop: Button = rootView.findViewById(R.id.btnPlayStop)
-        private val btnDelete: Button = rootView.findViewById(R.id.btnDelete)
+        private val titleTextView: TextView = rootView.findViewById(R.id.recordingTitleTextView)
+        private val durationTextView: TextView = rootView.findViewById(R.id.recordingDurationTextView)
+        private val playStopButton: MaterialButton = rootView.findViewById(R.id.recordingPlayStopButton)
+        private val deleteButton: MaterialButton = rootView.findViewById(R.id.recordingDeleteButton)
+        private val textContainer: View = rootView.findViewById(R.id.recordingTextContainer)
 
         /**
-         * @param recording Recording to display in this row. Type: RecordingInfo
-         * @param displayFormatter Builds the display string for the recording. Type: RecordingDisplayFormatter
-         * @param isCurrentlyPlaying Whether this row's file is currently playing. Type: Boolean
-         * @param onPlayStopClicked Called when this row's Play/Stop button is tapped. Type: () -> Unit
-         * @param onDeleteClicked Called when this row's Delete button is tapped. Type: () -> Unit
+         * @param recording Take to display. Type: RecordingInfo
+         * @param displayFormatter Builds the take's text. Type: RecordingDisplayFormatter
+         * @param isCurrentlyPlaying Whether this take is playing. Type: Boolean
+         * @param onPlayStopClicked Called when play/stop is tapped. Type: () -> Unit
+         * @param onDeleteClicked Called when delete is tapped. Type: () -> Unit
          * @return Unit
          */
         fun bind(
@@ -103,25 +103,38 @@ class RecordingsAdapter(
             onPlayStopClicked: () -> Unit,
             onDeleteClicked: () -> Unit
         ) {
-            tvRecordingLabel.text = displayFormatter.format(recording)
-            btnPlayStop.text = rootView.context.getString(
-                if (isCurrentlyPlaying) R.string.stop else R.string.play
+            val context = itemView.context
+            val title = displayFormatter.formatTitle(recording)
+            titleTextView.text = title
+            durationTextView.text = displayFormatter.formatDuration(recording)
+            textContainer.contentDescription = displayFormatter.formatAccessibilityDescription(recording)
+            playStopButton.setIconResource(if (isCurrentlyPlaying) R.drawable.ic_stop else R.drawable.ic_play)
+            playStopButton.contentDescription = context.getString(
+                if (isCurrentlyPlaying) R.string.recording_stop_description else R.string.recording_play_description, title
             )
-            btnPlayStop.setOnClickListener { onPlayStopClicked() }
-            btnDelete.setOnClickListener { onDeleteClicked() }
+            deleteButton.contentDescription = context.getString(R.string.recording_delete_description, title)
+            playStopButton.setOnClickListener { onPlayStopClicked() }
+            deleteButton.setOnClickListener { onDeleteClicked() }
         }
     }
 
-    /**
-     * Tells ListAdapter how to detect item identity and content changes
-     * between two RecordingInfo lists, so it can compute a minimal update.
-     */
+    /** Detects item identity and content changes between two take lists. */
     private class RecordingDiffCallback : DiffUtil.ItemCallback<RecordingInfo>() {
 
+        /**
+         * @param oldItem Take in the old list. Type: RecordingInfo
+         * @param newItem Take in the new list. Type: RecordingInfo
+         * @return True if both refer to the same file. Type: Boolean
+         */
         override fun areItemsTheSame(oldItem: RecordingInfo, newItem: RecordingInfo): Boolean {
             return oldItem.filePath == newItem.filePath
         }
 
+        /**
+         * @param oldItem Take in the old list. Type: RecordingInfo
+         * @param newItem Take in the new list. Type: RecordingInfo
+         * @return True if nothing displayed has changed. Type: Boolean
+         */
         override fun areContentsTheSame(oldItem: RecordingInfo, newItem: RecordingInfo): Boolean {
             return oldItem == newItem
         }

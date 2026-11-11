@@ -1,6 +1,7 @@
 package com.example.wavefret
 
 import android.content.Context
+import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.permission.MicrophonePermissionManager
 import com.example.wavefret.common.permission.SystemPermissionChecker
 import com.example.wavefret.common.storage.AppStorageDirectoryProvider
@@ -10,13 +11,21 @@ import com.example.wavefret.common.time.DateFormatter
 import com.example.wavefret.common.time.DurationFormatter
 import com.example.wavefret.common.time.SystemClock
 import com.example.wavefret.common.time.SystemDateFormatter
+import com.example.wavefret.practice.BuiltInExercises
+import com.example.wavefret.practice.Exercise
+import com.example.wavefret.practice.TabTextParser
+import com.example.wavefret.practice.TabTextWriter
+import com.example.wavefret.practice.progression.DifficultyScorer
+import com.example.wavefret.practice.progression.ExerciseProgression
+import com.example.wavefret.practice.progression.PracticeResultsRepository
+import com.example.wavefret.practice.songimport.ImportedExercisesRepository
 
 /**
- * Composition root: builds the app's shared, feature-independent
- * dependencies exactly once, so Activities depend on this container
- * instead of each constructing common infrastructure themselves.
+ * Composition root: builds the app's shared dependencies exactly once per
+ * screen, so Activities depend on this container instead of each
+ * constructing infrastructure themselves.
  *
- * @property context Application context used to build Android-backed dependencies. Type: Context
+ * @property context Context used to build Android-backed dependencies. Type: Context
  */
 class AppContainer(private val context: Context) {
 
@@ -38,4 +47,26 @@ class AppContainer(private val context: Context) {
     val appStorageDirectoryProvider: AppStorageDirectoryProvider by lazy {
         ExternalAppStorageDirectoryProvider(context)
     }
+
+    /** Parser for WaveFret tab text in standard tuning. Type: TabTextParser */
+    val tabTextParser: TabTextParser by lazy { TabTextParser(BassTunings.STANDARD) }
+
+    /** Exercises shipped with the app. Type: BuiltInExercises */
+    val builtInExercises: BuiltInExercises by lazy { BuiltInExercises(tabTextParser) }
+
+    /** Songs the player imported. Type: ImportedExercisesRepository */
+    val importedExercisesRepository: ImportedExercisesRepository by lazy {
+        ImportedExercisesRepository(appStorageDirectoryProvider, TabTextWriter(), tabTextParser)
+    }
+
+    /** History of completed practice runs. Type: PracticeResultsRepository */
+    val practiceResultsRepository: PracticeResultsRepository by lazy {
+        PracticeResultsRepository(appStorageDirectoryProvider)
+    }
+
+    /** Difficulty ordering, mastery and recommendations. Type: ExerciseProgression */
+    val exerciseProgression: ExerciseProgression by lazy { ExerciseProgression(DifficultyScorer()) }
+
+    /** @return Built-in exercises followed by imported songs. Type: List<Exercise> */
+    fun allExercises(): List<Exercise> = builtInExercises.all() + importedExercisesRepository.listExercises()
 }

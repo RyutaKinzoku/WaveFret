@@ -1,14 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- WaveFret colour scheme (light). 60% warm neutral surfaces, 30% dark ink, 10% amber accent. -->
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="tuning_status_in_tune">#4CAF50</color>
-    <color name="tuning_status_out_of_tune">#F4511E</color>
-    <color name="tab_staff_string_line">#9E9E9E</color>
-    <color name="tab_staff_playhead">#3F51B5</color>
-    <color name="tab_staff_fret_text">#FFFFFFFF</color>
-    <color name="tab_note_hit">#4CAF50</color>
-    <color name="tab_note_missed">#F4511E</color>
-    <color name="tab_note_current">#3F51B5</color>
-    <color name="tab_note_upcoming">#616161</color>
+    <color name="wf_primary">#8A5300</color>
+    <color name="wf_on_primary">#FFFFFF</color>
+    <color name="wf_primary_container">#FFDDB7</color>
+    <color name="wf_on_primary_container">#2C1700</color>
+    <color name="wf_secondary">#00696B</color>
+    <color name="wf_on_secondary">#FFFFFF</color>
+    <color name="wf_secondary_container">#CCE8E7</color>
+    <color name="wf_on_secondary_container">#051F1F</color>
+    <color name="wf_error">#BA1A1A</color>
+    <color name="wf_on_error">#FFFFFF</color>
+    <color name="wf_error_container">#FFDAD6</color>
+    <color name="wf_on_error_container">#410002</color>
+    <color name="wf_surface">#FFF8F4</color>
+    <color name="wf_on_surface">#201B16</color>
+    <color name="wf_on_surface_variant">#50453A</color>
+    <color name="wf_outline">#827568</color>
+    <color name="wf_outline_variant">#D4C4B5</color>
+    <color name="wf_surface_container_lowest">#FFFFFF</color>
+    <color name="wf_surface_container_low">#FCF2EA</color>
+    <color name="wf_surface_container">#F6ECE4</color>
+    <color name="wf_surface_container_high">#F0E6DE</color>
+    <color name="wf_surface_container_highest">#EBE1D9</color>
+    <color name="wf_launcher_background">#17130F</color>
 </resources>

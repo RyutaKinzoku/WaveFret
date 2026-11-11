@@ -2,95 +2,50 @@ package com.example.wavefret
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.isVisible
+import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.practice.PracticeActivity
-import com.example.wavefret.recording.MediaMetadataRetrieverDurationReader
-import com.example.wavefret.recording.MediaPlayerAudioPlayer
-import com.example.wavefret.recording.MediaRecorderAudioRecorder
-import com.example.wavefret.recording.PlaybackController
-import com.example.wavefret.recording.RecordingDisplayFormatter
-import com.example.wavefret.recording.RecordingFileNamer
-import com.example.wavefret.recording.RecordingInfo
-import com.example.wavefret.recording.RecordingSessionController
-import com.example.wavefret.recording.RecordingState
-import com.example.wavefret.recording.RecordingUiController
-import com.example.wavefret.recording.RecordingsAdapter
-import com.example.wavefret.recording.RecordingsFolderProvider
-import com.example.wavefret.recording.RecordingsRepository
+import com.example.wavefret.practice.labelResourceFor
+import com.example.wavefret.practice.progression.DifficultyScorer
+import com.example.wavefret.practice.progression.PracticeStats
+import com.example.wavefret.practice.progression.PracticeStatsCalculator
+import com.example.wavefret.recording.RecorderActivity
 import com.example.wavefret.tuner.TunerActivity
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.progressindicator.LinearProgressIndicator
+import java.text.NumberFormat
+import java.util.TimeZone
 
 /**
- * App entry point. Sets up edge-to-edge layout, requests microphone access,
- * wires the record/stop toggle button to RecordingUiController and
- * RecordingSessionController, displays, plays back, and deletes past
- * recordings, and launches the tuner and practice screens.
+ * Home: shows progress at a glance (streak, runs this week, mastery), the
+ * tools, and the single next exercise as the primary action in the thumb
+ * zone. New players get onboarding copy; returning players get their streak.
+ *
+ * Android framework glue — the numbers come from the tested
+ * [PracticeStatsCalculator] and [com.example.wavefret.practice.progression.ExerciseProgression]
+ * — so it is verified manually on-device.
  */
 class MainActivity : AppCompatActivity() {
 
-    /** Composition root providing shared, feature-independent dependencies. Type: AppContainer */
     private val appContainer = AppContainer(this)
+    private val practiceStatsCalculator by lazy { PracticeStatsCalculator(appContainer.exerciseProgression) }
+    private val difficultyScorer = DifficultyScorer()
 
-    /** Holds recording UI state (button label, status text), independent of Android Views. Type: RecordingUiController */
-    private val recordingUiController = RecordingUiController()
+    private lateinit var greetingTextView: TextView
+    private lateinit var streakValueTextView: TextView
+    private lateinit var weekValueTextView: TextView
+    private lateinit var masteredValueTextView: TextView
+    private lateinit var masteryProgressIndicator: LinearProgressIndicator
+    private lateinit var continueLabelTextView: TextView
+    private lateinit var continueTitleTextView: TextView
+    private lateinit var continueDetailTextView: TextView
+    private lateinit var practiceButton: Button
 
-    /** Resolves where recording files are stored, as a "recordings" subfolder. Type: RecordingsFolderProvider */
-    private val recordingDirectoryProvider = RecordingsFolderProvider(appContainer.appStorageDirectoryProvider)
-
-    /** Drives the actual MediaRecorder lifecycle for each recording session. Type: RecordingSessionController */
-    private val recordingSessionController = RecordingSessionController(
-        audioRecorder = MediaRecorderAudioRecorder(this),
-        fileNamer = RecordingFileNamer(appContainer.clock),
-        directoryProvider = recordingDirectoryProvider
-    )
-
-    /** Reads the current list of recorded files from disk, including duration, and deletes them. Type: RecordingsRepository */
-    private val recordingsRepository = RecordingsRepository(
-        directoryProvider = recordingDirectoryProvider,
-        audioDurationReader = MediaMetadataRetrieverDurationReader()
-    )
-
-    /** Builds each recording's display text. Type: RecordingDisplayFormatter */
-    private val recordingDisplayFormatter = RecordingDisplayFormatter(
-        dateFormatter = appContainer.dateFormatter,
-        durationFormatter = appContainer.durationFormatter
-    )
-
-    /** Drives playback of a tapped recording, including stopping/switching tracks. Type: PlaybackController */
-    private val playbackController = PlaybackController(
-        audioPlayer = MediaPlayerAudioPlayer(),
-        onPlaybackStateChanged = { previousFilePath, currentFilePath ->
-            refreshPlaybackUi(previousFilePath, currentFilePath)
-        }
-    )
-
-    /** Displays recordings inside rvRecordings and reports Play/Stop/Delete taps. Type: RecordingsAdapter */
-    private val recordingsAdapter = RecordingsAdapter(
-        displayFormatter = recordingDisplayFormatter,
-        onPlayStopClicked = { recording -> playbackController.onItemClicked(recording.filePath) },
-        onDeleteClicked = { recording -> onDeleteRecordingClicked(recording) },
-        isPlaying = { filePath -> playbackController.isPlaying(filePath) }
-    )
-
-    private lateinit var btnToggleRecording: Button
-    private lateinit var tvRecordingStatus: TextView
-    private lateinit var rvRecordings: RecyclerView
-    private lateinit var btnOpenTuner: Button
-    private lateinit var btnOpenPractice: Button
-
-    private val requestAudioPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            onAudioPermissionResult(isGranted)
-        }
+    private var recommendedExerciseTitle: String? = null
 
     /**
      * @param savedInstanceState Previously saved state, or null on first creation. Type: Bundle?
@@ -100,169 +55,93 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        findViewById<android.view.View>(R.id.homeScrollView).applySystemBarPadding(applyTop = true, applyBottom = false)
+        findViewById<android.view.View>(R.id.homeContinueContainer).applySystemBarPadding(applyTop = false, applyBottom = true)
+
+        greetingTextView = findViewById(R.id.homeGreetingTextView)
+        streakValueTextView = findViewById(R.id.homeStreakValueTextView)
+        weekValueTextView = findViewById(R.id.homeWeekValueTextView)
+        masteredValueTextView = findViewById(R.id.homeMasteredValueTextView)
+        masteryProgressIndicator = findViewById(R.id.homeMasteryProgressIndicator)
+        continueLabelTextView = findViewById(R.id.homeContinueLabelTextView)
+        continueTitleTextView = findViewById(R.id.homeContinueTitleTextView)
+        continueDetailTextView = findViewById(R.id.homeContinueDetailTextView)
+        practiceButton = findViewById(R.id.homePracticeButton)
+
+        findViewById<MaterialCardView>(R.id.homeTunerCard).setOnClickListener {
+            startActivity(Intent(this, TunerActivity::class.java))
         }
-
-        btnToggleRecording = findViewById(R.id.btnToggleRecording)
-        tvRecordingStatus = findViewById(R.id.tvStatus)
-        rvRecordings = findViewById(R.id.rvRecordings)
-        btnOpenTuner = findViewById(R.id.btnOpenTuner)
-        btnOpenPractice = findViewById(R.id.btnOpenPractice)
-
-        btnToggleRecording.setOnClickListener { onToggleRecordingClicked() }
-        btnOpenTuner.setOnClickListener { onOpenTunerClicked() }
-        btnOpenPractice.setOnClickListener { onOpenPracticeClicked() }
-        rvRecordings.layoutManager = LinearLayoutManager(this)
-        rvRecordings.adapter = recordingsAdapter
-
-        refreshRecordingUi()
-        refreshRecordingsList()
-        requestAudioPermissionIfNeeded()
-    }
-
-    /**
-     * Stops any in-progress playback when the Activity is destroyed, so the
-     * MediaPlayer doesn't keep running or leak after the screen is gone.
-     *
-     * @return Unit
-     */
-    override fun onDestroy() {
-        playbackController.stopPlayback()
-        super.onDestroy()
-    }
-
-    /**
-     * Delegates the toggle button tap to recordingUiController, then starts
-     * or stops the actual recording session to match the new UI state.
-     * Refuses to start recording if RECORD_AUDIO has not been granted yet.
-     *
-     * @return Unit
-     */
-    private fun onToggleRecordingClicked() {
-        val isCurrentlyIdle = recordingUiController.currentState() == RecordingState.IDLE
-        if (isCurrentlyIdle && appContainer.microphonePermissionManager.needsPermissionRequest()) {
-            Log.w(PERMISSION_LOG_TAG, "Cannot start recording without RECORD_AUDIO permission")
-            return
+        findViewById<MaterialCardView>(R.id.homeRecorderCard).setOnClickListener {
+            startActivity(Intent(this, RecorderActivity::class.java))
         }
-
-        recordingUiController.onToggleRecordingClicked()
-        when (recordingUiController.currentState()) {
-            RecordingState.RECORDING -> recordingSessionController.startNewRecording()
-            RecordingState.IDLE -> {
-                val recordedFilePath = recordingSessionController.stopCurrentRecording()
-                Log.d(RECORDING_LOG_TAG, "Recording saved to $recordedFilePath")
-                refreshRecordingsList()
-            }
+        practiceButton.setOnClickListener {
+            startActivity(PracticeActivity.intentFor(this, recommendedExerciseTitle))
         }
-        refreshRecordingUi()
     }
 
     /**
-     * Launches the tuner screen.
+     * Refreshes progress every time the player comes back, e.g. after a run.
      *
      * @return Unit
      */
-    private fun onOpenTunerClicked() {
-        startActivity(Intent(this, TunerActivity::class.java))
-    }
+    override fun onResume() {
+        super.onResume()
+        val exercises = appContainer.allExercises()
+        val results = appContainer.practiceResultsRepository.listResults()
+        val nowMillis = appContainer.clock.currentTimeMillis()
+        val practiceStats = practiceStatsCalculator.calculate(
+            results, exercises, nowMillis, TimeZone.getDefault().getOffset(nowMillis)
+        )
+        renderProgress(practiceStats)
 
-    /**
-     * Launches the practice screen.
-     *
-     * @return Unit
-     */
-    private fun onOpenPracticeClicked() {
-        startActivity(Intent(this, PracticeActivity::class.java))
-    }
-
-    /**
-     * Shows a confirmation dialog before deleting a recording, since
-     * deletion cannot be undone.
-     *
-     * @param recording Recording the user tapped Delete on. Type: RecordingInfo
-     * @return Unit
-     */
-    private fun onDeleteRecordingClicked(recording: RecordingInfo) {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.delete_recording_title)
-            .setMessage(getString(R.string.delete_recording_message, recording.fileName))
-            .setPositiveButton(R.string.delete) { _, _ -> deleteRecording(recording) }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    /**
-     * Stops playback if the file being deleted is currently playing, then
-     * removes it from disk and refreshes the list.
-     *
-     * @param recording Recording to delete. Type: RecordingInfo
-     * @return Unit
-     */
-    private fun deleteRecording(recording: RecordingInfo) {
-        if (playbackController.isPlaying(recording.filePath)) {
-            playbackController.stopPlayback()
-        }
-        recordingsRepository.deleteRecording(recording.filePath)
-        refreshRecordingsList()
-    }
-
-    /**
-     * @return Unit
-     */
-    private fun refreshRecordingUi() {
-        btnToggleRecording.text = recordingUiController.toggleRecordingButtonLabel()
-        tvRecordingStatus.text = recordingUiController.statusText()
-    }
-
-    /**
-     * Reloads the list of recordings from disk and updates rvRecordings.
-     *
-     * @return Unit
-     */
-    private fun refreshRecordingsList() {
-        recordingsAdapter.submitList(recordingsRepository.listRecordings())
-    }
-
-    /**
-     * Refreshes only the rows affected by a playback state change, instead
-     * of redrawing the whole list.
-     *
-     * @param previousFilePath File that was playing before the change, or null. Type: String?
-     * @param currentFilePath File that is playing now, or null. Type: String?
-     * @return Unit
-     */
-    private fun refreshPlaybackUi(previousFilePath: String?, currentFilePath: String?) {
-        recordingsAdapter.notifyPlaybackChanged(previousFilePath, currentFilePath)
-    }
-
-    /**
-     * @return Unit
-     */
-    private fun requestAudioPermissionIfNeeded() {
-        if (appContainer.microphonePermissionManager.needsPermissionRequest()) {
-            requestAudioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+        val recommendedExercise = appContainer.exerciseProgression.recommendNext(exercises, results)
+        recommendedExerciseTitle = recommendedExercise?.title
+        if (recommendedExercise == null) {
+            continueLabelTextView.setText(R.string.home_continue_label_all_mastered)
+            continueTitleTextView.setText(R.string.home_continue_all_mastered_body)
+            continueDetailTextView.isVisible = false
+            practiceButton.setText(R.string.home_open_practice_button)
         } else {
-            Log.d(PERMISSION_LOG_TAG, "RECORD_AUDIO already granted")
+            continueLabelTextView.setText(
+                if (practiceStats.isNewPlayer) R.string.home_continue_label_new else R.string.home_continue_label
+            )
+            continueTitleTextView.text = recommendedExercise.title
+            continueDetailTextView.isVisible = true
+            continueDetailTextView.text = listOf(
+                getString(labelResourceFor(difficultyScorer.score(recommendedExercise).level)),
+                getString(R.string.practice_exercise_tempo, recommendedExercise.tempoBpm),
+                resources.getQuantityString(
+                    R.plurals.practice_exercise_notes, recommendedExercise.noteCount, recommendedExercise.noteCount
+                )
+            ).joinToString(DETAIL_SEPARATOR)
+            practiceButton.text = getString(R.string.home_practice_button, recommendedExercise.title)
         }
     }
 
     /**
-     * @param isGranted True if permission was granted, false if denied. Type: Boolean
+     * @param practiceStats Numbers to show. Type: PracticeStats
      * @return Unit
      */
-    private fun onAudioPermissionResult(isGranted: Boolean) {
-        if (isGranted) {
-            Log.d(PERMISSION_LOG_TAG, "RECORD_AUDIO granted")
-        } else {
-            Log.d(PERMISSION_LOG_TAG, "RECORD_AUDIO denied")
+    private fun renderProgress(practiceStats: PracticeStats) {
+        greetingTextView.text = when {
+            practiceStats.isNewPlayer -> getString(R.string.home_greeting_new)
+            practiceStats.currentStreakDays > 1 -> getString(R.string.home_greeting_streak, practiceStats.currentStreakDays)
+            else -> getString(R.string.home_greeting_returning)
         }
+        val integerFormat = NumberFormat.getIntegerInstance()
+        streakValueTextView.text = integerFormat.format(practiceStats.currentStreakDays)
+        weekValueTextView.text = integerFormat.format(practiceStats.runsInLastSevenDays)
+        masteredValueTextView.text = getString(
+            R.string.home_stat_mastered_value, practiceStats.masteredExerciseCount, practiceStats.exerciseCount
+        )
+        masteryProgressIndicator.max = practiceStats.exerciseCount.coerceAtLeast(1)
+        masteryProgressIndicator.setProgressCompat(practiceStats.masteredExerciseCount, true)
+        masteryProgressIndicator.contentDescription = getString(
+            R.string.home_mastery_progress_description, practiceStats.masteredExerciseCount, practiceStats.exerciseCount
+        )
     }
 
-    companion object {
-        private const val PERMISSION_LOG_TAG = "Permissions"
-        private const val RECORDING_LOG_TAG = "Recording"
+    private companion object {
+        const val DETAIL_SEPARATOR = " · "
     }
 }
