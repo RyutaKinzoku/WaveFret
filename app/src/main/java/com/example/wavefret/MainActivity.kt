@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.practice.PracticeActivity
+import com.example.wavefret.practice.SongLibraryActivity
 import com.example.wavefret.practice.labelResourceFor
 import com.example.wavefret.practice.progression.DifficultyScorer
 import com.example.wavefret.practice.progression.PracticeStats
@@ -73,6 +74,12 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<MaterialCardView>(R.id.homeRecorderCard).setOnClickListener {
             startActivity(Intent(this, RecorderActivity::class.java))
+        }
+        findViewById<Button>(R.id.homeAddSongButton).setOnClickListener {
+            startActivity(SongLibraryActivity.intentFor(this, showAddSong = true))
+        }
+        findViewById<Button>(R.id.homeOpenLibraryButton).setOnClickListener {
+            startActivity(SongLibraryActivity.intentFor(this, showAddSong = false))
         }
         practiceButton.setOnClickListener {
             startActivity(PracticeActivity.intentFor(this, recommendedExerciseTitle))

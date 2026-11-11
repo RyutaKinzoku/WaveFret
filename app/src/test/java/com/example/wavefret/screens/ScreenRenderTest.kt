@@ -9,6 +9,7 @@ import androidx.test.core.app.ActivityScenario
 import com.example.wavefret.MainActivity
 import com.example.wavefret.R
 import com.example.wavefret.practice.PracticeActivity
+import com.example.wavefret.practice.SongLibraryActivity
 import com.example.wavefret.recording.RecorderActivity
 import com.example.wavefret.tuner.TunerActivity
 import org.junit.Assert.assertEquals
@@ -48,6 +49,11 @@ class ScreenRenderTest {
     @Test
     @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
     fun practiceShowsTheStartButton() = renderAndCheck(PracticeActivity::class.java, "practice_dark", R.id.practiceStartButton)
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun songLibraryShowsTheAddSongButton() =
+        renderAndCheck(SongLibraryActivity::class.java, "library_dark", R.id.songLibraryAddSongButton)
 
     @Test
     fun practiceShowsTheStartButtonInLightTheme() =

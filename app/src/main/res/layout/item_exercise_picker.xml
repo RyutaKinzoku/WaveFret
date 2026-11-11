@@ -54,6 +54,7 @@
         android:background="@drawable/bg_recommended_badge"
         android:paddingHorizontal="@dimen/space_s"
         android:paddingVertical="@dimen/space_xs"
+        android:layout_marginEnd="@dimen/space_s"
         android:text="@string/exercise_picker_recommended"
         android:textAppearance="@style/TextAppearance.WaveFret.Label"
         android:textColor="?attr/colorOnPrimaryContainer"

@@ -3,7 +3,6 @@ package com.example.wavefret.practice
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -36,11 +35,6 @@ import com.example.wavefret.practice.progression.PracticeMode
 import com.example.wavefret.practice.progression.PracticeResult
 import com.example.wavefret.practice.progression.PracticeSummary
 import com.example.wavefret.practice.progression.PracticeSummaryBuilder
-import com.example.wavefret.practice.songimport.AsciiTabParser
-import com.example.wavefret.practice.songimport.FretboardPositionFinder
-import com.example.wavefret.practice.songimport.MusicXmlBassParser
-import com.example.wavefret.practice.songimport.MusicXmlFileReader
-import com.example.wavefret.practice.songimport.SongImporter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -48,14 +42,11 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 /**
  * Practice screen. The chosen exercise sits in a card that opens a picker
@@ -63,7 +54,7 @@ import java.io.IOException
  * recommendation); a mode toggle explains wait vs tempo mode; the tab is
  * previewed before starting; Start/Stop sits in the thumb zone; and a
  * finished run ends on a summary sheet with the score, badges and a
- * one-tap "next exercise". Songs can be imported from the app bar.
+ * one-tap "next exercise". The app bar opens the song library to add songs.
  *
  * Android framework glue — every decision lives in the tested sessions,
  * [PracticeController], [PracticeDisplayFormatter], [TabStaffLayout],
@@ -89,9 +80,6 @@ class PracticeActivity : AppCompatActivity() {
     private val practiceDisplayFormatter = PracticeDisplayFormatter()
     private val exercisePickerItemsBuilder by lazy { ExercisePickerItemsBuilder(appContainer.exerciseProgression) }
     private val practiceSummaryBuilder by lazy { PracticeSummaryBuilder(appContainer.exerciseProgression) }
-    private val songImporter by lazy { SongImporter(AsciiTabParser(BassTunings.STANDARD), appContainer.tabTextParser) }
-    private val musicXmlFileReader = MusicXmlFileReader()
-    private val musicXmlBassParser = MusicXmlBassParser(BassTunings.STANDARD, FretboardPositionFinder(BassTunings.STANDARD))
     private val practiceController = PracticeController(
         audioSource = AudioRecordPcmSource(samplesPerBufferCount = PRACTICE_SAMPLES_PER_BUFFER_COUNT),
         silenceGate = SilenceGate(),
@@ -113,10 +101,6 @@ class PracticeActivity : AppCompatActivity() {
     ) { isGranted ->
         if (isGranted) startPractice() else showMicrophonePermissionNeeded(rootView, R.string.practice_permission_needed)
     }
-
-    private val openMusicXmlFileLauncher = registerForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { musicXmlFileUri -> musicXmlFileUri?.let(::importMusicXmlFile) }
 
     /**
      * @param savedInstanceState Previously saved state, or null on first creation. Type: Bundle?
@@ -145,7 +129,7 @@ class PracticeActivity : AppCompatActivity() {
         topAppBar.inflateMenu(R.menu.menu_practice)
         topAppBar.setOnMenuItemClickListener { menuItem ->
             val isImportItem = menuItem.itemId == R.id.practiceImportSongMenuItem
-            if (isImportItem) showImportSongDialog()
+            if (isImportItem) startActivity(SongLibraryActivity.intentFor(this, showAddSong = true))
             isImportItem
         }
         topAppBar.applySystemBarPadding(applyTop = true, applyBottom = false)
@@ -181,7 +165,8 @@ class PracticeActivity : AppCompatActivity() {
      */
     private fun refreshExercises(preferredTitle: String?) {
         val results = appContainer.practiceResultsRepository.listResults()
-        exercisePickerItems = exercisePickerItemsBuilder.build(appContainer.allExercises(), results)
+        val importedTitles = appContainer.importedExercisesRepository.listExercises().map { it.title }.toSet()
+        exercisePickerItems = exercisePickerItemsBuilder.build(appContainer.allExercises(), results, importedTitles)
         val chosenItem = exercisePickerItems.lastOrNull { it.exercise.title == preferredTitle }
             ?: exercisePickerItems.lastOrNull { it.exercise.title == selectedExercise?.title }
             ?: exercisePickerItems.firstOrNull { it.isRecommended }
@@ -256,12 +241,10 @@ class PracticeActivity : AppCompatActivity() {
     private fun showExercisePicker() {
         val pickerSheet = BottomSheetDialog(this)
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_exercise_picker, rootView, false)
-        val importedTitles = appContainer.importedExercisesRepository.listExercises().map { it.title }.toSet()
         sheetView.findViewById<RecyclerView>(R.id.exercisePickerRecyclerView).apply {
             layoutManager = LinearLayoutManager(this@PracticeActivity)
             adapter = ExercisePickerAdapter(
                 pickerItems = exercisePickerItems,
-                importedTitles = importedTitles,
                 describeExercise = ::describeExercise,
                 onExerciseChosen = { pickerItem ->
                     selectExercise(pickerItem)
@@ -486,86 +469,6 @@ class PracticeActivity : AppCompatActivity() {
     }
 
     /**
-     * Shows a dialog where a tab can be pasted, or a MusicXML file opened.
-     *
-     * @return Unit
-     */
-    private fun showImportSongDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_import_song, rootView, false)
-        val titleEditText = dialogView.findViewById<TextInputEditText>(R.id.importSongTitleEditText)
-        val tempoEditText = dialogView.findViewById<TextInputEditText>(R.id.importSongTempoEditText)
-        val tabEditText = dialogView.findViewById<TextInputEditText>(R.id.importSongTabEditText)
-        MaterialAlertDialogBuilder(this)
-            .setIcon(R.drawable.ic_file_upload)
-            .setTitle(R.string.import_song_dialog_title)
-            .setView(dialogView)
-            .setPositiveButton(R.string.import_song_confirm) { _, _ ->
-                importPastedSong(
-                    pastedText = tabEditText.text.toString(),
-                    title = titleEditText.text.toString(),
-                    tempoBpm = tempoEditText.text.toString().toIntOrNull()?.takeIf { it > 0 }
-                )
-            }
-            .setNeutralButton(R.string.import_song_open_music_xml) { _, _ ->
-                openMusicXmlFileLauncher.launch(MUSIC_XML_MIME_TYPES)
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    /**
-     * @param pastedText Tab text the player pasted. Type: String
-     * @param title Title typed by the player, possibly blank. Type: String
-     * @param tempoBpm Tempo typed by the player, or null. Type: Int?
-     * @return Unit
-     */
-    private fun importPastedSong(pastedText: String, title: String, tempoBpm: Int?) {
-        try {
-            saveImportedExercise(songImporter.import(pastedText, title, tempoBpm))
-        } catch (unreadableTab: IllegalArgumentException) {
-            showImportFailure(unreadableTab)
-        }
-    }
-
-    /**
-     * @param musicXmlFileUri Document the player picked. Type: Uri
-     * @return Unit
-     */
-    private fun importMusicXmlFile(musicXmlFileUri: Uri) {
-        try {
-            val fileBytes = contentResolver.openInputStream(musicXmlFileUri)?.use { it.readBytes() }
-                ?: throw IllegalArgumentException(getString(R.string.import_song_unreadable_file))
-            saveImportedExercise(musicXmlBassParser.parse(musicXmlFileReader.readMusicXmlText(fileBytes)))
-        } catch (unreadableScore: IllegalArgumentException) {
-            showImportFailure(unreadableScore)
-        } catch (unreadableFile: IOException) {
-            showImportFailure(unreadableFile)
-        }
-    }
-
-    /**
-     * @param importedExercise Exercise to store and select. Type: Exercise
-     * @return Unit
-     */
-    private fun saveImportedExercise(importedExercise: Exercise) {
-        appContainer.importedExercisesRepository.save(importedExercise)
-        refreshExercises(preferredTitle = importedExercise.title)
-        Snackbar.make(rootView, getString(R.string.import_song_saved, importedExercise.title), Snackbar.LENGTH_SHORT)
-            .setAnchorView(R.id.practiceBottomBar)
-            .show()
-    }
-
-    /**
-     * @param importFailure Why the import failed. Type: Exception
-     * @return Unit
-     */
-    private fun showImportFailure(importFailure: Exception) {
-        Snackbar.make(rootView, getString(R.string.import_song_failed, importFailure.message), Snackbar.LENGTH_LONG)
-            .setAnchorView(R.id.practiceBottomBar)
-            .show()
-    }
-
-    /**
      * @param practiceFeedback Feedback to describe. Type: PracticeFeedback
      * @return String resource describing it. Type: Int
      */
@@ -611,13 +514,6 @@ class PracticeActivity : AppCompatActivity() {
         private const val PRACTICE_SAMPLES_PER_BUFFER_COUNT = 4096
         private const val PITCH_ANALYSIS_CUTOFF_HZ = 1000.0
         private const val TEMPO_MODE_REQUIRED_MATCHES = 1
-        private val MUSIC_XML_MIME_TYPES = arrayOf(
-            "application/vnd.recordare.musicxml+xml",
-            "application/vnd.recordare.musicxml",
-            "application/xml",
-            "text/xml",
-            "application/octet-stream"
-        )
 
         /**
          * @param context Context starting the screen. Type: Context

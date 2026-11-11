@@ -35,7 +35,7 @@ class SafeXmlDocumentParser {
 
     private companion object {
         const val LOAD_EXTERNAL_DTD_FEATURE = "http://apache.org/xml/features/nonvalidating/load-external-dtd"
-        const val BYTE_ORDER_MARK = '﻿'
+        const val BYTE_ORDER_MARK = '\uFEFF'
     }
 }
 
