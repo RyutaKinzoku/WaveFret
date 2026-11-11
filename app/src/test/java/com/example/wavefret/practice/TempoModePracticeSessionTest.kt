@@ -115,4 +115,14 @@ class TempoModePracticeSessionTest {
         assertEquals(0, progress.hitCount)
         assertEquals(false, session.isStarted)
     }
+
+    @Test
+    fun missedNotesAreRecordedByIndex() {
+        val session = startedSessionFor(openA, openD)
+
+        session.onPitchDetected(null, timestampMillis = 1_600)
+        val progress = session.onPitchDetected(openDHz, timestampMillis = 2_000)
+
+        assertEquals(setOf(0), progress.missedNoteIndices)
+    }
 }
