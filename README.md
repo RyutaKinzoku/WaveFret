@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: v3 — Song import complete (text tabs and MusicXML)
+## Status: v4 — Difficulty & progression complete
 
 The current build lets you:
 
@@ -16,7 +16,12 @@ The current build lets you:
   hit or missed on its beat);
 - import songs to practice (v3): paste an ASCII bass tab from the
   internet or WaveFret tab text, or open a MusicXML (`.musicxml`, `.xml`,
-  `.mxl`) file. Imported songs are stored as text in app storage.
+  `.mxl`) file. Imported songs are stored as text in app storage;
+- follow a learning path (v4): exercises are rated Beginner /
+  Intermediate / Advanced by a heuristic, listed easiest first with your
+  best score, and the easiest one not yet mastered (90%+ in tempo mode)
+  is recommended. Every completed run is saved to
+  `practice_results.tsv`, a personal hit/miss dataset.
 
 ## Requirements
 
@@ -59,7 +64,9 @@ Top-level packages under `com.example.wavefret`:
 - **`practice`** — the tab model and text-tab parser, built-in
   exercises, wait/tempo practice sessions, the practice pipeline and the
   scrolling tab display; `practice.songimport` holds the ASCII-tab and
-  MusicXML importers and the imported-songs repository.
+  MusicXML importers and the imported-songs repository;
+  `practice.progression` holds difficulty scoring, practice history and
+  recommendations.
 
 The dependency direction is one-way: feature packages depend on
 `common`, never the reverse, and never on each other. This keeps generic pieces reusable by future
@@ -82,4 +89,6 @@ hardware.
 - **v3** — Song import (done): text tabs and MusicXML. Audio
   transcription from YouTube via Demucs + basic-pitch is deferred: both
   are Python ML models that need a desktop/server step, not on-device code.
-- **v4** — Difficulty scoring and progressive song ordering
+- **v4** — Difficulty scoring and progressive song ordering (done):
+  heuristic over tempo, position shifts, string crossings, neck height
+  and fret jumps. Rhythm isn't in the tab model yet, so it isn't scored.
