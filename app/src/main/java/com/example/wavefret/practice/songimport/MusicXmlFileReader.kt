@@ -1,15 +1,16 @@
 package com.example.wavefret.practice.songimport
 
-import java.io.ByteArrayInputStream
-import java.util.zip.ZipInputStream
+import com.example.wavefret.common.storage.ZipArchiveReader
 
 /**
  * Gets the MusicXML document text out of a file's bytes, whether it is a
  * plain `.musicxml`/`.xml` file or a compressed `.mxl` archive. An archive's
  * score is the root file named in `META-INF/container.xml`, falling back to
  * its first `.xml`/`.musicxml` entry outside `META-INF`.
+ *
+ * @property zipArchiveReader Opens .mxl archives. Type: ZipArchiveReader
  */
-class MusicXmlFileReader {
+class MusicXmlFileReader(private val zipArchiveReader: ZipArchiveReader = ZipArchiveReader()) {
 
     /**
      * @param fileBytes Full contents of the chosen file. Type: ByteArray
@@ -39,13 +40,7 @@ class MusicXmlFileReader {
      * @return Each file entry's text by path, in archive order. Type: Map<String, String>
      */
     private fun readArchiveEntries(archiveBytes: ByteArray): Map<String, String> {
-        val archiveEntries = linkedMapOf<String, String>()
-        ZipInputStream(ByteArrayInputStream(archiveBytes)).use { zipInputStream ->
-            generateSequence { zipInputStream.nextEntry }
-                .filterNot { it.isDirectory }
-                .forEach { zipEntry -> archiveEntries[zipEntry.name] = zipInputStream.readBytes().toString(Charsets.UTF_8) }
-        }
-        return archiveEntries
+        return zipArchiveReader.readEntries(archiveBytes).mapValues { (_, entryBytes) -> entryBytes.toString(Charsets.UTF_8) }
     }
 
     /**
