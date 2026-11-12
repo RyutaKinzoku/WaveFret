@@ -71,4 +71,34 @@ class HitConfirmerTest {
 
         assertEquals(false, hitConfirmer.onReading(PitchReading.MATCHING))
     }
+
+    @Test
+    fun whenAFreshPluckIsRequiredMatchingReadingsDoNotCountWithoutOne() {
+        val hitConfirmer = HitConfirmer(requiredConsecutiveMatches = 1)
+        hitConfirmer.requireFreshAttack()
+
+        val confirmations = listOf(PitchReading.MATCHING, PitchReading.SILENT, PitchReading.MATCHING).map(hitConfirmer::onReading)
+
+        assertEquals(listOf(false, false, false), confirmations)
+    }
+
+    @Test
+    fun aFreshPluckLetsTheNextMatchingReadingCount() {
+        val hitConfirmer = HitConfirmer(requiredConsecutiveMatches = 1)
+        hitConfirmer.requireFreshAttack()
+
+        hitConfirmer.onAttack()
+
+        assertEquals(true, hitConfirmer.onReading(PitchReading.MATCHING))
+    }
+
+    @Test
+    fun resetDropsTheFreshPluckRequirement() {
+        val hitConfirmer = HitConfirmer(requiredConsecutiveMatches = 1)
+        hitConfirmer.requireFreshAttack()
+
+        hitConfirmer.reset()
+
+        assertEquals(true, hitConfirmer.onReading(PitchReading.MATCHING))
+    }
 }

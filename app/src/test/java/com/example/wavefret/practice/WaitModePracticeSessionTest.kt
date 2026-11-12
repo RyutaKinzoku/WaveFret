@@ -88,7 +88,52 @@ class WaitModePracticeSessionTest {
 
         session.onPitchDetected(openAHz, timestampMillis = 0)
         session.onPitchDetected(null, timestampMillis = 100)
+        session.onAttack()
         val progress = session.onPitchDetected(openAHz, timestampMillis = 200)
+
+        assertTrue(progress.isComplete)
+    }
+
+    @Test
+    fun theFadingTailOfARepeatedNoteDoesNotCountAsTheRepeat() {
+        val session = sessionFor(openA, openA)
+
+        session.onPitchDetected(openAHz, timestampMillis = 0)
+        session.onPitchDetected(null, timestampMillis = 100)
+        val progress = session.onPitchDetected(openAHz, timestampMillis = 200)
+
+        assertEquals(1, progress.currentNoteIndex)
+    }
+
+    @Test
+    fun fretttingTheNextNoteOnTheStillRingingStringDoesNotCount() {
+        val secondFretOnA = TabNote(stringIndex = 1, fret = 2)
+        val session = sessionFor(openA, secondFretOnA)
+
+        session.onPitchDetected(openAHz, timestampMillis = 0)
+        val progress = session.onPitchDetected(61.74, timestampMillis = 100)
+
+        assertEquals(1, progress.currentNoteIndex)
+    }
+
+    @Test
+    fun theNextNoteOnTheSameStringCountsOnceItIsPlucked() {
+        val secondFretOnA = TabNote(stringIndex = 1, fret = 2)
+        val session = sessionFor(openA, secondFretOnA)
+
+        session.onPitchDetected(openAHz, timestampMillis = 0)
+        session.onAttack()
+        val progress = session.onPitchDetected(61.74, timestampMillis = 100)
+
+        assertTrue(progress.isComplete)
+    }
+
+    @Test
+    fun theNextNoteOnAnotherStringCountsWithoutWaitingForAPluckSignal() {
+        val session = sessionFor(openA, openD)
+
+        session.onPitchDetected(openAHz, timestampMillis = 0)
+        val progress = session.onPitchDetected(openDHz, timestampMillis = 100)
 
         assertTrue(progress.isComplete)
     }
