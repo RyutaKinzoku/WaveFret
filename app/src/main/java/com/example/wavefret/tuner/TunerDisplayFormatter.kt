@@ -3,49 +3,28 @@ package com.example.wavefret.tuner
 import kotlin.math.roundToInt
 
 /**
- * Converts a raw [TuningResult] (or its absence) from [TunerController]
- * into a [TunerDisplayState] a UI can render directly, keeping
- * cents-rounding and needle-angle math out of the Activity.
+ * Turns a needle position in cents into what the tuner screen draws: a
+ * signed, rounded cents label and the needle angle (the scale shows ±50
+ * cents over ±45°; beyond that the needle stops at the end of the scale).
  */
 class TunerDisplayFormatter {
 
     /**
-     * Builds the display state for one tuning pipeline output.
-     *
-     * @param tuningResult The latest evaluated tuning result, or null if nothing usable was detected. Type: TuningResult?
-     * @return The display state the tuner screen should show. Type: TunerDisplayState
+     * @param cents Needle position; positive is sharp. Type: Double
+     * @return Label such as "+8¢", "0¢" or "-12¢". Type: String
      */
-    fun format(tuningResult: TuningResult?): TunerDisplayState {
-        if (tuningResult == null) return TunerDisplayState.Listening
-        return TunerDisplayState.Detected(
-            stringName = tuningResult.closestString.name,
-            centsOffsetLabel = formatCentsOffsetLabel(tuningResult.centsOffset),
-            status = tuningResult.status,
-            needleRotationDegrees = calculateNeedleRotationDegrees(tuningResult.centsOffset)
-        )
-    }
-
-    /**
-     * Renders a cents offset as a signed, rounded label.
-     *
-     * @param centsOffset The raw cents offset from perfect pitch. Type: Double
-     * @return A label such as "+7¢", "-12¢", or "0¢". Type: String
-     */
-    private fun formatCentsOffsetLabel(centsOffset: Double): String {
-        val roundedCents = centsOffset.roundToInt()
+    fun centsLabel(cents: Double): String {
+        val roundedCents = cents.roundToInt()
         return if (roundedCents > 0) "+$roundedCents¢" else "$roundedCents¢"
     }
 
     /**
-     * Maps a cents offset to a needle rotation, clamped so a wildly
-     * off-pitch reading doesn't spin the needle past its visual limit.
-     *
-     * @param centsOffset The raw cents offset from perfect pitch. Type: Double
-     * @return The rotation to apply to the needle, in degrees. Type: Float
+     * @param cents Needle position; positive is sharp. Type: Double
+     * @return Needle angle in degrees, 0 being upright. Type: Float
      */
-    private fun calculateNeedleRotationDegrees(centsOffset: Double): Float {
-        val clampedCentsOffset = centsOffset.coerceIn(-MAX_DISPLAYED_CENTS, MAX_DISPLAYED_CENTS)
-        return (clampedCentsOffset / MAX_DISPLAYED_CENTS * MAX_NEEDLE_ROTATION_DEGREES).toFloat()
+    fun needleRotationDegrees(cents: Double): Float {
+        val clampedCents = cents.coerceIn(-MAX_DISPLAYED_CENTS, MAX_DISPLAYED_CENTS)
+        return (clampedCents / MAX_DISPLAYED_CENTS * MAX_NEEDLE_ROTATION_DEGREES).toFloat()
     }
 
     private companion object {

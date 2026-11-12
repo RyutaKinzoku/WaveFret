@@ -7,7 +7,7 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import com.google.android.material.color.MaterialColors
 import kotlin.math.cos
 import kotlin.math.min
@@ -16,8 +16,9 @@ import kotlin.math.sin
 /**
  * Semicircular tuning gauge: a scale from -50 to +50 cents with a tick
  * every 10 cents, a highlighted in-tune zone in the middle, and a needle
- * that glides to each new reading. The needle angle comes from the tested
- * [TunerDisplayFormatter]; this class only paints, so it is verified on-device.
+ * that glides between readings (which arrive about 40 times a second). The
+ * needle angle comes from the tested [TunerDisplayFormatter]; this class
+ * only paints, so it is verified on-device.
  */
 class TunerGaugeView @JvmOverloads constructor(
     context: Context,
@@ -68,7 +69,7 @@ class TunerGaugeView @JvmOverloads constructor(
         needleAnimator?.cancel()
         needleAnimator = ValueAnimator.ofFloat(needleRotationDegrees, targetRotationDegrees).apply {
             duration = NEEDLE_ANIMATION_MILLIS
-            interpolator = DecelerateInterpolator()
+            interpolator = LinearInterpolator()
             addUpdateListener { animator ->
                 needleRotationDegrees = animator.animatedValue as Float
                 invalidate()
@@ -156,6 +157,7 @@ class TunerGaugeView @JvmOverloads constructor(
         const val NEEDLE_WIDTH_DP = 4f
         const val NEEDLE_INSET_DP = 28f
         const val HUB_RADIUS_DP = 8f
-        const val NEEDLE_ANIMATION_MILLIS = 120L
+        /** About one reading interval, so the needle glides continuously between readings. */
+        const val NEEDLE_ANIMATION_MILLIS = 40L
     }
 }

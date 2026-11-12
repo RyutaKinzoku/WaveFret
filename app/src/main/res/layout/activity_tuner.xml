@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/tunerRoot"
     android:layout_width="match_parent"
@@ -27,8 +26,7 @@
                 android:id="@+id/tunerGaugeView"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                android:layout_marginTop="@dimen/space_l"
-                />
+                android:layout_marginTop="@dimen/space_m" />
 
             <TextView
                 android:id="@+id/tunerStringNameTextView"
@@ -43,36 +41,45 @@
                 android:id="@+id/tunerCentsOffsetTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFeatureSettings="tnum"
+                android:minHeight="32dp"
                 android:textAppearance="@style/TextAppearance.WaveFret.Title"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 tools:text="+3¢" />
 
             <TextView
                 android:id="@+id/tunerStatusTextView"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_s"
                 android:accessibilityLiveRegion="polite"
                 android:gravity="center"
-                android:text="@string/tuner_listening_prompt"
                 android:textAppearance="@style/TextAppearance.WaveFret.Body"
-                android:textColor="?attr/colorOnSurfaceVariant" />
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Pluck the E string" />
 
-            <LinearLayout
-                android:id="@+id/tunerStringsRow"
+            <TextView
+                style="@style/Widget.WaveFret.SectionHeader"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_xl"
-                android:contentDescription="@string/tuner_strings_description"
+                android:text="@string/tuner_strings_heading" />
+
+            <LinearLayout
+                android:id="@+id/tunerStringsRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
                 android:orientation="horizontal" />
 
             <TextView
+                android:id="@+id/tunerModeTextView"
                 style="@style/Widget.WaveFret.SecondaryText"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_l"
+                android:layout_marginTop="@dimen/space_m"
                 android:gravity="center"
-                android:text="@string/tuner_hint" />
+                tools:text="Automatic: lowest string first. Tap a string to choose it." />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>

@@ -17,13 +17,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
-import com.example.wavefret.common.audio.AudioRecordPcmSource
 import com.example.wavefret.common.audio.LowPassFilter
-import com.example.wavefret.common.audio.LowPassFilteredPitchDetector
 import com.example.wavefret.common.audio.Metronome
-import com.example.wavefret.common.audio.SilenceGate
 import com.example.wavefret.common.audio.ToneGeneratorClickPlayer
-import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.time.ElapsedRealtimeClock
 import com.example.wavefret.common.ui.applySystemBarPadding
@@ -82,15 +78,7 @@ class PracticeActivity : AppCompatActivity() {
     private val practiceDisplayFormatter = PracticeDisplayFormatter()
     private val exercisePickerItemsBuilder by lazy { ExercisePickerItemsBuilder(appContainer.exerciseProgression) }
     private val practiceSummaryBuilder by lazy { PracticeSummaryBuilder(appContainer.exerciseProgression) }
-    private val practiceController = PracticeController(
-        audioSource = AudioRecordPcmSource(samplesPerBufferCount = PRACTICE_SAMPLES_PER_BUFFER_COUNT),
-        silenceGate = SilenceGate(),
-        pitchDetector = LowPassFilteredPitchDetector(
-            lowPassFilter = LowPassFilter(cutoffHz = PITCH_ANALYSIS_CUTOFF_HZ),
-            innerPitchDetector = YinPitchDetector()
-        ),
-        clock = monotonicClock
-    )
+    private val practiceController = PracticeListeningPipeline.createController(monotonicClock)
     private var metronomeClickPlayer: ToneGeneratorClickPlayer? = null
 
     private var exercisePickerItems: List<ExercisePickerItem> = emptyList()
@@ -520,9 +508,6 @@ class PracticeActivity : AppCompatActivity() {
         private const val EXTRA_EXERCISE_TITLE = "com.example.wavefret.practice.EXERCISE_TITLE"
         private const val DETAIL_SEPARATOR = " · "
 
-        /** ~93 ms at 44.1 kHz: long enough for low E, short enough for tempo mode. */
-        private const val PRACTICE_SAMPLES_PER_BUFFER_COUNT = 4096
-        private const val PITCH_ANALYSIS_CUTOFF_HZ = 1000.0
         private const val TEMPO_MODE_REQUIRED_MATCHES = 1
 
         /**
