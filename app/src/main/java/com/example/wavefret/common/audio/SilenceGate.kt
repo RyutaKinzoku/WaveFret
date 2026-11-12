@@ -10,13 +10,13 @@ import kotlin.math.sqrt
  * @property rmsThreshold Minimum root-mean-square level a buffer must have
  *   to be considered actual signal, rather than silence/noise floor. Type: Double
  */
-class SilenceGate(private val rmsThreshold: Double = 0.01) {
+class SilenceGate(private val rmsThreshold: Double = 0.01) : SignalGate {
 
     /**
      * @param samples Audio buffer to check, as PCM float samples in [-1, 1]. Type: FloatArray
      * @return True if the buffer's RMS level is at or above rmsThreshold. Type: Boolean
      */
-    fun hasSignal(samples: FloatArray): Boolean {
+    override fun hasSignal(samples: FloatArray): Boolean {
         return rootMeanSquare(samples) >= rmsThreshold
     }
 

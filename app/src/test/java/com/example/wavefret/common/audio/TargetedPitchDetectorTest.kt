@@ -45,4 +45,18 @@ class TargetedPitchDetectorTest {
     fun noiseAloneIsNotANote() {
         assertNull(detector.detectNear(SyntheticSignals.whiteNoise(4096, 0.02, 9L), sampleRate, 55.0))
     }
+
+    @Test
+    fun aRealBassToneWithAStrongSecondHarmonicIsStillHeard() {
+        val lowE = SyntheticSignals.bassLikeTone(41.2, sampleRate, 4096)
+
+        assertEquals(41.2, detector.detectNear(lowE, sampleRate, expectedFrequencyHz = 41.2)!!, 0.5)
+    }
+
+    @Test
+    fun aToneDominatedByItsOctaveHarmonicIsStillHeardAsItsFundamental() {
+        val harmonicHeavyA = SyntheticSignals.evenHarmonicHeavyTone(55.0, sampleRate, 4096)
+
+        assertEquals(55.0, detector.detectNear(harmonicHeavyA, sampleRate, expectedFrequencyHz = 55.0)!!, 0.6)
+    }
 }
