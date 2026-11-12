@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: 0.10.0 — calm guided tuner and gentle-playing detection
+## Status: 0.11.0 — fresh-pluck detection and Find a song
 
 The current build lets you:
 
@@ -25,6 +25,9 @@ The current build lets you:
   your takes. Pick "just my bass" (YIN, accurate) or "full song"
   (on-device basic-pitch model, rough), then fix any wrong notes in the
   lesson editor;
+- find a song by name (0.11): WaveFret opens a YouTube search for bass
+  covers or a web search for bass tabs; share the result back to make a
+  lesson named after the song;
 - play along with the original song (0.9): it stops at each note until
   you play it right. Works with lessons made from audio files, YouTube
   links (YouTube's own player; nothing is downloaded) and Listen mode

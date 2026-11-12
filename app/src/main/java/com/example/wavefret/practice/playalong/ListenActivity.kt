@@ -239,7 +239,8 @@ class ListenActivity : AppCompatActivity() {
         val transcriptionJob = lifecycleScope.launch {
             try {
                 val draftLesson = withContext(Dispatchers.Default) {
-                    val defaultTitle = getString(if (videoId != null) R.string.youtube_lesson_title else R.string.listen_lesson_title)
+                    val defaultTitle = intent.getStringExtra(EXTRA_SONG_TITLE)
+                        ?: getString(if (videoId != null) R.string.youtube_lesson_title else R.string.listen_lesson_title)
                     val transcribed = OnDeviceLessonTranscriber(this@ListenActivity)
                         .transcribe(defaultTitle, heardAudio, LISTEN_SAMPLE_RATE_HZ, isFullSong)
                     if (videoId != null) {
@@ -267,6 +268,7 @@ class ListenActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_YOUTUBE_VIDEO_ID = "com.example.wavefret.practice.playalong.YOUTUBE_VIDEO_ID"
+        private const val EXTRA_SONG_TITLE = "com.example.wavefret.practice.playalong.SONG_TITLE"
         private const val LISTEN_SAMPLE_RATE_HZ = 22_050
         private const val MAXIMUM_LISTEN_SAMPLES = LISTEN_SAMPLE_RATE_HZ * 6 * 60
         private const val MINIMUM_LISTEN_SAMPLES = LISTEN_SAMPLE_RATE_HZ * 3
@@ -277,10 +279,13 @@ class ListenActivity : AppCompatActivity() {
         /**
          * @param context Context starting the screen. Type: Context
          * @param youTubeVideoId Video to play while listening, or null to listen to a speaker. Type: String?
+         * @param songTitle Name for the lesson, e.g. from "Find a song", or null for a default. Type: String?
          * @return An intent that opens Listen mode. Type: Intent
          */
-        fun intentFor(context: Context, youTubeVideoId: String?): Intent {
-            return Intent(context, ListenActivity::class.java).putExtra(EXTRA_YOUTUBE_VIDEO_ID, youTubeVideoId)
+        fun intentFor(context: Context, youTubeVideoId: String?, songTitle: String? = null): Intent {
+            return Intent(context, ListenActivity::class.java)
+                .putExtra(EXTRA_YOUTUBE_VIDEO_ID, youTubeVideoId)
+                .putExtra(EXTRA_SONG_TITLE, songTitle)
         }
     }
 }
