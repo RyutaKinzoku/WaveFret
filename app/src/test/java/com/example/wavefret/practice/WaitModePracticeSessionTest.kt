@@ -123,4 +123,19 @@ class WaitModePracticeSessionTest {
 
         assertEquals(0, progress.missCount)
     }
+
+    @Test
+    fun expectsTheCurrentNotesPitch() {
+        val session = sessionFor(openA, openD)
+
+        assertEquals(openAHz, session.expectedFrequencyHz()!!, 0.01)
+    }
+
+    @Test
+    fun expectsNothingOnceComplete() {
+        val session = sessionFor(openA)
+        session.onPitchDetected(openAHz, timestampMillis = 0)
+
+        assertEquals(null, session.expectedFrequencyHz())
+    }
 }

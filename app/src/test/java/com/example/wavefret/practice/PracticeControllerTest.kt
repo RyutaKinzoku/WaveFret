@@ -2,7 +2,9 @@ package com.example.wavefret.practice
 
 import com.example.wavefret.common.audio.FakePcmAudioSource
 import com.example.wavefret.common.audio.FakePitchDetector
+import com.example.wavefret.common.audio.AdaptiveSilenceGate
 import com.example.wavefret.common.audio.SilenceGate
+import com.example.wavefret.common.audio.TargetedPitchDetector
 import com.example.wavefret.common.audio.SyntheticSignals
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.time.SteppingFakeClock
@@ -25,7 +27,7 @@ class PracticeControllerTest {
 
     private fun controllerFor(buffers: List<FloatArray>, scriptedFrequenciesHz: List<Double?>) = PracticeController(
         audioSource = FakePcmAudioSource(buffers, SAMPLE_RATE),
-        silenceGate = SilenceGate(),
+        signalGate = SilenceGate(),
         pitchDetector = FakePitchDetector(scriptedFrequenciesHz),
         clock = SteppingFakeClock(firstTimeMillis = 0, stepMillis = 1_000)
     )
@@ -89,6 +91,40 @@ class PracticeControllerTest {
 
         assertEquals(1, finalProgress.hitCount)
         assertEquals(1, finalProgress.missCount)
+    }
+
+    @Test
+    fun aSoftExpectedNoteMissedByGeneralDetectionIsHeardByTheTargetedDetector() = runTest {
+        val tone = SyntheticSignals.bassLikeTone(openAHz, SAMPLE_RATE, SAMPLE_COUNT)
+        val noise = SyntheticSignals.whiteNoise(SAMPLE_COUNT, amplitude = 0.012, seed = 3L)
+        val softNoisyA = FloatArray(SAMPLE_COUNT) { tone[it] * 0.02f + noise[it] }
+        val practiceController = PracticeController(
+            audioSource = FakePcmAudioSource(listOf(softNoisyA), SAMPLE_RATE),
+            signalGate = AdaptiveSilenceGate(),
+            pitchDetector = FakePitchDetector(listOf(null)),
+            clock = SteppingFakeClock(firstTimeMillis = 0, stepMillis = 1_000),
+            targetedPitchDetector = TargetedPitchDetector()
+        )
+
+        val progress = practiceController.progressStream(waitSession()).toList().single()
+
+        assertEquals(PitchReading.MATCHING, progress.lastReading)
+    }
+
+    @Test
+    fun aWrongNoteIsStillReportedThroughGeneralDetection() = runTest {
+        val dString = SyntheticSignals.bassLikeTone(73.42, SAMPLE_RATE, SAMPLE_COUNT)
+        val practiceController = PracticeController(
+            audioSource = FakePcmAudioSource(listOf(dString), SAMPLE_RATE),
+            signalGate = SilenceGate(),
+            pitchDetector = FakePitchDetector(listOf(73.42)),
+            clock = SteppingFakeClock(firstTimeMillis = 0, stepMillis = 1_000),
+            targetedPitchDetector = TargetedPitchDetector()
+        )
+
+        val progress = practiceController.progressStream(waitSession()).toList().single()
+
+        assertEquals(PitchReading.NOT_MATCHING, progress.lastReading)
     }
 
     private companion object {

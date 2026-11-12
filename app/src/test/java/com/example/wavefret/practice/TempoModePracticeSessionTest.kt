@@ -125,4 +125,12 @@ class TempoModePracticeSessionTest {
 
         assertEquals(setOf(0), progress.missedNoteIndices)
     }
+
+    @Test
+    fun expectsTheNoteWhoseBeatIsCurrent() {
+        val session = startedSessionFor(openA, openD)
+        session.onPitchDetected(null, timestampMillis = 1_600)
+
+        assertEquals(openDHz, session.expectedFrequencyHz()!!, 0.01)
+    }
 }
