@@ -236,3 +236,40 @@
   the microphone hears a song played from the phone's own speaker.
 - Some YouTube videos don't allow embedding; WaveFret says so, and Listen
   mode with another speaker still works for them.
+
+## [0.10.0] - 2026-11-12 - Calm tuner and gentle playing
+
+### Changed
+- Tuner rebuilt around the string you're tuning:
+  - The needle follows the string in real time (~43 readings a second,
+    up from ~5) and glides between readings instead of jumping.
+  - Pick a string with the E A D G buttons, or leave it on automatic:
+    lowest untuned string first.
+  - Readings are only ever measured against the chosen string, with
+    harmonics and octave errors folded back onto it, so it can't jump
+    to another string.
+  - Holding a string within ±5 cents for 0.7 s plays a chime, vibrates,
+    marks it tuned (✓) and moves on; tuned strings are skipped.
+  - Tap a tuned string to tune it again; "Start over" or leaving the
+    tuner marks every string out of tune again.
+- Practice, tempo mode and play-along hear soft playing:
+  - The noise gate adapts to the room instead of a fixed level that
+    dropped quiet plucks.
+  - WaveFret listens specifically for the note the lesson expects
+    (accepting much weaker, noisier pitches near it, while still
+    refusing other notes and the octave above).
+  - Readings every 46 ms (was 93 ms), so a note needs to ring for less
+    time to count.
+
+### Removed
+- `PitchSmoother`, `TunerDisplayStabilizer`, `TuningEvaluator` and their
+  display types: the median filter and 4-second hold were what made the
+  old tuner lag and jump.
+
+### Architecture
+- New: `SlidingWindowAudioSource`, `SignalGate`, `AdaptiveSilenceGate`,
+  `DecimatingPitchDetector`, `TargetedPitchDetector`,
+  `PracticeListeningPipeline`, `TuningSession`, `TargetedTuningEvaluator`,
+  `NeedleSmoother`, `InTuneHoldDetector`, `GuidedTuner`, `TuneChimePlayer`.
+- `PracticeSession.expectedFrequencyHz()` lets the pipeline listen for the
+  expected note.

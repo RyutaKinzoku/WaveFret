@@ -242,7 +242,7 @@ class TunerActivity : AppCompatActivity() {
         stringButtons.forEachIndexed { stringIndex, stringButton ->
             val isTuned = stringIndex in state.tunedStringIndices
             val isTarget = stringIndex == state.targetStringIndex
-            stringButton.icon = if (isTuned) getDrawable(R.drawable.ic_check_circle) else null
+            stringButton.setIconResource(if (isTuned) R.drawable.ic_check_circle else 0)
             val backgroundAttribute = when {
                 isTarget -> androidx.appcompat.R.attr.colorPrimary
                 isTuned -> com.google.android.material.R.attr.colorSecondaryContainer
@@ -263,7 +263,8 @@ class TunerActivity : AppCompatActivity() {
                     else -> R.string.tuner_string_state_untuned
                 }
             )
-            stringButton.contentDescription = getString(R.string.tuner_string_button_description, tuning.strings[stringIndex].name, stateDescription)
+            stringButton.contentDescription =
+                getString(R.string.tuner_string_button_description, tuning.strings[stringIndex].name, stateDescription)
         }
     }
 

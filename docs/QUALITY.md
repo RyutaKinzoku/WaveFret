@@ -2,7 +2,7 @@
 
 This document maps each product-quality characteristic of ISO/IEC 25010:2023
 to what WaveFret does about it, how that is verified, and what is still
-open. It is updated with every release; the current state is **0.9.0**.
+open. It is updated with every release; the current state is **0.10.0**.
 
 Verification legend: **UT** = JUnit unit test, **RT** = Robolectric screen
 test (`ScreenRenderTest`, renders every screen in light/dark),
@@ -23,6 +23,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 
 | Sub-characteristic | How | Verified by |
 |---|---|---|
+| Time behaviour (0.10) | Tuner readings every 23 ms over 93 ms windows, with the pitch search done on a 4×-decimated signal to keep CPU low; practice readings every 46 ms. | UT (`SlidingWindowAudioSource`, `DecimatingPitchDetector`), DEV pending |
 | Time behaviour | Transcription runs on a background dispatcher behind a cancellable progress dialog. Audio capture and pitch detection run on `Dispatchers.IO`; UI only renders. Practice uses 4096-sample buffers (~93 ms) so tempo mode can keep up; the tab staff redraws per frame from the beat clock, not per buffer. | UT (`PracticeController`, `Metronome` virtual time), DEV |
 | Resource utilization | Decoding downmixes and resamples chunk by chunk and stops at 6 minutes (~32 MB of samples); the model file is memory-mapped and the interpreter closed after use. `onDraw` allocates nothing (layouts cached on size change); the microphone is released in `onPause`; metronome tone generator released on pause. | LINT (`DrawAllocation`), DEV |
 | Capacity | Exercises and history are small text files; parsing is linear. | UT |
@@ -40,6 +41,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 |---|---|---|
 | Appropriateness recognizability | Home shows progress, the two tools with one-line explanations, and the next exercise. | RT, DEV |
 | Learnability | New players see onboarding copy ("Tune up, then play your first exercise") and a "Start here" recommendation; each mode explains itself under the toggle; empty states explain what to do. | RT |
+| Operability (0.10) | Playing softly is enough: an adaptive noise gate and a detector that listens for the expected note hear quiet plucks, so lessons don't require force. The tuner never guesses the string: you pick it, or it goes lowest first. | UT (`AdaptiveSilenceGate`, `TargetedPitchDetector`, `GuidedTuner`) |
 | Operability | Primary actions in the thumb zone (Practise, Start/Stop, Record); all tap targets ≥ 48 dp; edge-to-edge insets keep every button above the navigation bar; screen stays on while playing. | RT (primary view shown), LINT, DEV |
 | User error protection | Leaving the lesson editor with unsaved edits asks first; a lesson can't lose its last note or its title. Deleting a take or song asks first; import validates input and explains failures; denied microphone access explains why and links to Settings; leaving mid-take saves the take. | DEV |
 | User engagement | Play-along turns any song into a stop-and-go game with unlimited tries. |

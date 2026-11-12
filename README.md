@@ -4,12 +4,14 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: 0.9.0 — play-along with the original song, YouTube and Listen mode
+## Status: 0.10.0 — calm guided tuner and gentle-playing detection
 
 The current build lets you:
 
 - record practice clips, browse, play back and delete them (v0);
-- tune your bass with a live needle tuner (v1);
+- tune your bass with a guided tuner (v1, rebuilt in 0.10): a real-time
+  needle, automatic lowest-string-first or a string you pick, a chime and
+  a ✓ when each string is in tune;
 - practice built-in exercises against a scrolling tab (v2), either in
   **wait mode** (the tab only advances once you play the right note) or
   **tempo mode** (a metronome counts you in and each note is scored as
