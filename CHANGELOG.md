@@ -273,3 +273,25 @@
   `NeedleSmoother`, `InTuneHoldDetector`, `GuidedTuner`, `TuneChimePlayer`.
 - `PracticeSession.expectedFrequencyHz()` lets the pipeline listen for the
   expected note.
+
+## [0.11.0] - 2026-11-12 - Fresh plucks and Find a song
+
+### Fixed
+- Notes on the same string as the previous one (and repeated notes) no
+  longer pass by themselves: fretting a string that is still ringing, or
+  the fading tail of the last note, used to count as playing. WaveFret now
+  detects the attack of a real pluck and waits for one before such a note
+  counts. Moving to a different string still counts straight away, in
+  every mode (wait, tempo, play-along).
+
+### Added
+- Find a song (Add a song → Find a song): type a song name and WaveFret
+  opens a YouTube search for bass covers or a web search for bass tabs.
+  Share the video or tab back to WaveFret and it becomes a lesson named
+  after the song (videos through Listen mode). Free: no accounts, API keys
+  or AI services, and nothing is downloaded by WaveFret.
+
+### Architecture
+- `AttackDetector`; `HitConfirmer.requireFreshAttack()` / `onAttack()`;
+  `PracticeSession.onAttack()`; `SongSearchLinks`, `PendingSongTitle`,
+  `PendingSongTitleStore`.

@@ -2,7 +2,7 @@
 
 This document maps each product-quality characteristic of ISO/IEC 25010:2023
 to what WaveFret does about it, how that is verified, and what is still
-open. It is updated with every release; the current state is **0.10.0**.
+open. It is updated with every release; the current state is **0.11.0**.
 
 Verification legend: **UT** = JUnit unit test, **RT** = Robolectric screen
 test (`ScreenRenderTest`, renders every screen in light/dark),
@@ -17,6 +17,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Functional completeness | Every roadmap feature v0-v4 ships: recorder, tuner, practice (wait/tempo), song import (ASCII tab, MusicXML/.mxl), difficulty and progression. | UT per feature package |
 | Functional correctness | Pitch matching ±40 cents, YIN with harmonic-lock rejection, hit confirmation that refuses to count a sustained note twice, beat windows of ±½ beat, streaks computed in local time. | UT (300+ tests, all green at every GREEN commit) |
 | Functional correctness (transcription) | Note decoding, windowing, resampling and tempo estimation are unit-tested against synthetic signals and synthetic model outputs; a harmonic-rich bass line is transcribed end to end. Real-song accuracy is not yet measured. | UT, DEV pending |
+| Functional correctness (0.11) | A note on the same string as the previous one, or a repeated note, only counts after a detected pluck attack, so ringing strings and fading tails can't play the lesson for you. | UT (`AttackDetector`, `HitConfirmer`, sessions, `PracticeController`) |
 | Functional appropriateness | The app compares against a *known* expected note instead of open transcription, the simplest reliable approach for "wait until I play it right". | Design (charter) |
 
 ## 2. Performance efficiency

@@ -11,6 +11,7 @@ import com.example.wavefret.common.time.SteppingFakeClock
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PracticeControllerTest {
@@ -125,6 +126,28 @@ class PracticeControllerTest {
         val progress = practiceController.progressStream(waitSession()).toList().single()
 
         assertEquals(PitchReading.NOT_MATCHING, progress.lastReading)
+    }
+
+    @Test
+    fun aRepeatedNoteFadingAndComingBackWithoutAPluckDoesNotCount() = runTest {
+        val loudA = SyntheticSignals.sine(openAHz, SAMPLE_RATE, SAMPLE_COUNT).map { it * 0.5f }.toFloatArray()
+        val fadingA = loudA.map { it * 0.3f }.toFloatArray()
+        val practiceController = controllerFor(listOf(loudA, fadingA, fadingA), listOf(openAHz, openAHz, openAHz))
+
+        val finalProgress = practiceController.progressStream(waitSession()).toList().last()
+
+        assertEquals(1, finalProgress.currentNoteIndex)
+    }
+
+    @Test
+    fun aRepeatedNoteCountsWhenItIsPluckedAgain() = runTest {
+        val loudA = SyntheticSignals.sine(openAHz, SAMPLE_RATE, SAMPLE_COUNT).map { it * 0.5f }.toFloatArray()
+        val fadingA = loudA.map { it * 0.1f }.toFloatArray()
+        val practiceController = controllerFor(listOf(loudA, fadingA, loudA), listOf(openAHz, openAHz, openAHz))
+
+        val finalProgress = practiceController.progressStream(waitSession()).toList().last()
+
+        assertTrue(finalProgress.isComplete)
     }
 
     private companion object {

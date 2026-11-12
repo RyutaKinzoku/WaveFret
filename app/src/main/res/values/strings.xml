@@ -240,4 +240,14 @@
     <string name="tuner_string_state_tuned">tuned, tap to tune it again</string>
     <string name="tuner_string_state_target">tuning now</string>
     <string name="tuner_string_state_untuned">not tuned yet</string>
+
+    <!-- Find a song -->
+    <string name="add_song_find_title">Find a song</string>
+    <string name="add_song_find_body">Type its name; WaveFret finds a bass cover or tab</string>
+    <string name="find_song_name_hint">Song name</string>
+    <string name="find_song_how_it_works">Pick a video or tab in the app that opens, tap Share, then choose WaveFret. The lesson will be named after this song.</string>
+    <string name="find_song_youtube">Bass cover on YouTube</string>
+    <string name="find_song_tab">Bass tab on the web</string>
+    <string name="find_song_name_required">Type a song name first</string>
+    <string name="find_song_no_app">No app here can open that search</string>
 </resources>

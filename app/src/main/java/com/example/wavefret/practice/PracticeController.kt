@@ -1,5 +1,6 @@
 package com.example.wavefret.practice
 
+import com.example.wavefret.common.audio.AttackDetector
 import com.example.wavefret.common.audio.PcmAudioSource
 import com.example.wavefret.common.audio.PitchDetector
 import com.example.wavefret.common.audio.SignalGate
@@ -20,13 +21,15 @@ import kotlinx.coroutines.flow.map
  * @param pitchDetector Estimates the fundamental frequency of a buffer. Type: PitchDetector
  * @param clock Monotonic time source used to timestamp each buffer. Type: Clock
  * @param targetedPitchDetector Listens specifically for the expected note, or null to skip. Type: TargetedPitchDetector?
+ * @param attackDetector Tells the session when a new pluck starts. Type: AttackDetector
  */
 class PracticeController(
     private val audioSource: PcmAudioSource,
     private val signalGate: SignalGate,
     private val pitchDetector: PitchDetector,
     private val clock: Clock,
-    private val targetedPitchDetector: TargetedPitchDetector? = null
+    private val targetedPitchDetector: TargetedPitchDetector? = null,
+    private val attackDetector: AttackDetector = AttackDetector()
 ) {
 
     /**
@@ -35,8 +38,20 @@ class PracticeController(
      */
     fun progressStream(practiceSession: PracticeSession): Flow<PracticeProgress> {
         return audioSource.audioBufferStream().map { audioBuffer ->
+            if (attackDetector.onLevel(rootMeanSquare(audioBuffer))) practiceSession.onAttack()
             practiceSession.onPitchDetected(detectPitchOrNull(audioBuffer, practiceSession), clock.currentTimeMillis())
         }
+    }
+
+    /**
+     * @param audioBuffer Audio window. Type: FloatArray
+     * @return Its root-mean-square level. Type: Double
+     */
+    private fun rootMeanSquare(audioBuffer: FloatArray): Double {
+        if (audioBuffer.isEmpty()) return 0.0
+        var sumOfSquares = 0.0
+        for (sample in audioBuffer) sumOfSquares += sample * sample.toDouble()
+        return kotlin.math.sqrt(sumOfSquares / audioBuffer.size)
     }
 
     /**

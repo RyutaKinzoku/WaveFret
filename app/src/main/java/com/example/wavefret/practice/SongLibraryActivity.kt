@@ -16,6 +16,7 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.IntentCompat
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
@@ -35,6 +36,9 @@ import com.example.wavefret.practice.playalong.LessonAudioStore
 import com.example.wavefret.practice.playalong.ListenActivity
 import com.example.wavefret.practice.playalong.YouTubeLinkParser
 import com.example.wavefret.practice.songimport.AsciiTabParser
+import com.example.wavefret.practice.songsearch.PendingSongTitle
+import com.example.wavefret.practice.songsearch.PendingSongTitleStore
+import com.example.wavefret.practice.songsearch.SongSearchLinks
 import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
 import com.example.wavefret.practice.songimport.SongFileFormat
 import com.example.wavefret.practice.songimport.FretboardPositionFinder
@@ -175,8 +179,10 @@ class SongLibraryActivity : AppCompatActivity() {
                 val sharedYouTubeVideoId = sharedText?.let(YouTubeLinkParser()::videoIdFrom)
                 when {
                     sharedUri != null -> importSongFile(sharedUri)
-                    sharedYouTubeVideoId != null -> startActivity(ListenActivity.intentFor(this, sharedYouTubeVideoId))
-                    !sharedText.isNullOrBlank() -> showPasteTabDialog(prefilledTab = sharedText)
+                    sharedYouTubeVideoId != null -> startActivity(
+                        ListenActivity.intentFor(this, sharedYouTubeVideoId, songTitle = takeSearchedSongTitle())
+                    )
+                    !sharedText.isNullOrBlank() -> showPasteTabDialog(prefilledTab = sharedText, prefilledTitle = takeSearchedSongTitle())
                 }
             }
             incomingIntent.action == Intent.ACTION_VIEW -> incomingIntent.data?.let(::importSongFile)
@@ -252,6 +258,11 @@ class SongLibraryActivity : AppCompatActivity() {
     private fun showAddSongSheet() {
         val addSongSheet = BottomSheetDialog(this)
         val sheetView = layoutInflater.inflate(R.layout.bottom_sheet_add_song, rootView, false)
+        bindAddSongOption(sheetView.findViewById(R.id.addSongFindOption), R.drawable.ic_library_music,
+            R.string.add_song_find_title, R.string.add_song_find_body) {
+            addSongSheet.dismiss()
+            showFindSongDialog()
+        }
         bindAddSongOption(sheetView.findViewById(R.id.addSongOpenFileOption), R.drawable.ic_file_upload,
             R.string.add_song_open_file_title, R.string.add_song_open_file_body) {
             addSongSheet.dismiss()
@@ -311,12 +322,13 @@ class SongLibraryActivity : AppCompatActivity() {
      * @param prefilledTab Tab text shared from another app, or null. Type: String?
      * @return Unit
      */
-    private fun showPasteTabDialog(prefilledTab: String?) {
+    private fun showPasteTabDialog(prefilledTab: String?, prefilledTitle: String? = null) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_import_song, rootView, false)
         val titleEditText = dialogView.findViewById<TextInputEditText>(R.id.importSongTitleEditText)
         val tempoEditText = dialogView.findViewById<TextInputEditText>(R.id.importSongTempoEditText)
         val tabEditText = dialogView.findViewById<TextInputEditText>(R.id.importSongTabEditText)
         prefilledTab?.let(tabEditText::setText)
+        prefilledTitle?.let(titleEditText::setText)
         MaterialAlertDialogBuilder(this)
             .setIcon(R.drawable.ic_content_paste)
             .setTitle(R.string.add_song_paste_title)
@@ -338,6 +350,52 @@ class SongLibraryActivity : AppCompatActivity() {
             .setNegativeButton(R.string.cancel, null)
             .show()
     }
+
+    /**
+     * Asks for a song name and opens a YouTube search for bass covers or a
+     * web search for bass tabs; the name is remembered so what the player
+     * shares back is named after the song.
+     *
+     * @return Unit
+     */
+    private fun showFindSongDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_find_song, rootView, false)
+        val nameLayout = dialogView.findViewById<TextInputLayout>(R.id.findSongNameLayout)
+        val nameEditText = dialogView.findViewById<TextInputEditText>(R.id.findSongNameEditText)
+        val findSongDialog = MaterialAlertDialogBuilder(this)
+            .setIcon(R.drawable.ic_library_music)
+            .setTitle(R.string.add_song_find_title)
+            .setView(dialogView)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+
+        /** Opens one kind of search for the typed song. */
+        fun search(searchUrlFor: (String) -> String) {
+            val songName = nameEditText.text?.toString().orEmpty().trim()
+            if (songName.isEmpty()) {
+                nameLayout.error = getString(R.string.find_song_name_required)
+                return
+            }
+            PendingSongTitleStore(this).save(PendingSongTitle(songName, appContainer.clock.currentTimeMillis()))
+            findSongDialog.dismiss()
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, searchUrlFor(songName).toUri()))
+            } catch (noBrowser: android.content.ActivityNotFoundException) {
+                showImportFailure(getString(R.string.find_song_no_app))
+            }
+        }
+        dialogView.findViewById<View>(R.id.findSongYouTubeButton).setOnClickListener {
+            search(SongSearchLinks()::youTubeBassCoverSearch)
+        }
+        dialogView.findViewById<View>(R.id.findSongTabButton).setOnClickListener {
+            search(SongSearchLinks()::webBassTabSearch)
+        }
+        findSongDialog.show()
+    }
+
+    /** @return The song name from a recent "Find a song" search, or null. Type: String? */
+    private fun takeSearchedSongTitle(): String? =
+        PendingSongTitleStore(this).takeFreshTitle(appContainer.clock.currentTimeMillis())
 
     /**
      * Asks for a YouTube link and opens Listen mode with that video.
