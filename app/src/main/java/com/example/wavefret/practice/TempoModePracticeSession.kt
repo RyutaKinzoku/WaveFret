@@ -63,6 +63,11 @@ class TempoModePracticeSession(
         return currentProgress()
     }
 
+    /**
+     * @return Unit
+     */
+    override fun onAttack() = expectedNoteJudge.onAttack()
+
     /** @return Progress without consuming a new reading. Type: PracticeProgress */
     override fun currentProgress(): PracticeProgress = PracticeProgress(
         currentNoteIndex = currentNoteIndex,

@@ -26,6 +26,13 @@ interface PracticeSession {
     fun expectedFrequencyHz(): Double? = exercise.notes.getOrNull(currentProgress().currentNoteIndex)
         ?.expectedFrequencyHz(exercise.tuning)
 
+    /**
+     * Tells the session a new pluck was heard.
+     *
+     * @return Unit
+     */
+    fun onAttack() = Unit
+
     /** @return Progress without consuming a new reading. Type: PracticeProgress */
     fun currentProgress(): PracticeProgress
 

@@ -33,8 +33,9 @@ class ExpectedNoteJudge(
     fun confirmsHit(pitchReading: PitchReading): Boolean = hitConfirmer.onReading(pitchReading)
 
     /**
-     * Prepares for the next note after leaving one (hit or missed). The
-     * confirmer only stays disarmed when the next note has the same pitch.
+     * Prepares for the next note after leaving one (hit or missed). When the
+     * next note is on the same string or is the same note, it must be
+     * plucked again: the ringing string or its fading tail doesn't count.
      *
      * @param leftNoteIndex Index of the note just left behind. Type: Int
      * @return Unit
@@ -43,8 +44,17 @@ class ExpectedNoteJudge(
         val nextNoteIndex = leftNoteIndex + 1
         if (nextNoteIndex >= exercise.noteCount) return
         val isSamePitch = noteMatcher.matches(expectedFrequencyHzOf(leftNoteIndex), expectedFrequencyHzOf(nextNoteIndex))
-        if (!isSamePitch) hitConfirmer.reset()
+        val isSameString = exercise.notes[leftNoteIndex].stringIndex == exercise.notes[nextNoteIndex].stringIndex
+        hitConfirmer.reset()
+        if (isSamePitch || isSameString) hitConfirmer.requireFreshAttack()
     }
+
+    /**
+     * A new pluck was heard.
+     *
+     * @return Unit
+     */
+    fun onAttack() = hitConfirmer.onAttack()
 
     /**
      * Forgets confirmation state, e.g. when an exercise restarts.
