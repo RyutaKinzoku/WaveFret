@@ -48,15 +48,12 @@
     <!-- Tuner -->
     <string name="tuner_title">Tuner</string>
     <string name="tuner_subtitle">Standard tuning · E A D G</string>
-    <string name="tuner_listening_prompt">Pluck an open string</string>
     <string name="tuner_no_note" translatable="false">–</string>
-    <string name="tuner_hint">Pluck one string at a time and let it ring.</string>
     <string name="tuner_status_in_tune">In tune</string>
     <string name="tuner_status_flat">Too low · tighten the string</string>
     <string name="tuner_status_sharp">Too high · loosen the string</string>
     <string name="tuner_gauge_description">Tuning gauge: %1$s</string>
     <string name="tuner_permission_needed">WaveFret needs the microphone to hear your bass.</string>
-    <string name="tuner_strings_description">Strings: E, A, D, G</string>
 
     <!-- Practice -->
     <string name="practice_title">Practice</string>
@@ -230,4 +227,17 @@
     <string name="youtube_lesson_title">YouTube lesson</string>
     <string name="listen_lesson_title">Song I listened to</string>
     <string name="next">Next</string>
+
+    <!-- Guided tuner -->
+    <string name="tuner_strings_heading">Strings</string>
+    <string name="tuner_pluck_string">Pluck the %1$s string and let it ring</string>
+    <string name="tuner_string_tuned">%1$s is in tune!</string>
+    <string name="tuner_all_tuned">All strings are in tune. Have fun playing!</string>
+    <string name="tuner_mode_automatic">Automatic: lowest string first. Tap a string to choose it.</string>
+    <string name="tuner_mode_chosen">Tuning %1$s. Tap it again to go back to automatic.</string>
+    <string name="tuner_start_over">Start over</string>
+    <string name="tuner_string_button_description">%1$s string, %2$s</string>
+    <string name="tuner_string_state_tuned">tuned, tap to tune it again</string>
+    <string name="tuner_string_state_target">tuning now</string>
+    <string name="tuner_string_state_untuned">not tuned yet</string>
 </resources>

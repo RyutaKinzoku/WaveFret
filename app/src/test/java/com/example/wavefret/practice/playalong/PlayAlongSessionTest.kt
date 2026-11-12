@@ -118,4 +118,12 @@ class PlayAlongSessionTest {
             PlayAlongSession(lesson.copy(noteOnsetsMillis = null), NoteMatcher(), HitConfirmer())
         }
     }
+
+    @Test
+    fun expectsTheNoteItIsWaitingFor() {
+        val session = session()
+        session.onMediaPosition(2_000)
+
+        assertEquals(openAHz, session.expectedFrequencyHz()!!, 0.01)
+    }
 }

@@ -17,6 +17,15 @@ interface PracticeSession {
      */
     fun onPitchDetected(frequencyHz: Double?, timestampMillis: Long): PracticeProgress
 
+    /**
+     * The pitch the session is waiting for, so the pipeline can listen for
+     * it specifically and hear softly played notes.
+     *
+     * @return Frequency of the current note in Hz, or null once complete. Type: Double?
+     */
+    fun expectedFrequencyHz(): Double? = exercise.notes.getOrNull(currentProgress().currentNoteIndex)
+        ?.expectedFrequencyHz(exercise.tuning)
+
     /** @return Progress without consuming a new reading. Type: PracticeProgress */
     fun currentProgress(): PracticeProgress
 

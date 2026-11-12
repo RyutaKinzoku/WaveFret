@@ -1,7 +1,5 @@
 package com.example.wavefret.tuner
 
-import com.example.wavefret.common.music.BassTunings
-
 import com.example.wavefret.common.audio.FakePcmAudioSource
 import com.example.wavefret.common.audio.FakePitchDetector
 import com.example.wavefret.common.audio.SilenceGate
@@ -13,99 +11,37 @@ import org.junit.Test
 
 class TunerControllerTest {
 
-    private val standardTuning = BassTunings.STANDARD
+    private val audibleBuffer = SyntheticSignals.sine(55.0, SAMPLE_RATE, SAMPLE_COUNT)
+    private val silentBuffer = SyntheticSignals.silence(SAMPLE_COUNT)
+
+    private fun controllerFor(buffers: List<FloatArray>, scriptedFrequenciesHz: List<Double?>) = TunerController(
+        audioSource = FakePcmAudioSource(buffers, SAMPLE_RATE),
+        signalGate = SilenceGate(),
+        pitchDetector = FakePitchDetector(scriptedFrequenciesHz)
+    )
 
     @Test
-    fun emitsNullWhenNoSignalPresent() = runTest {
-        val silentBuffer = SyntheticSignals.silence(SAMPLE_COUNT)
-        val tunerController = TunerController(
-            audioSource = FakePcmAudioSource(listOf(silentBuffer)),
-            silenceGate = SilenceGate(),
-            pitchDetector = FakePitchDetector(emptyList()),
-            pitchSmoother = PitchSmoother(),
-            tuningEvaluator = TuningEvaluator(standardTuning)
-        )
+    fun emitsOneReadingPerBuffer() = runTest {
+        val readings = controllerFor(listOf(audibleBuffer, audibleBuffer, audibleBuffer), listOf(55.0, 55.1, 54.9))
+            .pitchReadingStream().toList()
 
-        val emittedResults = tunerController.tuningResultStream().toList()
-
-        assertEquals(listOf(null), emittedResults)
+        assertEquals(listOf(55.0, 55.1, 54.9), readings)
     }
 
     @Test
-    fun emitsNullWhenPitchDetectorFindsNoPitch() = runTest {
-        val audibleBuffer = SyntheticSignals.sine(110.0, SAMPLE_RATE, SAMPLE_COUNT)
-        val tunerController = TunerController(
-            audioSource = FakePcmAudioSource(listOf(audibleBuffer)),
-            silenceGate = SilenceGate(),
-            pitchDetector = FakePitchDetector(listOf(null)),
-            pitchSmoother = PitchSmoother(),
-            tuningEvaluator = TuningEvaluator(standardTuning)
-        )
+    fun silenceIsReportedAsNoPitchWithoutRunningDetection() = runTest {
+        val readings = controllerFor(listOf(silentBuffer, audibleBuffer), listOf(41.2)).pitchReadingStream().toList()
 
-        val emittedResults = tunerController.tuningResultStream().toList()
-
-        assertEquals(listOf(null), emittedResults)
+        assertEquals(listOf(null, 41.2), readings)
     }
 
     @Test
-    fun emitsInTuneResultForAccuratelyDetectedString() = runTest {
-        val eStringFrequencyHz = standardTuning.strings.first { it.name == "E" }.frequencyHz
-        val audibleBuffer = SyntheticSignals.sine(eStringFrequencyHz, SAMPLE_RATE, SAMPLE_COUNT)
-        val tunerController = TunerController(
-            audioSource = FakePcmAudioSource(listOf(audibleBuffer)),
-            silenceGate = SilenceGate(),
-            pitchDetector = FakePitchDetector(listOf(eStringFrequencyHz)),
-            pitchSmoother = PitchSmoother(),
-            tuningEvaluator = TuningEvaluator(standardTuning)
-        )
-
-        val emittedResult = tunerController.tuningResultStream().toList().single()
-
-        assertEquals(TuningStatus.IN_TUNE, emittedResult?.status)
-        assertEquals("E", emittedResult?.closestString?.name)
-    }
-
-    @Test
-    fun emitsFlatResultWhenDetectedFrequencyIsBelowTarget() = runTest {
-        val aStringFrequencyHz = standardTuning.strings.first { it.name == "A" }.frequencyHz
-        val flatFrequencyHz = aStringFrequencyHz - 2.0
-        val audibleBuffer = SyntheticSignals.sine(aStringFrequencyHz, SAMPLE_RATE, SAMPLE_COUNT)
-        val tunerController = TunerController(
-            audioSource = FakePcmAudioSource(listOf(audibleBuffer)),
-            silenceGate = SilenceGate(),
-            pitchDetector = FakePitchDetector(listOf(flatFrequencyHz)),
-            pitchSmoother = PitchSmoother(),
-            tuningEvaluator = TuningEvaluator(standardTuning)
-        )
-
-        val emittedResult = tunerController.tuningResultStream().toList().single()
-
-        assertEquals(TuningStatus.FLAT, emittedResult?.status)
-    }
-
-    @Test
-    fun smoothsOutlierReadingAcrossConsecutiveBuffers() = runTest {
-        val dStringFrequencyHz = standardTuning.strings.first { it.name == "D" }.frequencyHz
-        val octaveOutlierFrequencyHz = dStringFrequencyHz * 2.0
-        val audibleBuffer = SyntheticSignals.sine(dStringFrequencyHz, SAMPLE_RATE, SAMPLE_COUNT)
-        val tunerController = TunerController(
-            audioSource = FakePcmAudioSource(listOf(audibleBuffer, audibleBuffer, audibleBuffer)),
-            silenceGate = SilenceGate(),
-            pitchDetector = FakePitchDetector(
-                listOf(dStringFrequencyHz, octaveOutlierFrequencyHz, dStringFrequencyHz)
-            ),
-            pitchSmoother = PitchSmoother(),
-            tuningEvaluator = TuningEvaluator(standardTuning)
-        )
-
-        val emittedResults = tunerController.tuningResultStream().toList()
-
-        assertEquals(TuningStatus.IN_TUNE, emittedResults[2]?.status)
-        assertEquals("D", emittedResults[2]?.closestString?.name)
+    fun undetectablePitchIsReportedAsNoPitch() = runTest {
+        assertEquals(listOf<Double?>(null), controllerFor(listOf(audibleBuffer), listOf(null)).pitchReadingStream().toList())
     }
 
     private companion object {
-        const val SAMPLE_RATE = 44100
+        const val SAMPLE_RATE = 44_100
         const val SAMPLE_COUNT = 4096
     }
 }

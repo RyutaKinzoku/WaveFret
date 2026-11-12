@@ -15,11 +15,7 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
-import com.example.wavefret.common.audio.AudioRecordPcmSource
 import com.example.wavefret.common.audio.LowPassFilter
-import com.example.wavefret.common.audio.LowPassFilteredPitchDetector
-import com.example.wavefret.common.audio.SilenceGate
-import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.time.ElapsedRealtimeClock
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
@@ -27,7 +23,7 @@ import com.example.wavefret.practice.Exercise
 import com.example.wavefret.practice.HitConfirmer
 import com.example.wavefret.practice.LessonMediaSource
 import com.example.wavefret.practice.NoteMatcher
-import com.example.wavefret.practice.PracticeController
+import com.example.wavefret.practice.PracticeListeningPipeline
 import com.example.wavefret.practice.PracticeDisplayFormatter
 import com.example.wavefret.practice.PracticeProgress
 import com.example.wavefret.practice.TabStaffView
@@ -65,12 +61,7 @@ class PlayAlongActivity : AppCompatActivity() {
 
     private val appContainer = AppContainer(this)
     private val practiceDisplayFormatter = PracticeDisplayFormatter()
-    private val practiceController = PracticeController(
-        audioSource = AudioRecordPcmSource(samplesPerBufferCount = LISTENING_SAMPLES_PER_BUFFER_COUNT),
-        silenceGate = SilenceGate(),
-        pitchDetector = LowPassFilteredPitchDetector(LowPassFilter(cutoffHz = PITCH_ANALYSIS_CUTOFF_HZ), YinPitchDetector()),
-        clock = ElapsedRealtimeClock()
-    )
+    private val practiceController = PracticeListeningPipeline.createController(ElapsedRealtimeClock())
 
     private lateinit var lesson: Exercise
     private lateinit var playAlongSession: PlayAlongSession
@@ -309,8 +300,6 @@ class PlayAlongActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_LESSON_TITLE = "com.example.wavefret.practice.playalong.LESSON_TITLE"
-        private const val LISTENING_SAMPLES_PER_BUFFER_COUNT = 4096
-        private const val PITCH_ANALYSIS_CUTOFF_HZ = 1000.0
         private const val SYNC_INTERVAL_MILLIS = 40L
         private const val PERFECT_SCORE = 100
 
