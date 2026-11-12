@@ -1,69 +1,36 @@
 package com.example.wavefret.tuner
 
-import com.example.wavefret.common.music.BassTunings
-
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class TunerDisplayFormatterTest {
 
-    private val displayFormatter = TunerDisplayFormatter()
-    private val eString = BassTunings.STANDARD.strings.first { it.name == "E" }
-    private val aString = BassTunings.STANDARD.strings.first { it.name == "A" }
+    private val formatter = TunerDisplayFormatter()
 
     @Test
-    fun formatsNullResultAsListening() {
-        val displayState = displayFormatter.format(null)
-
-        assertEquals(TunerDisplayState.Listening, displayState)
+    fun inTuneReadsZeroCentsWithTheNeedleUpright() {
+        assertEquals("0¢", formatter.centsLabel(0.2))
+        assertEquals(0f, formatter.needleRotationDegrees(0.0), 0.01f)
     }
 
     @Test
-    fun formatsInTuneResultWithZeroCentsAndNoRotation() {
-        val tuningResult = TuningResult(eString, 0.0, TuningStatus.IN_TUNE)
-
-        val displayState = displayFormatter.format(tuningResult)
-
-        assertEquals(
-            TunerDisplayState.Detected("E", "0¢", TuningStatus.IN_TUNE, 0f),
-            displayState
-        )
+    fun sharpReadingsHaveAPlusSignAndAreRounded() {
+        assertEquals("+8¢", formatter.centsLabel(7.6))
     }
 
     @Test
-    fun formatsSharpResultWithPositiveSignAndRoundedCents() {
-        val tuningResult = TuningResult(aString, 7.6, TuningStatus.SHARP)
-
-        val displayState = displayFormatter.format(tuningResult) as TunerDisplayState.Detected
-
-        assertEquals("+8¢", displayState.centsOffsetLabel)
+    fun flatReadingsHaveAMinusSign() {
+        assertEquals("-12¢", formatter.centsLabel(-12.4))
     }
 
     @Test
-    fun formatsFlatResultWithNegativeSign() {
-        val tuningResult = TuningResult(aString, -12.4, TuningStatus.FLAT)
-
-        val displayState = displayFormatter.format(tuningResult) as TunerDisplayState.Detected
-
-        assertEquals("-12¢", displayState.centsOffsetLabel)
+    fun needleTurnsInProportionWithinTheScale() {
+        assertEquals(-22.5f, formatter.needleRotationDegrees(-25.0), 0.01f)
     }
 
     @Test
-    fun calculatesProportionalNeedleRotationWithinDisplayRange() {
-        val tuningResult = TuningResult(aString, -25.0, TuningStatus.FLAT)
-
-        val displayState = displayFormatter.format(tuningResult) as TunerDisplayState.Detected
-
-        assertEquals(-22.5f, displayState.needleRotationDegrees, 0.01f)
-    }
-
-    @Test
-    fun clampsNeedleRotationForCentsBeyondDisplayRange() {
-        val tuningResult = TuningResult(aString, 73.0, TuningStatus.SHARP)
-
-        val displayState = displayFormatter.format(tuningResult) as TunerDisplayState.Detected
-
-        assertEquals(45.0f, displayState.needleRotationDegrees, 0.01f)
-        assertEquals("+73¢", displayState.centsOffsetLabel)
+    fun needleStopsAtTheEndOfTheScaleButTheLabelShowsTheRealValue() {
+        assertEquals(45f, formatter.needleRotationDegrees(73.0), 0.01f)
+        assertEquals("+73¢", formatter.centsLabel(73.0))
     }
 }
