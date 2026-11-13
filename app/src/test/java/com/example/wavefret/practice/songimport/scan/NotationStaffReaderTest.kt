@@ -95,4 +95,26 @@ class NotationStaffReaderTest {
     fun anEmptyStaffHasNoNotes() {
         assertEquals(emptyList<Int>(), read(blankStaffPage()))
     }
+
+    @Test
+    fun beamedNotesAreReadOnceAndTheBeamIsNotANote() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.quarterNote(image, 100, rowOf(0), spacing)
+        ScoreImageDrawing.quarterNote(image, 150, rowOf(1), spacing)
+        val beamTop = rowOf(1) - spacing * 7 / 2
+        (0 until 5).forEach { ScoreImageDrawing.horizontalLine(image, beamTop - 8 + it, 106, 157, thickness = 1) }
+
+        assertEquals(listOf(31, 33), read(image))
+    }
+
+    @Test
+    fun aStackedTimeSignatureIsNotANote() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.verticalLine(image, 70, 101, 148, thickness = 3)
+        ScoreImageDrawing.filledNotehead(image, 66, 116, halfWidth = 6, halfHeight = 4)
+        ScoreImageDrawing.filledNotehead(image, 66, 140, halfWidth = 6, halfHeight = 4)
+        ScoreImageDrawing.quarterNote(image, 150, rowOf(0), spacing)
+
+        assertEquals(listOf(31), read(image))
+    }
 }
