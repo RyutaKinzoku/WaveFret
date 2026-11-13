@@ -63,7 +63,7 @@ class SongFileImporterTest {
     fun pdfOrPhotoExplainsHowToConvertIt() {
         val outcome = songFileImporter.import("partitura.pdf", "application/pdf", "%PDF".toByteArray(), "")
 
-        assertEquals(SongImportOutcome.SheetMusicImageNotSupported, outcome)
+        assertEquals(SongImportOutcome.NeedsTextRecognition, outcome)
     }
 
     @Test

@@ -104,4 +104,122 @@ class AsciiTabParserTest {
 
         assertThrows(IllegalArgumentException::class.java) { asciiTabParser.parseNotes(emptyTab) }
     }
+
+    @Test
+    fun treatsTypographicDashesAndNonBreakingSpacesAsPlainTab() {
+        val asciiTab = "G|\u2013\u2013\u2013\u2013\u2013|\nD|\u2014\u2014\u2014\u2014\u2014|\nA|\u2013\u20135\u2013\u2013|\nE|\u00A03\u2013\u2013\u2013\u2013|"
+
+        assertEquals(listOf(TabNote(0, 3), TabNote(1, 5)), asciiTabParser.parseNotes(asciiTab))
+    }
+
+    @Test
+    fun ignoresRepeatCountsAfterTheLastBar() {
+        val asciiTab = """
+            G|---------|
+            D|---------|
+            A|---------|  x4
+            E|--3--5---|  (x2)
+        """.trimIndent()
+
+        assertEquals(listOf(TabNote(0, 3), TabNote(0, 5)), asciiTabParser.parseNotes(asciiTab))
+    }
+
+    @Test
+    fun readsSystemsWhoseLinesHaveNoStringNames() {
+        val asciiTab = """
+            |---------|
+            |------2--|
+            |---------|
+            |--3------|
+        """.trimIndent()
+
+        assertEquals(listOf(TabNote(0, 3), TabNote(2, 2)), asciiTabParser.parseNotes(asciiTab))
+    }
+
+    @Test
+    fun skipsDeadAndGhostNoteMarksWithoutLosingTheLine() {
+        val asciiTab = """
+            G|----------|
+            D|----------|
+            A|--X--g5-v-|
+            E|-3-----P--|
+        """.trimIndent()
+
+        assertEquals(listOf(TabNote(0, 3), TabNote(1, 5)), asciiTabParser.parseNotes(asciiTab))
+    }
+
+    @Test
+    fun readsTheFourHighStringsOfAFiveStringTab() {
+        val asciiTab = """
+            G|--------|
+            D|--------|
+            A|-----2--|
+            E|--0-----|
+            B|-----0--|
+        """.trimIndent()
+
+        assertEquals(listOf(TabNote(0, 0), TabNote(1, 2)), asciiTabParser.parseNotes(asciiTab))
+    }
+
+    @Test
+    fun readsTabLinesIndentedWithTabCharacters() {
+        val asciiTab = "\tG|-----|\n\tD|-----|\n\tA|--7--|\n\tE|-----|"
+
+        assertEquals(listOf(TabNote(1, 7)), asciiTabParser.parseNotes(asciiTab))
+    }
+
+    @Test
+    fun ignoresChordAndBarCountLinesBetweenSystems() {
+        val asciiTab = """
+            [Verse]
+               Am          G
+            |  1   |   2   |
+            G|------|------|
+            D|------|------|
+            A|--0---|------|
+            E|------|--3---|
+        """.trimIndent()
+
+        assertEquals(listOf(TabNote(1, 0), TabNote(0, 3)), asciiTabParser.parseNotes(asciiTab))
+    }
+
+    @Test
+    fun extractsJustTheTabFromAWholeWebPage() {
+        val pageText = """
+            Sign in   Tabs   Courses
+            Seven Nation Army Bass Tab
+            Tuning: E A D G
+            [Intro]
+            G|--------|
+            D|--------|
+            A|--7--7--|
+            E|--------|
+
+            [Verse]
+            G|--------|
+            D|--------|
+            A|--5--3--|
+            E|--------|
+            Rate this tab   Comments (12)
+        """.trimIndent()
+
+        val expectedTab = """
+            G|--------|
+            D|--------|
+            A|--7--7--|
+            E|--------|
+
+            [Verse]
+            G|--------|
+            D|--------|
+            A|--5--3--|
+            E|--------|
+        """.trimIndent()
+        assertEquals(expectedTab, asciiTabParser.extractTab(pageText))
+    }
+
+    @Test
+    fun extractingFromAPageWithoutTabGivesNothing() {
+        assertEquals(null, asciiTabParser.extractTab("Lyrics only\nNo tab here"))
+    }
 }

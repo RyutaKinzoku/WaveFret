@@ -4,9 +4,11 @@ import com.example.wavefret.practice.Exercise
 
 /**
  * Turns difficulty ratings and practice history into a learning path:
- * exercises ordered easiest first, which ones are mastered, and what to
- * play next. Mastery requires playing in time, so only tempo-mode runs
- * count towards it.
+ * exercises ordered easiest first, which ones are finished or mastered,
+ * and what to play next. Finishing a run in any mode marks an exercise
+ * as finished, so it is never suggested again (it can still be replayed).
+ * Mastery requires playing in time, so only tempo-mode runs count
+ * towards it.
  *
  * @property difficultyScorer Rates each exercise. Type: DifficultyScorer
  * @property masteryScorePercent Tempo-mode score needed to master an exercise. Type: Int
@@ -39,13 +41,23 @@ class ExerciseProgression(
     }
 
     /**
+     * @param exerciseTitle Exercise to check. Type: String
+     * @param results Practice history. Type: List<PracticeResult>
+     * @return True if a run of the exercise was finished in any mode. Type: Boolean
+     */
+    fun isFinished(exerciseTitle: String, results: List<PracticeResult>): Boolean {
+        return results.any { it.exerciseTitle == exerciseTitle }
+    }
+
+    /**
      * @param exercises Exercises available. Type: List<Exercise>
      * @param results Practice history. Type: List<PracticeResult>
-     * @return The easiest exercise not yet mastered, or null if all are. Type: Exercise?
+     * @return The easiest exercise not yet finished, or null if all are. Type: Exercise?
      */
     fun recommendNext(exercises: List<Exercise>, results: List<PracticeResult>): Exercise? {
+        val finishedTitles = results.mapTo(HashSet()) { it.exerciseTitle }
         return orderedByDifficulty(exercises)
-            .firstOrNull { !isMastered(it.exercise.title, results) }
+            .firstOrNull { it.exercise.title !in finishedTitles }
             ?.exercise
     }
 

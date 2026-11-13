@@ -7,8 +7,8 @@ import android.view.View
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import com.example.wavefret.R
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.google.android.material.appbar.MaterialToolbar
 
@@ -17,7 +17,7 @@ import com.google.android.material.appbar.MaterialToolbar
  *
  * Android framework glue with no logic, verified on-device.
  */
-class VideoPlayerActivity : AppCompatActivity() {
+class VideoPlayerActivity : WaveFretActivity() {
 
     private lateinit var videoView: VideoView
 

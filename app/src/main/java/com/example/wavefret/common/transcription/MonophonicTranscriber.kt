@@ -10,16 +10,19 @@ import kotlin.math.sqrt
 /**
  * Transcribes audio with one note at a time, such as a bass played on its
  * own, using the app's YIN pitch detector frame by frame. Frame pitches are
- * median-smoothed, then runs of the same note become notes; silence or a
- * pitch change ends a note. Accurate on clean bass, unsuitable for full mixes.
+ * median-smoothed, then runs of the same note become notes; silence, a
+ * pitch change or a new pluck (a sudden rise in loudness) ends a note, so
+ * the same note played several times stays several notes. The silence
+ * level follows the recording's own loudness, so quiet recordings work.
+ * Accurate on clean bass, unsuitable for full mixes.
  *
  * @property pitchDetector Finds the pitch of each analysis window. Type: PitchDetector
- * @property silenceThreshold RMS of a frame's centre below which it counts as silent. Type: Double
+ * @property minimumSilenceThreshold Frame RMS that is always silence, however quiet the recording. Type: Double
  * @property minimumNoteMillis Shorter runs are discarded as noise. Type: Long
  */
 class MonophonicTranscriber(
     private val pitchDetector: PitchDetector,
-    private val silenceThreshold: Double = DEFAULT_SILENCE_THRESHOLD,
+    private val minimumSilenceThreshold: Double = DEFAULT_MINIMUM_SILENCE_THRESHOLD,
     private val minimumNoteMillis: Long = DEFAULT_MINIMUM_NOTE_MILLIS
 ) : NoteTranscriber {
 
@@ -33,10 +36,14 @@ class MonophonicTranscriber(
         val hopSamples = sampleRateHz * HOP_MILLIS / MILLIS_PER_SECOND
         if (samples.size < windowSamples) return emptyList()
         val frameCount = (samples.size - windowSamples) / hopSamples + 1
+        val frameLevels = DoubleArray(frameCount) { frame ->
+            rootMeanSquare(samples, frame * hopSamples + windowSamples / 2 - hopSamples, 2 * hopSamples)
+        }
+        val silenceThreshold = silenceThresholdFor(frameLevels)
+        val attackFrames = attackFramesIn(frameLevels, silenceThreshold)
         val rawFrameNotes = List(frameCount) { frame ->
             val windowStart = frame * hopSamples
-            val centreStart = windowStart + windowSamples / 2 - hopSamples
-            if (rootMeanSquare(samples, centreStart, 2 * hopSamples) < silenceThreshold) {
+            if (frameLevels[frame] < silenceThreshold) {
                 null
             } else {
                 pitchDetector.detectPitch(samples.copyOfRange(windowStart, windowStart + windowSamples), sampleRateHz)
@@ -49,7 +56,9 @@ class MonophonicTranscriber(
         var runStart = 0
         while (runStart < frameNotes.size) {
             var runEnd = runStart
-            while (runEnd + 1 < frameNotes.size && frameNotes[runEnd + 1] == frameNotes[runStart]) runEnd++
+            while (runEnd + 1 < frameNotes.size && frameNotes[runEnd + 1] == frameNotes[runStart] &&
+                !(runEnd + 1 in attackFrames && runEnd + 1 - runStart >= minimumFrames)
+            ) runEnd++
             val runMidiNumber = frameNotes[runStart]
             if (runMidiNumber != null && runEnd - runStart + 1 >= minimumFrames) {
                 val onsetSample = runStart * hopSamples + windowSamples / 2
@@ -68,6 +77,34 @@ class MonophonicTranscriber(
      * @param frequencyHz Detected pitch. Type: Double
      * @return Nearest MIDI note number. Type: Int
      */
+    /**
+     * @param frameLevels RMS of every frame. Type: DoubleArray
+     * @return Level below which a frame is silent: a fraction of the recording's loud frames, never below the minimum. Type: Double
+     */
+    private fun silenceThresholdFor(frameLevels: DoubleArray): Double {
+        val sortedLevels = frameLevels.sorted()
+        val loudLevel = sortedLevels[((sortedLevels.size - 1) * LOUD_LEVEL_PERCENTILE).roundToInt()]
+        return maxOf(minimumSilenceThreshold, loudLevel * SILENCE_FRACTION_OF_LOUD_LEVEL)
+    }
+
+    /**
+     * A pluck shows as a frame clearly louder than the quietest of the few
+     * frames before it; only the first frame of each rise counts.
+     *
+     * @param frameLevels RMS of every frame. Type: DoubleArray
+     * @param silenceThreshold Level below which frames are silent. Type: Double
+     * @return Indices of frames where a new pluck starts. Type: Set<Int>
+     */
+    private fun attackFramesIn(frameLevels: DoubleArray, silenceThreshold: Double): Set<Int> {
+        val attackFrames = mutableSetOf<Int>()
+        for (frame in ATTACK_LOOKBACK_FRAMES until frameLevels.size) {
+            val quietestBefore = (frame - ATTACK_LOOKBACK_FRAMES until frame).minOf { frameLevels[it] }
+            val isRise = frameLevels[frame] >= silenceThreshold && frameLevels[frame] >= quietestBefore * ATTACK_RISE_RATIO
+            if (isRise && frame - 1 !in attackFrames) attackFrames += frame
+        }
+        return attackFrames
+    }
+
     private fun midiNumberOf(frequencyHz: Double): Int =
         A4_MIDI_NUMBER + (centsBetween(A4_FREQUENCY_HZ, frequencyHz) / CENTS_PER_SEMITONE).roundToInt()
 
@@ -114,7 +151,11 @@ class MonophonicTranscriber(
         const val MILLIS_PER_SECOND = 1_000
         const val SMOOTHING_RADIUS_FRAMES = 2
         const val SILENT_FRAME = -1
-        const val DEFAULT_SILENCE_THRESHOLD = 0.02
+        const val DEFAULT_MINIMUM_SILENCE_THRESHOLD = 0.0015
+        const val LOUD_LEVEL_PERCENTILE = 0.9
+        const val SILENCE_FRACTION_OF_LOUD_LEVEL = 0.08
+        const val ATTACK_LOOKBACK_FRAMES = 3
+        const val ATTACK_RISE_RATIO = 1.5
         const val DEFAULT_MINIMUM_NOTE_MILLIS = 60L
         const val A4_MIDI_NUMBER = 69
         const val A4_FREQUENCY_HZ = 440.0

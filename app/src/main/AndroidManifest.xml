@@ -6,12 +6,15 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Only for YouTube's embedded player in play-along and Listen mode. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
     <uses-feature
         android:name="android.hardware.camera.any"
         android:required="false" />
 
     <application
+        android:name=".WaveFretApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -22,6 +25,17 @@
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="33"
         android:theme="@style/Theme.WaveFret">
+        <service
+            android:name=".common.audio.PlaybackCaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+        <activity
+            android:name=".practice.songsearch.SongFinderActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="false" />
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -58,6 +72,7 @@
                 <data android:mimeType="application/octet-stream" />
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="application/pdf" />
+                <data android:mimeType="image/*" />
                 <data android:mimeType="image/*" />
                 <data android:mimeType="audio/*" />
             </intent-filter>

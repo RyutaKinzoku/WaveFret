@@ -2,7 +2,7 @@
 
 This document maps each product-quality characteristic of ISO/IEC 25010:2023
 to what WaveFret does about it, how that is verified, and what is still
-open. It is updated with every release; the current state is **0.11.0**.
+open. It is updated with every release; the current state is **0.12.0**.
 
 Verification legend: **UT** = JUnit unit test, **RT** = Robolectric screen
 test (`ScreenRenderTest`, renders every screen in light/dark),
@@ -18,6 +18,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Functional correctness | Pitch matching ±40 cents, YIN with harmonic-lock rejection, hit confirmation that refuses to count a sustained note twice, beat windows of ±½ beat, streaks computed in local time. | UT (300+ tests, all green at every GREEN commit) |
 | Functional correctness (transcription) | Note decoding, windowing, resampling and tempo estimation are unit-tested against synthetic signals and synthetic model outputs; a harmonic-rich bass line is transcribed end to end. Real-song accuracy is not yet measured. | UT, DEV pending |
 | Functional correctness (0.11) | A note on the same string as the previous one, or a repeated note, only counts after a detected pluck attack, so ringing strings and fading tails can't play the lesson for you. | UT (`AttackDetector`, `HitConfirmer`, sessions, `PracticeController`) |
+| Functional correctness (0.12) | Finished lessons are never recommended again; the next suggestion is the easiest unfinished one. Re-plucked notes stay separate notes, quiet recordings are transcribed, full songs keep only the bass line. Pasted, photographed and web tabs are normalised before parsing. | UT (`ExerciseProgression`, `PracticeSummaryBuilder`, `MonophonicTranscriber`, `BassLineExtractor`, `AsciiTabParser`, `TextGridBuilder`, `TabLineGapFiller`) |
 | Functional appropriateness | The app compares against a *known* expected note instead of open transcription, the simplest reliable approach for "wait until I play it right". | Design (charter) |
 
 ## 2. Performance efficiency
@@ -43,6 +44,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Appropriateness recognizability | Home shows progress, the two tools with one-line explanations, and the next exercise. | RT, DEV |
 | Learnability | New players see onboarding copy ("Tune up, then play your first exercise") and a "Start here" recommendation; each mode explains itself under the toggle; empty states explain what to do. | RT |
 | Operability (0.10) | Playing softly is enough: an adaptive noise gate and a detector that listens for the expected note hear quiet plucks, so lessons don't require force. The tuner never guesses the string: you pick it, or it goes lowest first. | UT (`AdaptiveSilenceGate`, `TargetedPitchDetector`, `GuidedTuner`) |
+| Operability (0.12) | Settings let the player choose light, dark or system theme and one of four text sizes on top of the phone's font size. Find a song, photo/PDF tabs and YouTube learning all happen inside the app; Listen mode tells the player not to play during step 1. | UT (`ThemeMode`, `TextSize`), RT (settings, song finder), DEV |
 | Operability | Primary actions in the thumb zone (Practise, Start/Stop, Record); all tap targets ≥ 48 dp; edge-to-edge insets keep every button above the navigation bar; screen stays on while playing. | RT (primary view shown), LINT, DEV |
 | User error protection | Leaving the lesson editor with unsaved edits asks first; a lesson can't lose its last note or its title. Deleting a take or song asks first; import validates input and explains failures; denied microphone access explains why and links to Settings; leaving mid-take saves the take. | DEV |
 | User engagement | Play-along turns any song into a stop-and-go game with unlimited tries. |
@@ -64,6 +66,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 
 | Sub-characteristic | How | Verified by |
 |---|---|---|
+| Confidentiality (0.12) | Text recognition for photos/PDFs runs on the device (bundled ML Kit model). Hearing a video directly needs the player's approval in Android's capture prompt each time, runs only while Listen mode listens (with an ongoing notification), and the captured sound is analysed in memory and never saved. The song finder is an ordinary in-app browser; WaveFret sends nothing to the sites it opens. | Manifest review, DEV |
 | Confidentiality | `RECORD_AUDIO` and `CAMERA` are requested only when a screen needs them. `INTERNET` (since 0.9) is used only to load YouTube's embedded player for a video the player chose; no WaveFret data is sent anywhere, there are no accounts, analytics or ads, and transcription runs on the device. Takes leave the device only when the player shares one: a FileProvider exposes just that file, read-only, to the app they pick. | Manifest review |
 | Integrity | YouTube video ids are checked against YouTube's id format before they are placed in the player page, and the page's JavaScript bridge only receives player events. All XML (MusicXML, Guitar Pro) goes through `SafeXmlDocumentParser` (no entity expansion, no external DTDs); file names are URL-encoded so titles can't escape the storage folder; shared files are parsed, never executed. | UT |
 | Accountability / authenticity | Not applicable: single-user, no accounts. | — |
@@ -106,3 +109,6 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 - English only; strings are externalized, so translation is possible but not done.
 - Android Gradle Plugin 9.5.1 is available (lint notice); upgrading is a separate task.
 - Rhythm is not part of the tab model, so it doesn't count towards difficulty.
+- Sheet music (notes on a staff) in photos and PDFs isn't read; only tabs are.
+- Text recognition, playback capture and the song finder have only been checked with unit tests and rendered screens, not on a phone.
+- Transcription accuracy on real songs is still unmeasured; the new rules were checked against synthetic audio and synthetic model output.

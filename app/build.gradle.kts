@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.wavefret"
         minSdk = 24
         targetSdk = 37
-        versionCode = 11
-        versionName = "0.11.0"
+        versionCode = 12
+        versionName = "0.12.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,4 +59,5 @@ dependencies {
     implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
     implementation(libs.litert)
+    implementation(libs.mlkit.text.recognition)
 }

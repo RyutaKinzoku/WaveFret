@@ -17,8 +17,8 @@ enum class SongFileFormat {
     /** ASCII tab or WaveFret tab text. */
     TAB_TEXT,
 
-    /** PDF or photo of sheet music: needs converting to MusicXML first. */
-    SHEET_MUSIC_IMAGE,
+    /** PDF or photo: its tab is read with text recognition. */
+    DOCUMENT_IMAGE,
 
     /** Anything else, including Guitar Pro 3-6 files. */
     UNSUPPORTED
@@ -46,7 +46,7 @@ class SongFileFormatDetector {
             extension in OLD_GUITAR_PRO_EXTENSIONS -> SongFileFormat.UNSUPPORTED
             normalizedMimeType.startsWith("audio/") || extension in AUDIO_EXTENSIONS -> SongFileFormat.AUDIO
             normalizedMimeType == "application/pdf" || normalizedMimeType.startsWith("image/") ||
-                extension in SHEET_MUSIC_IMAGE_EXTENSIONS -> SongFileFormat.SHEET_MUSIC_IMAGE
+                extension in DOCUMENT_IMAGE_EXTENSIONS -> SongFileFormat.DOCUMENT_IMAGE
             looksLikeMusicXml(leadingBytes) || extension in MUSIC_XML_EXTENSIONS -> SongFileFormat.MUSIC_XML
             normalizedMimeType.startsWith("text/") || extension in TEXT_EXTENSIONS -> SongFileFormat.TAB_TEXT
             else -> SongFileFormat.UNSUPPORTED
@@ -76,7 +76,7 @@ class SongFileFormatDetector {
         val ZIP_SIGNATURE = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
         val OLD_GUITAR_PRO_EXTENSIONS = setOf("gp3", "gp4", "gp5", "gpx")
         val AUDIO_EXTENSIONS = setOf("mp3", "m4a", "aac", "wav", "ogg", "oga", "opus", "flac", "3gp", "amr", "webm")
-        val SHEET_MUSIC_IMAGE_EXTENSIONS = setOf("pdf", "jpg", "jpeg", "png", "webp", "heic")
+        val DOCUMENT_IMAGE_EXTENSIONS = setOf("pdf", "jpg", "jpeg", "png", "webp", "heic")
         val MUSIC_XML_EXTENSIONS = setOf("musicxml", "xml", "mxl")
         val TEXT_EXTENSIONS = setOf("txt", "tab")
     }

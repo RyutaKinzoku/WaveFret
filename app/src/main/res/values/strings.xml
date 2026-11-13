@@ -22,7 +22,7 @@
     <string name="home_recorder_body">Record a take and listen back</string>
     <string name="home_continue_label_new">Start here</string>
     <string name="home_continue_label">Up next</string>
-    <string name="home_continue_label_all_mastered">Everything mastered</string>
+    <string name="home_continue_label_all_mastered">Everything finished</string>
     <string name="home_continue_all_mastered_body">Import a song or replay a favourite.</string>
     <string name="home_practice_button">Practise %1$s</string>
     <string name="home_open_practice_button">Open practice</string>
@@ -82,6 +82,7 @@
     <string name="exercise_picker_title">Choose an exercise</string>
     <string name="exercise_picker_recommended">Recommended</string>
     <string name="exercise_picker_mastered_description">Mastered</string>
+    <string name="exercise_picker_finished_description">Finished</string>
     <string name="exercise_picker_delete_description">Delete %1$s</string>
     <string name="delete_song_title">Delete this song?</string>
     <string name="delete_song_message">%1$s will be removed from your songs. Your scores are kept.</string>
@@ -133,10 +134,13 @@
     <string name="add_song_open_file_body">Guitar Pro (.gp), MusicXML, MIDI or a text tab</string>
     <string name="add_song_paste_title">Paste a tab</string>
     <string name="add_song_paste_body">Copy a bass tab from a website and paste it</string>
-    <string name="add_song_sheet_music_title">Sheet music (PDF or photo)</string>
-    <string name="add_song_sheet_music_body">See how to turn it into a lesson</string>
-    <string name="sheet_music_help_title">PDFs and photos need one extra step</string>
-    <string name="sheet_music_help_message">WaveFret can\'t read notes from a picture yet. Open the PDF or photo in MuseScore (free), check the notes, then export it as MusicXML and add that file here.</string>
+    <string name="add_song_sheet_music_title">Tab from a photo or PDF</string>
+    <string name="add_song_sheet_music_body">WaveFret reads the tab on your phone, free and offline</string>
+    <string name="reading_tab_title">Reading the tab</string>
+    <string name="reading_tab_step">Looking for fret numbers on every page…</string>
+    <string name="no_tab_found_title">No bass tab found</string>
+    <string name="no_tab_found_message">WaveFret reads tabs (numbers on four lines). It can\'t read notes on a music staff yet. If the picture is a tab, try a sharper, straight photo, or edit what was read.</string>
+    <string name="no_tab_found_edit">Edit what was read</string>
     <string name="ok">OK</string>
     <string name="importing_song">Importing…</string>
     <string name="home_songs_title">Your songs</string>
@@ -211,7 +215,7 @@
     <string name="listen_title">Listen</string>
     <string name="listen_start">Start listening</string>
     <string name="listen_stop">Stop and make a lesson</string>
-    <string name="listen_status_youtube">Press Start: the video plays and WaveFret listens through the microphone.</string>
+    <string name="listen_status_youtube">Step 1 of 2: WaveFret learns the notes. Press Start and let the video play. You don\'t need to play yet. Next, you\'ll play along and the video will wait for each note.</string>
     <string name="listen_status_speaker">Play the song on a speaker near your phone, then press Start.</string>
     <string name="listen_status_listening">Listening… press Stop when you have enough.</string>
     <string name="listen_tip">Turn the volume up and keep the phone close. Headphones won\'t work: the microphone has to hear the song.</string>
@@ -245,9 +249,44 @@
     <string name="add_song_find_title">Find a song</string>
     <string name="add_song_find_body">Type its name; WaveFret finds a bass cover or tab</string>
     <string name="find_song_name_hint">Song name</string>
-    <string name="find_song_how_it_works">Pick a video or tab in the app that opens, tap Share, then choose WaveFret. The lesson will be named after this song.</string>
+    <string name="find_song_how_it_works">WaveFret searches inside the app. Open a video or a tab page, then tap Use. Free, no account needed.</string>
     <string name="find_song_youtube">Bass cover on YouTube</string>
     <string name="find_song_tab">Bass tab on the web</string>
     <string name="find_song_name_required">Type a song name first</string>
-    <string name="find_song_no_app">No app here can open that search</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_open_description">Settings</string>
+    <string name="settings_theme_heading">Theme</string>
+    <string name="settings_theme_system">Same as my phone</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_text_size_heading">Text size</string>
+    <string name="settings_text_size_small">Small</string>
+    <string name="settings_text_size_default">Default</string>
+    <string name="settings_text_size_large">Large</string>
+    <string name="settings_text_size_extra_large">Extra large</string>
+    <string name="settings_text_size_preview">Play the open E string, then fret the 3rd fret for G.</string>
+    <string name="settings_text_size_hint">Text size adds to your phone\'s own font size.</string>
+
+    <!-- Song finder -->
+    <string name="song_finder_subtitle">Find a song</string>
+    <string name="song_finder_videos">Videos</string>
+    <string name="song_finder_tabs">Tabs</string>
+    <string name="song_finder_use_video">Use this video</string>
+    <string name="song_finder_use_tab">Use the tab on this page</string>
+    <string name="song_finder_videos_hint">Open a bass cover video to use it.</string>
+    <string name="song_finder_video_ready_hint">Use this video to learn its bass line, then play along.</string>
+    <string name="song_finder_tabs_hint">Open a page that shows the bass tab as text (numbers on four lines), then tap the button.</string>
+    <string name="song_finder_no_tab_on_page">No bass tab text on this page. Try another result, or a page with a text tab.</string>
+
+    <!-- Hearing the video directly -->
+    <string name="listen_direct_title">Hear the video directly?</string>
+    <string name="listen_direct_message">Phone speakers can\'t play deep bass notes, so WaveFret hears the bass far better straight from the video. Android will ask to record or cast your screen: WaveFret only uses the sound to find the notes, and nothing is saved.</string>
+    <string name="listen_direct_continue">Continue</string>
+    <string name="listen_direct_use_microphone">Use the microphone</string>
+    <string name="listen_direct_declined">Listening through the microphone instead</string>
+    <string name="playback_capture_channel">Learning a song</string>
+    <string name="playback_capture_notification_title">WaveFret is learning the notes</string>
+    <string name="playback_capture_notification_body">Only the video\'s sound is used. Nothing is saved.</string>
 </resources>

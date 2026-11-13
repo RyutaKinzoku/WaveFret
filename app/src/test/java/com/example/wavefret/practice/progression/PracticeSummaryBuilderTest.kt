@@ -46,16 +46,26 @@ class PracticeSummaryBuilderTest {
     }
 
     @Test
-    fun suggestsTheNextUnmasteredExerciseOtherThanThisOne() {
+    fun suggestsTheNextUnfinishedExerciseOtherThanThisOne() {
         val summary = builder.build(result("Easy", PracticeMode.TEMPO, 95), emptyList(), listOf(easy, hard))
 
         assertEquals("Hard", summary.nextExercise?.title)
     }
 
     @Test
-    fun suggestsNothingWhenEverythingElseIsMastered() {
+    fun afterTheSecondExerciseSuggestsTheThirdNotTheFirst() {
+        val medium = Exercise("Medium", BassTunings.STANDARD, 100, listOf(TabNote(0, 3), TabNote(2, 5), TabNote(1, 2)))
         val summary = builder.build(
-            result("Easy", PracticeMode.TEMPO, 95), listOf(result("Hard", PracticeMode.TEMPO, 99)), listOf(easy, hard)
+            result("Medium", PracticeMode.WAIT, 80), listOf(result("Easy", PracticeMode.WAIT, 70)), listOf(easy, medium, hard)
+        )
+
+        assertEquals("Hard", summary.nextExercise?.title)
+    }
+
+    @Test
+    fun suggestsNothingWhenEverythingElseIsFinished() {
+        val summary = builder.build(
+            result("Easy", PracticeMode.TEMPO, 95), listOf(result("Hard", PracticeMode.WAIT, 40)), listOf(easy, hard)
         )
 
         assertNull(summary.nextExercise)

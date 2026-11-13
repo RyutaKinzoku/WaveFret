@@ -295,3 +295,62 @@
 - `AttackDetector`; `HitConfirmer.requireFreshAttack()` / `onAttack()`;
   `PracticeSession.onAttack()`; `SongSearchLinks`, `PendingSongTitle`,
   `PendingSongTitleStore`.
+
+## [0.12.0] - 2026-11-12 - Settings, tabs from anywhere, better transcription
+
+### Added
+- Settings (gear on the home screen): theme (same as my phone, light or
+  dark) and text size (small, default, large, extra large). Text size adds
+  to the phone's own font size and applies to every screen.
+- Tabs from photos and PDFs (Add a song → Tab from a photo or PDF, or
+  share an image/PDF to WaveFret): Google's ML Kit text recognition runs on
+  the phone, offline and free; WaveFret rebuilds the tab's columns from
+  character positions, restores missing staff-line dashes, and opens the
+  result for checking. Sheet music on a staff can't be read yet, and the
+  app says so.
+- Find a song now works inside the app: a built-in browser searches
+  YouTube bass covers or web bass tabs. "Use this video" opens Listen
+  mode; "Use the tab on this page" reads the tab text the page shows (no
+  download or account needed) and opens it for checking.
+- Listen mode hears a YouTube video directly on Android 10+ (Android's
+  capture prompt, foreground service while listening; the sound is only
+  analysed, never saved), because phone speakers can't play low bass
+  notes. The microphone is the fallback. The screen explains the two
+  steps (learn the notes, then play along), and saving the lesson opens
+  play-along straight away.
+
+### Fixed
+- Finished lessons are never suggested again (they can still be
+  replayed). Finishing a run in any mode marks a lesson finished; mastery
+  (90%+ in tempo mode) is now a separate trophy badge. This also fixes the
+  end-of-run suggestion going back to an earlier lesson instead of the
+  next harder one.
+- Pasted tabs copied from websites, PDFs or photos parse reliably:
+  typographic dashes, non-breaking spaces and tab characters, missing
+  string names, dead/ghost-note letters, repeat counts after the last bar
+  and 5-string systems.
+- Audio transcription: the same note plucked several times in a row stays
+  several notes (pluck detection); quiet recordings are transcribed (the
+  silence level follows the recording); full songs keep only the bass line
+  (lowest of simultaneous notes, harmonic ghosts and notes far above the
+  bass register dropped) instead of every instrument below E4.
+
+### Removed
+- The leave-the-app song search hand-off (`PendingSongTitle`,
+  `PendingSongTitleStore`), replaced by the in-app finder.
+
+### Architecture
+- `common.appearance` (`ThemeMode`, `TextSize`, `AppearancePreferencesStore`,
+  `applyThemeMode`), `common.ui.WaveFretActivity` (base screen applying
+  text size), `WaveFretApplication`, `settings.SettingsActivity`.
+- `common.textrecognition` (`RecognizedSymbol`, `TextGridBuilder`,
+  `MlKitSymbolRecognizer`, `DocumentPageRenderer`);
+  `practice.songimport.TabLineGapFiller`, `RecognizedTabTextBuilder`,
+  `AsciiTabParser.extractTab`.
+- `practice.songsearch.SongFinderActivity`.
+- `common.transcription.BassLineExtractor`; pluck splitting and adaptive
+  silence in `MonophonicTranscriber`.
+- `common.audio.PlaybackCapturePcmSource`, `PlaybackCaptureService`.
+- New dependency: `com.google.mlkit:text-recognition` 16.0.1 (bundled
+  model, no Play services download).
+

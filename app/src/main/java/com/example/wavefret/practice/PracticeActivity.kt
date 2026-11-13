@@ -10,7 +10,6 @@ import android.view.WindowManager
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,6 +21,7 @@ import com.example.wavefret.common.audio.Metronome
 import com.example.wavefret.common.audio.ToneGeneratorClickPlayer
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.time.ElapsedRealtimeClock
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
 import com.example.wavefret.practice.playalong.LessonAudioStore
@@ -58,7 +58,7 @@ import kotlinx.coroutines.launch
  * [PracticeController], [PracticeDisplayFormatter], [TabStaffLayout],
  * [Metronome], importers and progression classes — so it is verified on-device.
  */
-class PracticeActivity : AppCompatActivity() {
+class PracticeActivity : WaveFretActivity() {
 
     private lateinit var rootView: ViewGroup
     private lateinit var exerciseCard: View

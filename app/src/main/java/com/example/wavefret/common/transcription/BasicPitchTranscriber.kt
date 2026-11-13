@@ -15,13 +15,15 @@ import com.example.wavefret.common.music.NoteEvent
  * @property posteriorgramNoteDecoder Turns model maps into notes. Type: PosteriorgramNoteDecoder
  * @property audioResampler Converts audio to the model's sample rate. Type: AudioResampler
  * @property highestBassMidiNumber Notes above this are treated as other instruments. Type: Int
+ * @property bassLineExtractor Keeps only the bass line out of all instruments. Type: BassLineExtractor
  */
 class BasicPitchTranscriber(
     private val basicPitchModel: BasicPitchModel,
     private val basicPitchWindowing: BasicPitchWindowing,
     private val posteriorgramNoteDecoder: PosteriorgramNoteDecoder,
     private val audioResampler: AudioResampler,
-    private val highestBassMidiNumber: Int = DEFAULT_HIGHEST_BASS_MIDI_NUMBER
+    private val highestBassMidiNumber: Int = DEFAULT_HIGHEST_BASS_MIDI_NUMBER,
+    private val bassLineExtractor: BassLineExtractor = BassLineExtractor()
 ) : NoteTranscriber {
 
     /**
@@ -37,7 +39,8 @@ class BasicPitchTranscriber(
         }
         val noteFrames = basicPitchWindowing.stitch(predictions.map { it.notes }, modelAudio.size)
         val onsetFrames = basicPitchWindowing.stitch(predictions.map { it.onsets }, modelAudio.size)
-        return posteriorgramNoteDecoder.decode(noteFrames, onsetFrames).filter { it.midiNumber <= highestBassMidiNumber }
+        val bassRangeNotes = posteriorgramNoteDecoder.decode(noteFrames, onsetFrames).filter { it.midiNumber <= highestBassMidiNumber }
+        return bassLineExtractor.extract(bassRangeNotes)
     }
 
     private companion object {

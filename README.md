@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: 0.11.0 — fresh-pluck detection and Find a song
+## Status: 0.12.0 — settings, tabs from anywhere, better transcription
 
 The current build lets you:
 
@@ -18,25 +18,27 @@ The current build lets you:
   hit or missed on its beat);
 - add the songs you want to learn (v3, 0.7): paste an ASCII bass tab,
   or open/share a Guitar Pro 7+ (`.gp`), MIDI (`.mid`) or MusicXML
-  (`.musicxml`, `.xml`, `.mxl`) file. PDFs and photos of sheet music must
-  first be converted to MusicXML (e.g. with MuseScore). Songs live in a
-  searchable library sorted by difficulty;
+  (`.musicxml`, `.xml`, `.mxl`) file, or read a tab from a photo or PDF
+  (0.12, on-device text recognition; sheet music on a staff isn't read
+  yet). Songs live in a searchable library sorted by difficulty;
 - turn audio into a lesson (0.8): an audio file, shared audio, or one of
   your takes. Pick "just my bass" (YIN, accurate) or "full song"
   (on-device basic-pitch model, rough), then fix any wrong notes in the
   lesson editor;
-- find a song by name (0.11): WaveFret opens a YouTube search for bass
-  covers or a web search for bass tabs; share the result back to make a
-  lesson named after the song;
+- find a song by name (0.12): a built-in browser searches YouTube bass
+  covers or web bass tabs; use the open video, or the tab text on the
+  page, without leaving the app;
 - play along with the original song (0.9): it stops at each note until
   you play it right. Works with lessons made from audio files, YouTube
-  links (YouTube's own player; nothing is downloaded) and Listen mode
-  (WaveFret listens to a song played on a speaker);
+  links (YouTube's own player; nothing is downloaded; on Android 10+
+  WaveFret hears the video's sound directly) and Listen mode (WaveFret
+  listens to a song played on a speaker);
+- choose the theme and text size in Settings (0.12);
 - record audio or video takes and share them with any app (0.7);
 - follow a learning path (v4): exercises are rated Beginner /
   Intermediate / Advanced by a heuristic, listed easiest first with your
-  best score, and the easiest one not yet mastered (90%+ in tempo mode)
-  is recommended. Every completed run is saved to
+  best score, and the easiest one not yet finished is recommended
+  (0.12); mastery (90%+ in tempo mode) earns a trophy. Every completed run is saved to
   `practice_results.tsv`, a personal hit/miss dataset.
 
 ## Requirements
@@ -83,10 +85,11 @@ renders to `app/build/screenshots/` on each test run.
 Top-level packages under `com.example.wavefret`:
 
 - **`common`** — generic infrastructure with no knowledge of any one
-  feature: `audio` (PCM source, YIN pitch detection, low-pass filter,
-  silence gate, metronome), `music` (notes, cents, fret frequencies,
-  bass tunings), `time` (Clock, BeatClock, formatters), `permission`,
-  `storage`.
+  feature: `audio` (PCM sources, YIN pitch detection, low-pass filter,
+  silence gate, metronome, playback capture), `music` (notes, cents, fret
+  frequencies, bass tunings), `transcription`, `textrecognition`,
+  `appearance` (theme, text size), `ui`, `time`, `permission`, `storage`.
+- **`settings`** — the Settings screen.
 - **`recording`** — recording, listing, playback and deletion of clips.
 - **`tuner`** — the live tuner pipeline and needle display.
 - **`practice`** — the tab model and text-tab parser, built-in

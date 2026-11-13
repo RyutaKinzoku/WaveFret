@@ -19,7 +19,9 @@ import com.example.wavefret.practice.playalong.ListenActivity
 import com.example.wavefret.practice.playalong.PlayAlongActivity
 import com.example.wavefret.practice.TabNote
 import com.example.wavefret.practice.SongLibraryActivity
+import com.example.wavefret.practice.songsearch.SongFinderActivity
 import com.example.wavefret.recording.RecorderActivity
+import com.example.wavefret.settings.SettingsActivity
 import com.example.wavefret.tuner.TunerActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -134,6 +136,30 @@ class ScreenRenderTest {
                     activity.getString(R.string.practice_start),
                     activity.findViewById<Button>(R.id.practiceStartButton).text.toString()
                 )
+            }
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun settingsShowsThemeAndTextSizeChoices() =
+        renderAndCheck(SettingsActivity::class.java, "settings_dark", R.id.settingsTextSizeRadioGroup)
+
+    @Test
+    fun settingsShowsThemeChoicesInLightTheme() =
+        renderAndCheck(SettingsActivity::class.java, "settings_light", R.id.settingsThemeRadioGroup)
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun songFinderShowsTheSearchAndTheUseButton() {
+        val songFinderIntent = SongFinderActivity.intentFor(
+            ApplicationProvider.getApplicationContext(), songTitle = "Seven Nation Army", searchKind = SongFinderActivity.SearchKind.TAB
+        )
+        ActivityScenario.launch<SongFinderActivity>(songFinderIntent).use { scenario ->
+            scenario.onActivity { activity ->
+                val useButton = activity.findViewById<View>(R.id.songFinderUseButton)
+                assertTrue("use button must be shown", useButton.isShown && useButton.height > 0)
+                saveScreenshot(activity.window.decorView, "song_finder_dark")
             }
         }
     }
