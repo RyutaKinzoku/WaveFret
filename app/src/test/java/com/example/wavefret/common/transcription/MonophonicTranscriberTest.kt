@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.abs
+import kotlin.math.exp
 
 class MonophonicTranscriberTest {
 
@@ -53,5 +54,52 @@ class MonophonicTranscriberTest {
         val notes = transcriber.transcribe(sequence(null to 300, 98.0 to 30, null to 300), sampleRate)
 
         assertEquals(0, notes.size)
+    }
+
+    /** A plucked bass note: harmonic-rich and decaying, like a real string. */
+    private fun pluck(frequencyHz: Double, durationMillis: Int, amplitude: Double = 0.6): FloatArray {
+        val sampleCount = sampleRate * durationMillis / 1_000
+        val tone = SyntheticSignals.bassLikeTone(frequencyHz, sampleRate, sampleCount)
+        return FloatArray(sampleCount) { index ->
+            (tone[index] * amplitude * exp(-index / (sampleRate * 0.35))).toFloat()
+        }
+    }
+
+    @Test
+    fun repeatedPlucksOfTheSameNoteWithoutSilenceAreSeparateNotes() {
+        val pluckSamples = sampleRate * 300 / 1_000
+        val ringingString = SyntheticSignals.bassLikeTone(41.2, sampleRate, pluckSamples * 4)
+        val bassLine = FloatArray(ringingString.size) { index ->
+            (ringingString[index] * 0.6 * exp(-(index % pluckSamples) / (sampleRate * 0.35))).toFloat()
+        }
+
+        val notes = transcriber.transcribe(bassLine, sampleRate)
+
+        assertEquals(listOf(28, 28, 28, 28), notes.map { it.midiNumber })
+        notes.zip(listOf(0L, 300L, 600L, 900L)).forEach { (note, expectedOnset) ->
+            assertTrue("onset ${note.onsetMillis} expected near $expectedOnset", abs(note.onsetMillis - expectedOnset) <= 60)
+        }
+    }
+
+    @Test
+    fun aQuietRecordingIsStillTranscribed() {
+        val quietBassLine = pluck(55.0, 500, amplitude = 0.01) + pluck(73.42, 500, amplitude = 0.01)
+
+        assertEquals(listOf(33, 38), transcriber.transcribe(quietBassLine, sampleRate).map { it.midiNumber })
+    }
+
+    @Test
+    fun harmonicRichBassNotesAreNotReadAnOctaveHigh() {
+        val bassLine = pluck(41.2, 500) + pluck(61.74, 500) + pluck(82.41, 500) + pluck(110.0, 500)
+
+        assertEquals(listOf(28, 35, 40, 45), transcriber.transcribe(bassLine, sampleRate).map { it.midiNumber })
+    }
+
+    @Test
+    fun quietRoomNoiseBetweenNotesIsNotANote() {
+        val noise = SyntheticSignals.whiteNoise(sampleRate / 2, amplitude = 0.01)
+        val bassLine = noise + pluck(55.0, 500) + SyntheticSignals.whiteNoise(sampleRate / 2, amplitude = 0.01, seed = 7)
+
+        assertEquals(listOf(33), transcriber.transcribe(bassLine, sampleRate).map { it.midiNumber })
     }
 }
