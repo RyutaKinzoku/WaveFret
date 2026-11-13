@@ -49,4 +49,12 @@ class LessonPlaybackScheduleTest {
         assertEquals(43.65, notes[1].frequencyHz, 0.05)
         assertEquals(listOf(0, 1), notes.map { it.noteIndex })
     }
+
+    @Test
+    fun playbackCanStartFromAnyNote() {
+        val notes = schedule.schedule(lesson(4, onsetsMillis = listOf(0L, 300L, 700L, 1_200L)), fromNoteIndex = 2)
+
+        assertEquals(listOf(2, 3), notes.map { it.noteIndex })
+        assertEquals(listOf(0L, 500L), notes.map { it.startMillis })
+    }
 }
