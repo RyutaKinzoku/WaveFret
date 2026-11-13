@@ -354,6 +354,15 @@
 - New dependency: `com.google.mlkit:text-recognition` 16.0.1 (bundled
   model, no Play services download).
 
+## [0.14.1] - 2026-11-13 - Make Project works in Android Studio
+
+### Fixed
+- Android Studio's Make Project (Build > Make Project) failed with "task
+  'unitTestClasses' not found": the Android Gradle Plugin 9 no longer
+  creates the aggregate test-compile tasks Studio asks for. The app module
+  now provides `unitTestClasses` and `androidTestClasses`, which compile
+  the unit and device test sources.
+
 ## [0.14.0] - 2026-11-13 - Hear any lesson, piano scores, light-on-dark video tabs
 
 ### Added

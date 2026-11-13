@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.wavefret"
         minSdk = 24
         targetSdk = 37
-        versionCode = 14
-        versionName = "0.14.0"
+        versionCode = 15
+        versionName = "0.14.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,3 +61,8 @@ dependencies {
     implementation(libs.litert)
     implementation(libs.mlkit.text.recognition)
 }
+
+// Android Studio's "Make Project" asks for these aggregate tasks, which the
+// Android Gradle Plugin 9 no longer creates; they compile the test sources.
+tasks.register("unitTestClasses") { dependsOn("compileDebugUnitTestSources") }
+tasks.register("androidTestClasses") { dependsOn("compileDebugAndroidTestSources") }
