@@ -15,8 +15,8 @@ sealed class SongImportOutcome {
     /** The file is audio; its notes must be detected by transcription. */
     data object NeedsAudioTranscription : SongImportOutcome()
 
-    /** The file is a PDF or photo of sheet music, which must be converted to MusicXML first. */
-    data object SheetMusicImageNotSupported : SongImportOutcome()
+    /** The file is a PDF or photo; its tab must be read with text recognition. */
+    data object NeedsTextRecognition : SongImportOutcome()
 
     /**
      * The file could not be read.
@@ -62,7 +62,7 @@ class SongFileImporter(
         return try {
             when (songFileFormatDetector.detect(fileName, mimeType, fileBytes)) {
                 SongFileFormat.AUDIO -> SongImportOutcome.NeedsAudioTranscription
-                SongFileFormat.SHEET_MUSIC_IMAGE -> SongImportOutcome.SheetMusicImageNotSupported
+                SongFileFormat.DOCUMENT_IMAGE -> SongImportOutcome.NeedsTextRecognition
                 SongFileFormat.UNSUPPORTED -> SongImportOutcome.Failed(
                     if (fileName.substringAfterLast('.').lowercase() in OLD_GUITAR_PRO_EXTENSIONS) OLD_GUITAR_PRO_REASON
                     else UNSUPPORTED_REASON

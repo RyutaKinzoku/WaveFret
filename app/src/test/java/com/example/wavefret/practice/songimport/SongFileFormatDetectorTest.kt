@@ -42,8 +42,8 @@ class SongFileFormatDetectorTest {
 
     @Test
     fun pdfAndPhotosAreSheetMusicImagesThatNeedConverting() {
-        assertEquals(SongFileFormat.SHEET_MUSIC_IMAGE, detector.detect("partitura.pdf", "application/pdf", "%PDF-1.7".toByteArray()))
-        assertEquals(SongFileFormat.SHEET_MUSIC_IMAGE, detector.detect("photo.jpg", "image/jpeg", byteArrayOf(1)))
+        assertEquals(SongFileFormat.DOCUMENT_IMAGE, detector.detect("partitura.pdf", "application/pdf", "%PDF-1.7".toByteArray()))
+        assertEquals(SongFileFormat.DOCUMENT_IMAGE, detector.detect("photo.jpg", "image/jpeg", byteArrayOf(1)))
     }
 
     @Test

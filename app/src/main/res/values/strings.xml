@@ -134,10 +134,13 @@
     <string name="add_song_open_file_body">Guitar Pro (.gp), MusicXML, MIDI or a text tab</string>
     <string name="add_song_paste_title">Paste a tab</string>
     <string name="add_song_paste_body">Copy a bass tab from a website and paste it</string>
-    <string name="add_song_sheet_music_title">Sheet music (PDF or photo)</string>
-    <string name="add_song_sheet_music_body">See how to turn it into a lesson</string>
-    <string name="sheet_music_help_title">PDFs and photos need one extra step</string>
-    <string name="sheet_music_help_message">WaveFret can\'t read notes from a picture yet. Open the PDF or photo in MuseScore (free), check the notes, then export it as MusicXML and add that file here.</string>
+    <string name="add_song_sheet_music_title">Tab from a photo or PDF</string>
+    <string name="add_song_sheet_music_body">WaveFret reads the tab on your phone, free and offline</string>
+    <string name="reading_tab_title">Reading the tab</string>
+    <string name="reading_tab_step">Looking for fret numbers on every page…</string>
+    <string name="no_tab_found_title">No bass tab found</string>
+    <string name="no_tab_found_message">WaveFret reads tabs (numbers on four lines). It can\'t read notes on a music staff yet. If the picture is a tab, try a sharper, straight photo, or edit what was read.</string>
+    <string name="no_tab_found_edit">Edit what was read</string>
     <string name="ok">OK</string>
     <string name="importing_song">Importing…</string>
     <string name="home_songs_title">Your songs</string>

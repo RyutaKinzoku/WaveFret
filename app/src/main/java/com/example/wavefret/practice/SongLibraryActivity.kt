@@ -26,6 +26,9 @@ import com.example.wavefret.R
 import com.example.wavefret.common.audio.MediaCodecAudioDecoder
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.ui.WaveFretActivity
+import com.example.wavefret.common.textrecognition.DocumentPageRenderer
+import com.example.wavefret.common.textrecognition.MlKitSymbolRecognizer
+import com.example.wavefret.common.textrecognition.RecognizedSymbol
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.practice.playalong.LessonAudioStore
 import com.example.wavefret.practice.playalong.ListenActivity
@@ -45,6 +48,7 @@ import com.example.wavefret.practice.songimport.NoteEventsLessonBuilder
 import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
 import com.example.wavefret.practice.songimport.SongFileFormat
 import com.example.wavefret.practice.songimport.SongFileFormatDetector
+import com.example.wavefret.practice.songimport.RecognizedTabTextBuilder
 import com.example.wavefret.practice.songimport.SongFileImporter
 import com.example.wavefret.practice.songimport.SongImportOutcome
 import com.example.wavefret.practice.songimport.SongImporter
@@ -71,7 +75,7 @@ import kotlinx.coroutines.withContext
  * default. "Add a song" opens files (Guitar Pro, MusicXML, MIDI, tab
  * text), turns audio into a draft lesson (bass-only audio with YIN, full
  * songs with the basic-pitch model) that opens in the lesson editor, takes
- * a pasted tab, or explains how to convert a PDF or photo.
+ * a pasted tab, or reads the tab in a PDF or photo.
  * Files and text shared into WaveFret from other apps land here too.
  * Tapping a song opens it in practice.
  *
@@ -291,7 +295,7 @@ class SongLibraryActivity : WaveFretActivity() {
         bindAddSongOption(sheetView.findViewById(R.id.addSongSheetMusicOption), R.drawable.ic_image,
             R.string.add_song_sheet_music_title, R.string.add_song_sheet_music_body) {
             addSongSheet.dismiss()
-            showSheetMusicHelp()
+            openSongFileLauncher.launch(arrayOf("image/*", "application/pdf"))
         }
         addSongSheet.setContentView(sheetView)
         addSongSheet.show()
@@ -427,17 +431,81 @@ class SongLibraryActivity : WaveFretActivity() {
     }
 
     /**
-     * Explains how to turn a PDF or photo of sheet music into MusicXML.
+     * Reads the tab in a photo or PDF with on-device text recognition, then
+     * opens the paste dialog with what was read so the player can check it,
+     * fix it and name it.
      *
+     * @param documentUri Photo or PDF to read. Type: Uri
+     * @param fileName Its display name, used as the suggested title. Type: String
+     * @param mimeType Its type, if known. Type: String?
      * @return Unit
      */
-    private fun showSheetMusicHelp() {
-        MaterialAlertDialogBuilder(this)
+    private fun readTabFromDocument(documentUri: Uri, fileName: String, mimeType: String?) {
+        val progressView = layoutInflater.inflate(R.layout.dialog_transcribing, rootView, false)
+        progressView.findViewById<TextView>(R.id.transcribingStepTextView).setText(R.string.reading_tab_step)
+        val progressDialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.reading_tab_title)
+            .setView(progressView)
+            .setCancelable(false)
+            .create()
+        val isPdf = mimeType == "application/pdf" || fileName.endsWith(".pdf", ignoreCase = true)
+        val readingJob = lifecycleScope.launch {
+            val recognizedTabText = try {
+                withContext(Dispatchers.Default) {
+                    val pages = mutableListOf<List<RecognizedSymbol>>()
+                    MlKitSymbolRecognizer().use { symbolRecognizer ->
+                        DocumentPageRenderer(contentResolver).forEachPage(documentUri, isPdf) { pageBitmap ->
+                            pages += symbolRecognizer.recognize(pageBitmap)
+                        }
+                    }
+                    RecognizedTabTextBuilder().build(pages)
+                }
+            } catch (unreadableDocument: IOException) {
+                null
+            } catch (deniedDocument: SecurityException) {
+                null
+            } catch (recognitionFailure: com.google.mlkit.common.MlKitException) {
+                null
+            }
+            progressDialog.dismiss()
+            val suggestedTitle = takeSearchedSongTitle() ?: fileName.substringBeforeLast('.')
+            when {
+                recognizedTabText == null -> showImportFailure(getString(R.string.import_song_unreadable_file))
+                containsReadableTab(recognizedTabText) -> showPasteTabDialog(recognizedTabText, suggestedTitle)
+                else -> showNoTabFoundDialog(recognizedTabText, suggestedTitle)
+            }
+        }
+        progressDialog.setButton(android.content.DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel)) { _, _ ->
+            readingJob.cancel()
+        }
+        progressDialog.show()
+    }
+
+    /**
+     * @param tabText Text that may contain a bass tab. Type: String
+     * @return True if at least one note can be read from it. Type: Boolean
+     */
+    private fun containsReadableTab(tabText: String): Boolean =
+        runCatching { AsciiTabParser(BassTunings.STANDARD).parseNotes(tabText) }.isSuccess
+
+    /**
+     * Explains that no tab was found (for example, the picture is sheet
+     * music on a staff) and offers to edit what was read anyway.
+     *
+     * @param recognizedText Everything that was read from the picture. Type: String
+     * @param suggestedTitle Title to prefill. Type: String
+     * @return Unit
+     */
+    private fun showNoTabFoundDialog(recognizedText: String, suggestedTitle: String) {
+        val dialogBuilder = MaterialAlertDialogBuilder(this)
             .setIcon(R.drawable.ic_image)
-            .setTitle(R.string.sheet_music_help_title)
-            .setMessage(R.string.sheet_music_help_message)
-            .setPositiveButton(R.string.ok, null)
-            .show()
+            .setTitle(R.string.no_tab_found_title)
+            .setMessage(R.string.no_tab_found_message)
+            .setNegativeButton(R.string.ok, null)
+        if (recognizedText.isNotBlank()) {
+            dialogBuilder.setPositiveButton(R.string.no_tab_found_edit) { _, _ -> showPasteTabDialog(recognizedText, suggestedTitle) }
+        }
+        dialogBuilder.show()
     }
 
     /**
@@ -478,7 +546,7 @@ class SongLibraryActivity : WaveFretActivity() {
             importingSnackbar.dismiss()
             when (importOutcome) {
                 is SongImportOutcome.Imported -> saveImportedSong(importOutcome.exercise)
-                SongImportOutcome.SheetMusicImageNotSupported -> showSheetMusicHelp()
+                SongImportOutcome.NeedsTextRecognition -> readTabFromDocument(songFileUri, fileName, mimeType)
                 SongImportOutcome.NeedsAudioTranscription -> askWhatIsInTheAudio(songFileUri, fileName)
                 is SongImportOutcome.Failed -> showImportFailure(importOutcome.reason)
             }
