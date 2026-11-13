@@ -59,4 +59,5 @@ dependencies {
     implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
     implementation(libs.litert)
+    implementation(libs.mlkit.text.recognition)
 }
