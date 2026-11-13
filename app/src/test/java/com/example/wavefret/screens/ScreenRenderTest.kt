@@ -19,6 +19,7 @@ import com.example.wavefret.practice.playalong.ListenActivity
 import com.example.wavefret.practice.playalong.PlayAlongActivity
 import com.example.wavefret.practice.TabNote
 import com.example.wavefret.practice.SongLibraryActivity
+import com.example.wavefret.practice.songsearch.SongFinderActivity
 import com.example.wavefret.recording.RecorderActivity
 import com.example.wavefret.settings.SettingsActivity
 import com.example.wavefret.tuner.TunerActivity
@@ -147,6 +148,21 @@ class ScreenRenderTest {
     @Test
     fun settingsShowsThemeChoicesInLightTheme() =
         renderAndCheck(SettingsActivity::class.java, "settings_light", R.id.settingsThemeRadioGroup)
+
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun songFinderShowsTheSearchAndTheUseButton() {
+        val songFinderIntent = SongFinderActivity.intentFor(
+            ApplicationProvider.getApplicationContext(), songTitle = "Seven Nation Army", searchKind = SongFinderActivity.SearchKind.TAB
+        )
+        ActivityScenario.launch<SongFinderActivity>(songFinderIntent).use { scenario ->
+            scenario.onActivity { activity ->
+                val useButton = activity.findViewById<View>(R.id.songFinderUseButton)
+                assertTrue("use button must be shown", useButton.isShown && useButton.height > 0)
+                saveScreenshot(activity.window.decorView, "song_finder_dark")
+            }
+        }
+    }
 
     /**
      * @param activityClass Screen to launch. Type: Class<T>
