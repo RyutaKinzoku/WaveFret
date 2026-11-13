@@ -122,7 +122,24 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
             }
         }
         return clusters(candidates, spacing)
-            .filter { notehead -> hasStem(shapes, notehead, spacing) }
+            .filter { notehead -> isNoteheadWide(shapes.image, notehead, spacing) && hasStem(shapes, notehead, spacing) }
+    }
+
+    /**
+     * Beams are as solid as noteheads but much wider.
+     *
+     * @param image Image without staff lines. Type: BinaryImage
+     * @param notehead A solid shape. Type: Notehead
+     * @param spacing Staff line spacing. Type: Double
+     * @return True if the ink through its centre is no wider than a notehead. Type: Boolean
+     */
+    private fun isNoteheadWide(image: BinaryImage, notehead: Notehead, spacing: Double): Boolean {
+        val y = notehead.centreY.toInt()
+        var left = notehead.centreX.toInt()
+        while (image.isInk(left - 1, y)) left--
+        var right = notehead.centreX.toInt()
+        while (image.isInk(right + 1, y)) right++
+        return right - left + 1 <= spacing * MAXIMUM_HEAD_WIDTH_SPACINGS
     }
 
     /**
@@ -156,7 +173,7 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
      * @param shapes Ink measurements. Type: ShapeMeasurements
      * @param notehead A solid shape. Type: Notehead
      * @param spacing Staff line spacing. Type: Double
-     * @return True if a long vertical stroke touches its left or right side. Type: Boolean
+     * @return True if a long vertical stroke starts at its left or right side and runs one way, up or down. Type: Boolean
      */
     private fun hasStem(shapes: ShapeMeasurements, notehead: Notehead, spacing: Double): Boolean {
         val sideOffset = (spacing * STEM_SIDE_OFFSET_SPACINGS).roundToInt()
@@ -165,8 +182,14 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
         val centreX = notehead.centreX.roundToInt()
         val centreY = notehead.centreY.roundToInt()
         val columns = (centreX - sideOffset - reach..centreX - sideOffset + reach) + (centreX + sideOffset - reach..centreX + sideOffset + reach)
+        val nearEnd = spacing * STEM_NEAR_END_SPACINGS
         return columns.any { x ->
-            (centreY - reach..centreY + reach).any { y -> verticalRunAt(shapes.image, x, y) >= minimumStem }
+            (centreY - reach..centreY + reach).any { y ->
+                val (runTop, runBottom) = verticalRunEnds(shapes.image, x, y) ?: return@any false
+                val rises = centreY - runTop >= minimumStem && runBottom - centreY <= nearEnd
+                val falls = runBottom - centreY >= minimumStem && centreY - runTop <= nearEnd
+                rises || falls
+            }
         }
     }
 
@@ -320,13 +343,22 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
      * @param y Row. Type: Int
      * @return Length of the vertical ink run through the pixel, 0 if it is paper. Type: Int
      */
-    private fun verticalRunAt(image: BinaryImage, x: Int, y: Int): Int {
-        if (!image.isInk(x, y)) return 0
+    private fun verticalRunAt(image: BinaryImage, x: Int, y: Int): Int =
+        verticalRunEnds(image, x, y)?.let { (top, bottom) -> bottom - top + 1 } ?: 0
+
+    /**
+     * @param image Image. Type: BinaryImage
+     * @param x Column. Type: Int
+     * @param y Row. Type: Int
+     * @return Top and bottom rows of the vertical ink run through the pixel, or null if it is paper. Type: Pair<Int, Int>?
+     */
+    private fun verticalRunEnds(image: BinaryImage, x: Int, y: Int): Pair<Int, Int>? {
+        if (!image.isInk(x, y)) return null
         var top = y
         while (image.isInk(x, top - 1)) top--
         var bottom = y
         while (image.isInk(x, bottom + 1)) bottom++
-        return bottom - top + 1
+        return top to bottom
     }
 
     /**
@@ -422,6 +454,8 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
         const val STEM_SIDE_OFFSET_SPACINGS = 0.55
         const val STEM_SEARCH_REACH_SPACINGS = 0.25
         const val MINIMUM_STEM_SPACINGS = 2.5
+        const val STEM_NEAR_END_SPACINGS = 0.45
+        const val MAXIMUM_HEAD_WIDTH_SPACINGS = 2.0
         const val HEAD_HALF_WIDTH_SPACINGS = 0.55
         const val CLUSTER_REACH_X_SPACINGS = 0.5
         const val CLUSTER_REACH_Y_SPACINGS = 0.35
