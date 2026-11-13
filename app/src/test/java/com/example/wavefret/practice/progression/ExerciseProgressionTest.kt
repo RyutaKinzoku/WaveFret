@@ -40,15 +40,29 @@ class ExerciseProgressionTest {
     }
 
     @Test
-    fun recommendsTheEasiestExerciseNotYetMastered() {
-        val results = listOf(result("Easy", PracticeMode.TEMPO, 100), result("Medium", PracticeMode.TEMPO, 50))
+    fun exerciseIsFinishedOnceCompletedInAnyMode() {
+        assertTrue(exerciseProgression.isFinished("Easy", listOf(result("Easy", PracticeMode.WAIT, 40))))
+        assertTrue(exerciseProgression.isFinished("Easy", listOf(result("Easy", PracticeMode.TEMPO, 10))))
+        assertFalse(exerciseProgression.isFinished("Easy", listOf(result("Medium", PracticeMode.WAIT, 100))))
+    }
+
+    @Test
+    fun recommendsTheEasiestExerciseNotYetFinished() {
+        val results = listOf(result("Easy", PracticeMode.WAIT, 60))
 
         assertEquals("Medium", exerciseProgression.recommendNext(listOf(hard, medium, easy), results)?.title)
     }
 
     @Test
-    fun recommendsNothingOnceEverythingIsMastered() {
-        val results = listOf("Easy", "Medium", "Hard").map { result(it, PracticeMode.TEMPO, 90) }
+    fun neverRecommendsAFinishedExerciseAgain() {
+        val results = listOf(result("Easy", PracticeMode.WAIT, 60), result("Medium", PracticeMode.WAIT, 70))
+
+        assertEquals("Hard", exerciseProgression.recommendNext(listOf(hard, medium, easy), results)?.title)
+    }
+
+    @Test
+    fun recommendsNothingOnceEverythingIsFinished() {
+        val results = listOf("Easy", "Medium", "Hard").map { result(it, PracticeMode.WAIT, 50) }
 
         assertNull(exerciseProgression.recommendNext(listOf(hard, medium, easy), results))
     }

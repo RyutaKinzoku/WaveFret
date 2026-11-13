@@ -38,4 +38,12 @@ class ExercisePickerItemsBuilderTest {
 
         assertEquals(listOf(false, true), pickerItems.map { it.isRecommended })
     }
+
+    @Test
+    fun itemsCarryWhetherTheExerciseIsFinished() {
+        val finishedInWaitMode = PracticeResult("Hard", PracticeMode.WAIT, 50, 5, 5, completedAtMillis = 0)
+        val pickerItems = exercisePickerItemsBuilder.build(listOf(hard, easy), listOf(finishedInWaitMode))
+
+        assertEquals(listOf(false, true), pickerItems.map { it.isFinished })
+    }
 }
