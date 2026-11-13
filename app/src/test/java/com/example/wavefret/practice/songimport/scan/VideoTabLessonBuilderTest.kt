@@ -39,9 +39,12 @@ class VideoTabLessonBuilderTest {
 
     @Test
     fun aChordColumnGivesItsLowestNote() {
-        val collector = collectorWith(listOf(TabNote(0, 5), TabNote(2, 7)), listOf(TabNote(1, 2)))
+        val collector = collectorWith(listOf(TabNote(0, 5), TabNote(2, 7)), listOf(TabNote(1, 2)), listOf(TabNote(1, 3)))
 
-        assertEquals(listOf(TabNote(0, 5), TabNote(1, 2)), videoTabLessonBuilder.build("Riff", collector, emptyList(), video)!!.notes)
+        assertEquals(
+            listOf(TabNote(0, 5), TabNote(1, 2), TabNote(1, 3)),
+            videoTabLessonBuilder.build("Riff", collector, emptyList(), video)!!.notes
+        )
     }
 
     @Test
