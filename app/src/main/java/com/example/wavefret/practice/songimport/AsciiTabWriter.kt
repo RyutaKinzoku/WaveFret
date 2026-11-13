@@ -18,14 +18,20 @@ class AsciiTabWriter(private val tuning: BassTuning) {
     fun write(systems: List<List<List<TabNote>>>): String {
         return systems.joinToString("\n\n") { columns ->
             tuning.strings.indices.reversed().joinToString("\n") { stringIndex ->
-                val line = StringBuilder(tuning.strings[stringIndex].name).append("|-")
+                val line = StringBuilder(tuning.strings[stringIndex].name).append(LINE_START)
                 columns.forEach { column ->
                     val columnWidth = column.maxOf { it.fret.toString().length }
                     val fretText = column.firstOrNull { it.stringIndex == stringIndex }?.fret?.toString().orEmpty()
                     line.append(fretText.padEnd(columnWidth, '-')).append('-')
                 }
-                line.append('|').toString()
+                line.append(LINE_END).toString()
             }
         }
+    }
+
+    private companion object {
+        /** Padding so even a one-note line has enough dashes to be read back as tab. */
+        const val LINE_START = "|--"
+        const val LINE_END = "-|"
     }
 }
