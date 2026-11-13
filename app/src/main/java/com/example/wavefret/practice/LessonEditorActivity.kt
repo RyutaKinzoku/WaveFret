@@ -10,6 +10,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.AppContainer
@@ -27,6 +28,8 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * Lets the player check and fix a lesson, typically one transcribed from
@@ -53,6 +56,8 @@ class LessonEditorActivity : WaveFretActivity() {
     private var originalTitle: String? = null
     private var selectedNoteIndex = 0
     private var hasUnsavedChanges = false
+    private var hearingJob: Job? = null
+    private val lessonSynthPlayer = LessonSynthPlayer()
 
     /**
      * @param savedInstanceState Previously saved state, or null on first creation. Type: Bundle?
@@ -83,6 +88,7 @@ class LessonEditorActivity : WaveFretActivity() {
         tabStaffView = headerView.findViewById(R.id.lessonEditorTabStaffView)
         titleEditText = headerView.findViewById(R.id.lessonEditorTitleEditText)
         tempoEditText = headerView.findViewById(R.id.lessonEditorTempoEditText)
+        headerView.findViewById<View>(R.id.lessonEditorHearButton).setOnClickListener { onHearClicked() }
         titleEditText.setText(lessonEditor.lesson.title)
         // Plain ASCII digits, so the value parses back with toIntOrNull() in every locale.
         tempoEditText.setText(String.format(Locale.ROOT, "%d", lessonEditor.lesson.tempoBpm))
@@ -95,6 +101,62 @@ class LessonEditorActivity : WaveFretActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = confirmLeaving()
         })
+    }
+
+    /**
+     * Stops playback when the screen is no longer visible.
+     *
+     * @return Unit
+     */
+    override fun onPause() {
+        super.onPause()
+        stopHearing()
+    }
+
+    /**
+     * Plays the lesson on a synthesized bass from the selected note, the
+     * selection following each note as it sounds, or stops it if it is
+     * already playing.
+     *
+     * @return Unit
+     */
+    private fun onHearClicked() {
+        if (hearingJob != null) {
+            stopHearing()
+            return
+        }
+        val hearButton = headerView.findViewById<MaterialButton>(R.id.lessonEditorHearButton)
+        hearButton.setText(R.string.hear_lesson_stop)
+        hearButton.setIconResource(R.drawable.ic_stop)
+        hearingJob = lifecycleScope.launch {
+            try {
+                lessonSynthPlayer.play(lessonEditor.lesson, selectedNoteIndex) { noteIndex -> selectNote(noteIndex) }
+            } finally {
+                hearingJob = null
+                hearButton.setText(R.string.hear_lesson_from_note)
+                hearButton.setIconResource(R.drawable.ic_hear)
+            }
+        }
+    }
+
+    /**
+     * @return Unit
+     */
+    private fun stopHearing() {
+        hearingJob?.cancel()
+        hearingJob = null
+    }
+
+    /**
+     * @param noteIndex Note to highlight in the tab and the list. Type: Int
+     * @return Unit
+     */
+    private fun selectNote(noteIndex: Int) {
+        val previousSelectedIndex = selectedNoteIndex
+        selectedNoteIndex = noteIndex
+        renderLesson()
+        notesRecyclerView.adapter?.notifyItemChanged(previousSelectedIndex + 1)
+        notesRecyclerView.adapter?.notifyItemChanged(noteIndex + 1)
     }
 
     /**
@@ -137,11 +199,8 @@ class LessonEditorActivity : WaveFretActivity() {
      * @return Unit
      */
     private fun showNoteEditor(noteIndex: Int) {
-        val previousSelectedIndex = selectedNoteIndex
-        selectedNoteIndex = noteIndex
-        renderLesson()
-        notesRecyclerView.adapter?.notifyItemChanged(previousSelectedIndex + 1)
-        notesRecyclerView.adapter?.notifyItemChanged(noteIndex + 1)
+        stopHearing()
+        selectNote(noteIndex)
         val lesson = lessonEditor.lesson
         val tabNote = lesson.notes[noteIndex]
         val noteSheet = BottomSheetDialog(this)

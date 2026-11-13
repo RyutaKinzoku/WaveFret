@@ -100,6 +100,8 @@ class PracticeActivity : WaveFretActivity() {
     }
     private var practiceProgressJob: Job? = null
     private var metronomeJob: Job? = null
+    private var hearingJob: Job? = null
+    private val lessonSynthPlayer = LessonSynthPlayer()
 
     private val requestMicrophonePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -155,6 +157,7 @@ class PracticeActivity : WaveFretActivity() {
             selectedExercise?.let { exercise -> startActivity(PlayAlongActivity.intentFor(this, exercise.title)) }
         }
         startStopButton.setOnClickListener { onStartStopClicked() }
+        findViewById<View>(R.id.practiceHearButton).setOnClickListener { onHearClicked() }
 
         refreshExercises(preferredTitle = intent.getStringExtra(EXTRA_EXERCISE_TITLE))
     }
@@ -166,6 +169,7 @@ class PracticeActivity : WaveFretActivity() {
      */
     override fun onPause() {
         super.onPause()
+        stopHearing()
         stopPractice()
         selectedExercise?.let(::showPreview)
         metronomeClickPlayer?.release()
@@ -195,6 +199,7 @@ class PracticeActivity : WaveFretActivity() {
      * @return Unit
      */
     private fun selectExercise(pickerItem: ExercisePickerItem) {
+        stopHearing()
         stopPractice()
         selectedExercise = pickerItem.exercise
         exerciseTitleTextView.text = pickerItem.exercise.title
@@ -393,6 +398,7 @@ class PracticeActivity : WaveFretActivity() {
      * @return Unit
      */
     private fun onStartStopClicked() {
+        stopHearing()
         when {
             practiceProgressJob != null -> selectedExercise?.let { exercise ->
                 stopPractice()
@@ -463,6 +469,49 @@ class PracticeActivity : WaveFretActivity() {
             beatClock.beatPositionAt(monotonicClock.currentTimeMillis()) - tempoSession.countInBeats
         }
         return tempoSession
+    }
+
+    /**
+     * Plays the lesson on a synthesized bass, following along on the tab,
+     * or stops it if it is already playing.
+     *
+     * @return Unit
+     */
+    private fun onHearClicked() {
+        val exercise = selectedExercise ?: return
+        if (hearingJob != null) {
+            stopHearing()
+            showPreview(exercise)
+            return
+        }
+        if (practiceProgressJob != null) {
+            stopPractice()
+            showPreview(exercise)
+        }
+        val hearButton = findViewById<MaterialButton>(R.id.practiceHearButton)
+        hearButton.setText(R.string.hear_lesson_stop)
+        hearButton.setIconResource(R.drawable.ic_stop)
+        val previewProgress = buildWaitSession(exercise).currentProgress()
+        hearingJob = lifecycleScope.launch {
+            try {
+                lessonSynthPlayer.play(exercise, fromNoteIndex = 0) { noteIndex ->
+                    renderProgress(exercise, previewProgress.copy(currentNoteIndex = noteIndex, playheadPosition = noteIndex.toDouble()))
+                }
+            } finally {
+                hearingJob = null
+                hearButton.setText(R.string.hear_lesson)
+                hearButton.setIconResource(R.drawable.ic_hear)
+                if (!isFinishing) showPreview(exercise)
+            }
+        }
+    }
+
+    /**
+     * @return Unit
+     */
+    private fun stopHearing() {
+        hearingJob?.cancel()
+        hearingJob = null
     }
 
     /**

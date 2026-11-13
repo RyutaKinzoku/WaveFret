@@ -96,4 +96,44 @@ class ScoreImageReaderTest {
 
         assertTrue(pageReading.tabSystems.isEmpty() && pageReading.notationSystems.isEmpty())
     }
+
+    @Test
+    fun onAPianoPageOnlyTheBassClefStaffIsRead() = runTest {
+        val page = BinaryImage.blank(500, 400)
+        ScoreImageDrawing.staff(page, top = 60, lineCount = 5, spacing = 12, left = 20, right = 480)
+        ScoreImageDrawing.trebleClef(page, 26, 60, 12)
+        ScoreImageDrawing.quarterNote(page, 120, 109, 12)
+        ScoreImageDrawing.staff(page, top = 220, lineCount = 5, spacing = 12, left = 20, right = 480)
+        ScoreImageDrawing.bassClef(page, 26, 220, 12)
+        ScoreImageDrawing.quarterNote(page, 120, 269, 12)
+
+        val pageReading = reader(PrintedDigits(emptyList())).read(page)
+
+        assertEquals(listOf(listOf(31)), pageReading.notationSystems)
+    }
+
+    @Test
+    fun aPageWithOnlyTrebleClefStaffsIsReadInTrebleClef() = runTest {
+        val page = BinaryImage.blank(500, 250)
+        ScoreImageDrawing.staff(page, top = 60, lineCount = 5, spacing = 12, left = 20, right = 480)
+        ScoreImageDrawing.trebleClef(page, 26, 60, 12)
+        ScoreImageDrawing.quarterNote(page, 120, 109, 12)
+
+        val pageReading = reader(PrintedDigits(emptyList())).read(page)
+
+        assertEquals(listOf(listOf(40)), pageReading.notationSystems)
+    }
+
+    @Test
+    fun aFourLineStaffWithoutNumbersDoesNotHideTheSheetMusic() = runTest {
+        val page = BinaryImage.blank(500, 300)
+        ScoreImageDrawing.staff(page, top = 30, lineCount = 4, spacing = 12, left = 20, right = 480)
+        ScoreImageDrawing.staff(page, top = 150, lineCount = 5, spacing = 12, left = 20, right = 480)
+        ScoreImageDrawing.quarterNote(page, 120, 199, 12)
+
+        val pageReading = reader(PrintedDigits(emptyList())).read(page)
+
+        assertEquals(listOf(listOf(31)), pageReading.notationSystems)
+        assertTrue(pageReading.tabSystems.isEmpty())
+    }
 }

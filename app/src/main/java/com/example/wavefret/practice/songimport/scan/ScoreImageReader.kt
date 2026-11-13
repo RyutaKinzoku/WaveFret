@@ -10,22 +10,28 @@ import kotlin.math.roundToInt
 /**
  * Reads the music on a page image (a PDF page, a photo or a video frame):
  * finds the staffs, reads tab staffs by recognizing the numbers on their
- * lines, and, only when a page has no tab, reads bass-clef music staffs
- * note by note. A 5-line staff with numbers on its lines is a 5-string
- * bass tab; without them it is a music staff.
+ * lines, and, only when a page has no tab, reads music staffs note by
+ * note. A staff is tab only when numbers sit on its lines: a 4-line staff
+ * without them (a staff that lost a line in a poor scan) is skipped, and
+ * a 5-line staff without them is a music staff. When a page has 4-line
+ * tab, its 5-line staffs are not read at all. On pages with both treble-clef and
+ * bass-clef staffs (piano and vocal scores) only the bass-clef staffs are
+ * read, since they hold the bass line.
  *
  * @property tuning Tuning tabs are read in. Type: BassTuning
  * @property symbolRecognizer Reads the numbers around each tab staff. Type: ImageSymbolRecognizer
  * @property staffFinder Finds staffs. Type: StaffFinder
  * @property staffLineEraser Removes lines before numbers are read. Type: StaffLineEraser
  * @property notationStaffReader Reads music staffs. Type: NotationStaffReader
+ * @property clefDetector Tells treble from bass clef. Type: ClefDetector
  */
 class ScoreImageReader(
     tuning: BassTuning,
     private val symbolRecognizer: ImageSymbolRecognizer,
     private val staffFinder: StaffFinder = StaffFinder(),
     private val staffLineEraser: StaffLineEraser = StaffLineEraser(),
-    private val notationStaffReader: NotationStaffReader = NotationStaffReader(staffLineEraser)
+    private val notationStaffReader: NotationStaffReader = NotationStaffReader(staffLineEraser),
+    private val clefDetector: ClefDetector = ClefDetector(staffLineEraser)
 ) {
 
     private val drawnTabReader = DrawnTabReader(tuning)
@@ -38,37 +44,37 @@ class ScoreImageReader(
         val staffs = staffFinder.find(page)
         if (staffs.isEmpty()) return PageReading(emptyList(), emptyList())
         val pageWithoutLines = staffLineEraser.erase(page, staffs)
-        val hasFourLineStaff = staffs.any { it.lineYs.size == TAB_LINE_COUNT }
 
-        val tabSystems = mutableListOf<List<List<TabNote>>>()
+        val fourLineTab = staffs.filter { it.lineYs.size == TAB_LINE_COUNT }
+            .mapNotNull { staff -> readTabIfNumbered(pageWithoutLines, staff, MINIMUM_NUMBERS_FOR_FOUR_LINE_TAB) }
+            .filter { it.isNotEmpty() }
+        if (fourLineTab.isNotEmpty()) return PageReading(fourLineTab, emptyList())
+
+        val fiveLineTab = mutableListOf<List<List<TabNote>>>()
         val musicStaffs = mutableListOf<Staff>()
-        for (staff in staffs) {
-            when {
-                staff.lineYs.size == TAB_LINE_COUNT -> tabSystems += readTab(pageWithoutLines, staff)
-                staff.lineYs.size == MUSIC_LINE_COUNT && hasFourLineStaff -> Unit
-                staff.lineYs.size == MUSIC_LINE_COUNT -> {
-                    val symbols = symbolRecognizer.recognize(pageWithoutLines, regionAround(staff, page))
-                    if (drawnTabReader.countNumbersOnLines(staff, symbols) >= MINIMUM_NUMBERS_FOR_TAB) {
-                        tabSystems += drawnTabReader.read(staff, symbols)
-                    } else {
-                        musicStaffs += staff
-                    }
-                }
-            }
+        staffs.filter { it.lineYs.size == MUSIC_LINE_COUNT }.forEach { staff ->
+            val tab = readTabIfNumbered(pageWithoutLines, staff, MINIMUM_NUMBERS_FOR_FIVE_LINE_TAB)
+            if (tab == null) musicStaffs += staff else if (tab.isNotEmpty()) fiveLineTab += tab
         }
-        if (tabSystems.isNotEmpty()) return PageReading(tabSystems.filter { it.isNotEmpty() }, emptyList())
-        val notationSystems = musicStaffs.map { notationStaffReader.read(page, it) }.filter { it.isNotEmpty() }
+        if (fiveLineTab.isNotEmpty()) return PageReading(fiveLineTab, emptyList())
+        val clefs = musicStaffs.associateWith { clefDetector.detect(page, it) }
+        val hasBassClef = clefs.values.any { it == Clef.BASS }
+        val notationSystems = musicStaffs
+            .filter { !hasBassClef || clefs.getValue(it) == Clef.BASS }
+            .map { notationStaffReader.read(page, it, clefs.getValue(it)) }
+            .filter { it.isNotEmpty() }
         return PageReading(emptyList(), notationSystems)
     }
 
     /**
      * @param pageWithoutLines Page with staff and bar lines erased. Type: BinaryImage
-     * @param staff A tab staff. Type: Staff
-     * @return Its notes as columns. Type: List<List<TabNote>>
+     * @param staff A 4- or 5-line staff. Type: Staff
+     * @param numbersNeeded Numbers that must sit on its lines for it to be tab. Type: Int
+     * @return Its notes as columns if it is tab, or null if it is not. Type: List<List<TabNote>>?
      */
-    private suspend fun readTab(pageWithoutLines: BinaryImage, staff: Staff): List<List<TabNote>> {
+    private suspend fun readTabIfNumbered(pageWithoutLines: BinaryImage, staff: Staff, numbersNeeded: Int): List<List<TabNote>>? {
         val symbols = symbolRecognizer.recognize(pageWithoutLines, regionAround(staff, pageWithoutLines))
-        return drawnTabReader.read(staff, symbols)
+        return if (drawnTabReader.countNumbersOnLines(staff, symbols) >= numbersNeeded) drawnTabReader.read(staff, symbols) else null
     }
 
     /**
@@ -89,7 +95,8 @@ class ScoreImageReader(
     private companion object {
         const val TAB_LINE_COUNT = 4
         const val MUSIC_LINE_COUNT = 5
-        const val MINIMUM_NUMBERS_FOR_TAB = 3
+        const val MINIMUM_NUMBERS_FOR_FOUR_LINE_TAB = 1
+        const val MINIMUM_NUMBERS_FOR_FIVE_LINE_TAB = 3
         const val REGION_MARGIN_SPACINGS = 1.5
     }
 }

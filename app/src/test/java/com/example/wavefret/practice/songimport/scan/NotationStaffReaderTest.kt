@@ -117,4 +117,44 @@ class NotationStaffReaderTest {
 
         assertEquals(listOf(31), read(image))
     }
+
+    @Test
+    fun aTrebleClefStaffIsReadTwoOctavesLowerSoItFitsTheBass() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.quarterNote(image, 100, rowOf(0), spacing)
+        ScoreImageDrawing.quarterNote(image, 150, rowOf(2), spacing)
+        val staff = StaffFinder().find(image).single()
+
+        assertEquals(listOf(40, 43), notationStaffReader.read(image, staff, Clef.TREBLE))
+    }
+
+    @Test
+    fun theClefAndAScannedKeySignatureSharpAreNotNotesAndTheSharpApplies() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.bassClef(image, 26, 100, spacing)
+        ScoreImageDrawing.blurredSharp(image, 76, rowOf(6), spacing)
+        ScoreImageDrawing.quarterNote(image, 140, rowOf(6), spacing)
+        ScoreImageDrawing.quarterNote(image, 190, rowOf(0), spacing)
+
+        assertEquals(listOf(42, 31), read(image))
+    }
+
+    @Test
+    fun aTimeSignatureIsNeitherNotesNorAKeySignature() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.bassClef(image, 26, 100, spacing)
+        ScoreImageDrawing.timeSignature(image, 72, 100, spacing)
+        (0..8).forEach { position -> ScoreImageDrawing.quarterNote(image, 130 + position * 45, rowOf(position), spacing) }
+
+        assertEquals(listOf(31, 33, 35, 36, 38, 40, 41, 43, 45), read(image))
+    }
+
+    @Test
+    fun notesHangingBelowTheStaffAboveAreNotRead() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.quarterNote(image, 100, rowOf(17), spacing)
+        ScoreImageDrawing.quarterNote(image, 150, rowOf(0), spacing)
+
+        assertEquals(listOf(31), read(image))
+    }
 }

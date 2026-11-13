@@ -354,6 +354,44 @@
 - New dependency: `com.google.mlkit:text-recognition` 16.0.1 (bundled
   model, no Play services download).
 
+## [0.14.0] - 2026-11-13 - Hear any lesson, piano scores, light-on-dark video tabs
+
+### Added
+- Hear any lesson on a synthesized bass (a plucked-string sound): "Hear
+  how it sounds" on the practice screen follows along on the tab, and
+  "Hear it from the selected note" in the lesson editor plays from the
+  note you picked, so a generated lesson can be checked by ear before
+  saving. Lessons taken from a song keep its rhythm (long silences
+  shortened); others play one note per beat at their tempo.
+- Listen mode reads tabs drawn light on a dark background as well as dark
+  on light, and says when the video shows no tab, so it is clear the notes
+  are being learned by ear.
+
+### Fixed
+- Piano and vocal scores (like the sheet music of a song book) were read
+  as if every staff were a bass part. WaveFret now tells treble clef from
+  bass clef and reads only the bass-clef staffs when a page has both;
+  treble-only pages are read in treble clef and moved down into the
+  bass's range.
+- The clef, key signature and time signature at the start of each staff
+  were read as notes, and a key signature's sharps were missed in
+  low-resolution scans. They are now skipped, and a key signature is only
+  trusted in the standard order of sharps or flats.
+- Notes of the staff above no longer leak into a bass staff.
+- A staff that lost a line in a poor scan no longer hides the rest of the
+  page's sheet music: a 4-line staff only counts as tab when numbers sit
+  on its lines.
+
+### Architecture
+- `common.audio.PluckedStringSynthesizer` (Karplus-Strong with a
+  symmetric loop filter, so the pitch is exact);
+  `practice.LessonPlaybackSchedule`/`ScheduledNote`; framework glue
+  `LessonSynthPlayer` (streaming `AudioTrack`).
+- `common.imaging.LuminanceImage` and `connectedInkShapes`;
+  `practice.songimport.scan.Clef`, `ClefDetector`, `StaffHeader`,
+  `StaffHeaderFinder`, `VideoFrameTabReader`.
+- Android Gradle Plugin 9.5.1, Robolectric 4.18.
+
 ## [0.13.0] - 2026-11-13 - Tabs and sheet music from PDFs, tabs from videos, play-along with the right notes
 
 ### Added

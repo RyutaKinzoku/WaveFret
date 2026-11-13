@@ -2,7 +2,7 @@
 
 This document maps each product-quality characteristic of ISO/IEC 25010:2023
 to what WaveFret does about it, how that is verified, and what is still
-open. It is updated with every release; the current state is **0.13.0**.
+open. It is updated with every release; the current state is **0.14.0**.
 
 Verification legend: **UT** = JUnit unit test, **RT** = Robolectric screen
 test (`ScreenRenderTest`, renders every screen in light/dark),
@@ -20,6 +20,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Functional correctness (0.11) | A note on the same string as the previous one, or a repeated note, only counts after a detected pluck attack, so ringing strings and fading tails can't play the lesson for you. | UT (`AttackDetector`, `HitConfirmer`, sessions, `PracticeController`) |
 | Functional correctness (0.12) | Finished lessons are never recommended again; the next suggestion is the easiest unfinished one. Re-plucked notes stay separate notes, quiet recordings are transcribed, full songs keep only the bass line. Pasted, photographed and web tabs are normalised before parsing. | UT (`ExerciseProgression`, `PracticeSummaryBuilder`, `MonophonicTranscriber`, `BassLineExtractor`, `AsciiTabParser`, `TextGridBuilder`, `TabLineGapFiller`) |
 | Functional correctness (0.13) | Drawn tab staffs and bass-clef sheet music are read from page images; video tabs are merged across frames; a tab lesson is lined up with a recording note by note (exact pitch, then octave) so play-along uses the tab's notes. Checked with drawn test pages, synthetic frames and note sequences, and the staff finder against a real screenshot of a Guitar Pro PDF. | UT (`StaffFinder`, `StaffLineEraser`, `DrawnTabReader`, `NotationStaffReader`, `ScoreImageReader`, `ScannedSongAssembler`, `VideoTabCollector`, `VideoTabLessonBuilder`, `LessonSynchronizer`, `AsciiTabParser`) |
+| Functional correctness (0.14) | Clefs are told apart and only bass-clef staffs of piano/vocal scores are read; the clef, key signature and time signature are skipped and key signatures follow the standard order; light-on-dark video tabs are read; the synthesized bass sounds at the exact pitch of each note. Checked with drawn test pages, synthetic frames, YIN on the synthesized notes, and the clef and note reading against a real 100-dpi piano/vocal PDF (all 12 bass staffs found, header symbols no longer read as notes). | UT (`ClefDetector`, `StaffHeaderFinder`, `NotationStaffReader`, `ScoreImageReader`, `LuminanceImage`, `VideoFrameTabReader`, `PluckedStringSynthesizer`, `LessonPlaybackSchedule`) |
 | Functional appropriateness | The app compares against a *known* expected note instead of open transcription, the simplest reliable approach for "wait until I play it right". | Design (charter) |
 
 ## 2. Performance efficiency
@@ -109,9 +110,9 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 - Play-along and Listen mode with YouTube have only been checked with rendered screens and unit tests, not on a phone with network access.
 - Tablet / landscape layouts are not specialised yet (content stretches full width).
 - English only; strings are externalized, so translation is possible but not done.
-- Android Gradle Plugin 9.5.1 is available (lint notice); upgrading is a separate task.
 - Rhythm is not part of the tab model, so it doesn't count towards difficulty.
-- Sheet music reading is experimental: rhythm isn't read, and it was only checked on drawn test pages and a low-resolution screenshot, where blurred rests still read as notes.
+- Sheet music reading is experimental: rhythm isn't read; on a real 100-dpi piano/vocal PDF some rests still read as notes and one page's key signature was missed.
 - Reading tabs from videos depends on the video showing a clear tab staff; tab pages that repeat exactly are only counted once.
+- The synthesized bass has only been checked by measuring its pitch, not listened to on a phone.
 - Text recognition, playback capture and the song finder have only been checked with unit tests and rendered screens, not on a phone.
 - Transcription accuracy on real songs is still unmeasured; the new rules were checked against synthetic audio and synthetic model output.

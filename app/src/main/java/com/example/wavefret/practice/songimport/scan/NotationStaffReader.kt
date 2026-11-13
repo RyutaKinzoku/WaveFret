@@ -1,31 +1,41 @@
 package com.example.wavefret.practice.songimport.scan
 
 import com.example.wavefret.common.imaging.BinaryImage
+import com.example.wavefret.common.imaging.PixelRegion
+import com.example.wavefret.common.imaging.connectedInkShapes
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Reads the notes of one bass-clef staff from a page image (experimental
+ * Reads the notes of one music staff from a page image (experimental
  * optical music recognition). It finds filled noteheads with a stem
  * (quarter notes and shorter) and hollow noteheads (half and whole notes),
- * turns their height on the staff into a pitch, applies the key signature
- * and sharps or flats written just before a note, and returns the
- * sounding pitches left to right. Bass parts are written an octave above
- * how they sound, so pitches are lowered an octave. Rhythm is not read,
- * and of notes played together only the lowest is kept.
+ * turns their height on the staff into a pitch for the staff's clef,
+ * applies the key signature and sharps or flats written just before a
+ * note, and returns the pitches to play on the bass, left to right (see
+ * [Clef.semitonesToBass]). The clef, key signature and time signature
+ * at the start of the staff are skipped, and the key signature is only
+ * trusted in the standard order of sharps (F C G D A E B) or flats
+ * (B E A D G C F). Rhythm is not read, and of notes played together only
+ * the lowest is kept.
  *
  * @property staffLineEraser Removes the staff lines before shapes are measured. Type: StaffLineEraser
+ * @property staffHeaderFinder Finds the clef, key signature and time signature. Type: StaffHeaderFinder
  */
-class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLineEraser()) {
+class NotationStaffReader(
+    private val staffLineEraser: StaffLineEraser = StaffLineEraser(),
+    private val staffHeaderFinder: StaffHeaderFinder = StaffHeaderFinder()
+) {
 
     /**
      * @param image Page image. Type: BinaryImage
-     * @param staff A 5-line bass-clef staff on it. Type: Staff
-     * @return Sounding MIDI numbers of the staff's notes, left to right. Type: List<Int>
+     * @param staff A 5-line music staff on it. Type: Staff
+     * @param clef The staff's clef. Type: Clef
+     * @return MIDI numbers to play on the bass for the staff's notes, left to right. Type: List<Int>
      */
-    fun read(image: BinaryImage, staff: Staff): List<Int> {
+    fun read(image: BinaryImage, staff: Staff, clef: Clef = Clef.BASS): List<Int> {
         val spacing = staff.lineSpacing
         val bandTop = (staff.top - BAND_SPACINGS * spacing).toInt().coerceAtLeast(0)
         val bandBottom = (staff.bottom + BAND_SPACINGS * spacing).toInt().coerceAtMost(image.height - 1)
@@ -33,14 +43,16 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
         eraseLedgerLines(working, staff, bandTop, bandBottom)
         val shapes = ShapeMeasurements(working, staff.left, staff.right, bandTop, bandBottom)
 
-        val firstNoteColumn = staff.left + CLEF_WIDTH_SPACINGS * spacing
+        val header = staffHeaderFinder.find(working, staff)
+        val firstNoteColumn = header?.endColumn?.toDouble() ?: (staff.left + CLEF_WIDTH_SPACINGS * spacing)
         val noteheads = (findFilledNoteheads(shapes, staff) + findHollowNoteheads(shapes, staff))
-            .filter { it.centreX >= firstNoteColumn }
+            .filter { it.centreX > firstNoteColumn }
             .let(::withoutDuplicates)
             .sortedBy { it.centreX }
         if (noteheads.isEmpty()) return emptyList()
 
-        val accidentals = findAccidentals(working, staff, bandTop, bandBottom, noteheads)
+        val firstAccidentalColumn = header?.endColumn?.toDouble() ?: (staff.left + KEY_SIGNATURE_START_SPACINGS * spacing)
+        val accidentals = findAccidentals(working, staff, bandTop..bandBottom, firstAccidentalColumn, noteheads)
         val inlineAccidentals = noteheads.associateWith { notehead ->
             accidentals.firstOrNull { accidental ->
                 accidental.right <= notehead.left + spacing * INLINE_OVERLAP_SPACINGS &&
@@ -49,9 +61,13 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
             }
         }
         val usedInline = inlineAccidentals.values.filterNotNull().toSet()
-        val keySignature = accidentals
-            .filter { it !in usedInline && it.right < noteheads.first().left }
-            .associate { letterIndexOf(it.position) to if (it.isFlat) -1 else 1 }
+        val keySignature = if (header != null) {
+            keySignatureOf(header, working, staff, clef)
+        } else {
+            accidentals
+                .filter { it !in usedInline && it.right < noteheads.first().left }
+                .associate { letterIndexOf(it.position, clef) to if (it.isFlat) -1 else 1 }
+        }
 
         val columns = mutableListOf<MutableList<Notehead>>()
         noteheads.forEach { notehead ->
@@ -62,13 +78,13 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
         return columns.map { column ->
             column.minOf { notehead ->
                 val position = positionOf(notehead.centreY, staff)
-                val letterIndex = letterIndexOf(position)
+                val letterIndex = letterIndexOf(position, clef)
                 val keyAlteration = keySignature[letterIndex] ?: 0
                 val alteration = when (val accidental = inlineAccidentals[notehead]) {
                     null -> keyAlteration
                     else -> if (accidental.isFlat) -1 else if (keyAlteration < 0) 0 else 1
                 }
-                writtenNaturalMidiNumber(position) + alteration - WRITTEN_OCTAVE_ABOVE_SOUNDING
+                writtenNaturalMidiNumber(position, clef) + alteration + clef.semitonesToBass
             }
         }
     }
@@ -196,54 +212,107 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
     /**
      * @param working Image without staff lines. Type: BinaryImage
      * @param staff The staff. Type: Staff
-     * @param bandTop First row searched. Type: Int
-     * @param bandBottom Last row searched. Type: Int
+     * @param band Rows searched. Type: IntRange
+     * @param firstAccidentalColumn Leftmost column an accidental may start at. Type: Double
      * @param noteheads Noteheads found, whose shapes are not accidentals. Type: List<Notehead>
      * @return Sharps, naturals and flats found on the staff. Type: List<Accidental>
      */
     private fun findAccidentals(
         working: BinaryImage,
         staff: Staff,
-        bandTop: Int,
-        bandBottom: Int,
+        band: IntRange,
+        firstAccidentalColumn: Double,
         noteheads: List<Notehead>
     ): List<Accidental> {
         val spacing = staff.lineSpacing
-        val firstAccidentalColumn = staff.left + KEY_SIGNATURE_START_SPACINGS * spacing
-        return connectedShapes(working, staff.left, staff.right, bandTop, bandBottom)
+        return working.connectedInkShapes(PixelRegion(staff.left, band.first, staff.right, band.last))
             .filter { shape ->
-                val shapeHeight = shape.bottom - shape.top + 1
-                val shapeWidth = shape.right - shape.left + 1
                 shape.left >= firstAccidentalColumn &&
-                    shapeHeight >= spacing * ACCIDENTAL_MIN_HEIGHT_SPACINGS && shapeHeight <= spacing * ACCIDENTAL_MAX_HEIGHT_SPACINGS &&
-                    shapeWidth <= spacing * ACCIDENTAL_MAX_WIDTH_SPACINGS &&
+                    shape.height >= spacing * ACCIDENTAL_MIN_HEIGHT_SPACINGS && shape.height <= spacing * ACCIDENTAL_MAX_HEIGHT_SPACINGS &&
+                    shape.width <= spacing * ACCIDENTAL_MAX_WIDTH_SPACINGS &&
                     noteheads.none { it.centreX.roundToInt() in shape.left..shape.right && it.centreY.roundToInt() in shape.top..shape.bottom }
             }
-            .mapNotNull { shape ->
-                val strokeCount = verticalStrokeCount(working, shape, spacing)
-                when {
-                    strokeCount == 1 -> Accidental(
-                        isFlat = true,
-                        position = positionOf(shape.bottom + 1 - spacing * FLAT_BOWL_ABOVE_BOTTOM_SPACINGS, staff),
-                        right = shape.right
-                    )
-                    strokeCount >= 2 -> Accidental(
-                        isFlat = false,
-                        position = positionOf((shape.top + shape.bottom + 1) / 2.0, staff),
-                        right = shape.right
-                    )
-                    else -> null
-                }
+            .mapNotNull { shape -> accidentalOf(working, shape, staff) }
+    }
+
+    /**
+     * A flat has one tall stroke with its bowl at the bottom, so most of
+     * its ink is in its lower half; anything else with strokes (a sharp, a
+     * natural, or a sharp blurred into a block by a poor scan) is read as
+     * raising the note.
+     *
+     * @param working Image without staff lines. Type: BinaryImage
+     * @param shape Bounding box of an accidental-sized shape. Type: PixelRegion
+     * @param staff The staff. Type: Staff
+     * @return The accidental, or null if the shape has no tall stroke. Type: Accidental?
+     */
+    private fun accidentalOf(working: BinaryImage, shape: PixelRegion, staff: Staff): Accidental? {
+        val spacing = staff.lineSpacing
+        val strokeCount = verticalStrokeCount(working, shape, spacing)
+        if (strokeCount == 0) return null
+        val middleRow = (shape.top + shape.bottom) / 2
+        var upperInk = 0
+        var lowerInk = 0
+        for (y in shape.top..shape.bottom) for (x in shape.left..shape.right) {
+            if (!working.isInk(x, y)) continue
+            if (y <= middleRow) upperInk++ else lowerInk++
+        }
+        val isFlat = strokeCount == 1 && lowerInk > upperInk * FLAT_LOWER_HEAVY_RATIO
+        val position = if (isFlat) {
+            positionOf(shape.bottom + 1 - spacing * FLAT_BOWL_ABOVE_BOTTOM_SPACINGS, staff)
+        } else {
+            positionOf((shape.top + shape.bottom + 1) / 2.0, staff)
+        }
+        return Accidental(isFlat = isFlat, position = position, right = shape.right)
+    }
+
+    /**
+     * @param header The staff's header. Type: StaffHeader
+     * @param working Image without staff lines. Type: BinaryImage
+     * @param staff The staff. Type: Staff
+     * @param clef The staff's clef. Type: Clef
+     * @return Alteration (+1 sharp, -1 flat) of each letter index in the key signature. Type: Map<Int, Int>
+     */
+    private fun keySignatureOf(header: StaffHeader, working: BinaryImage, staff: Staff, clef: Clef): Map<Int, Int> {
+        val spacing = staff.lineSpacing
+        val sizable = header.symbols.filter { it.height >= spacing * STACKED_SYMBOL_MIN_HEIGHT_SPACINGS }
+        val accidentals = header.symbols
+            .filter { symbol ->
+                symbol.height >= spacing * KEY_ACCIDENTAL_MIN_HEIGHT_SPACINGS &&
+                    symbol.height <= spacing * KEY_ACCIDENTAL_MAX_HEIGHT_SPACINGS &&
+                    symbol.width <= spacing * ACCIDENTAL_MAX_WIDTH_SPACINGS &&
+                    sizable.none { other -> other != symbol && isStacked(symbol, other) }
             }
+            .mapNotNull { accidentalOf(working, it, staff) }
+        val isFlatKey = accidentals.firstOrNull()?.isFlat ?: return emptyMap()
+        val order = if (isFlatKey) FLAT_ORDER else SHARP_ORDER
+        val letters = accidentals
+            .takeWhile { it.isFlat == isFlatKey }
+            .map { letterIndexOf(it.position, clef) }
+            .zip(order.asList())
+            .takeWhile { (letter, expected) -> letter == expected }
+            .map { it.first }
+        return letters.associateWith { if (isFlatKey) -1 else 1 }
+    }
+
+    /**
+     * @param first A header symbol. Type: PixelRegion
+     * @param second Another header symbol. Type: PixelRegion
+     * @return True if one sits right above the other, like the two numbers of a time signature. Type: Boolean
+     */
+    private fun isStacked(first: PixelRegion, second: PixelRegion): Boolean {
+        val overlap = minOf(first.right, second.right) - maxOf(first.left, second.left) + 1
+        val isVerticallyApart = first.bottom < second.top || second.bottom < first.top
+        return overlap * 2 >= minOf(first.width, second.width) && isVerticallyApart
     }
 
     /**
      * @param image Image without staff lines. Type: BinaryImage
-     * @param shape A connected shape. Type: Shape
+     * @param shape Bounding box of a connected shape. Type: PixelRegion
      * @param spacing Staff line spacing. Type: Double
      * @return Number of separate tall vertical strokes in the shape (1 for a flat, 2 for a sharp or natural). Type: Int
      */
-    private fun verticalStrokeCount(image: BinaryImage, shape: Shape, spacing: Double): Int {
+    private fun verticalStrokeCount(image: BinaryImage, shape: PixelRegion, spacing: Double): Int {
         val minimumStroke = spacing * ACCIDENTAL_STROKE_SPACINGS
         var strokeCount = 0
         var isInStroke = false
@@ -259,46 +328,6 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
             isInStroke = isStrokeColumn
         }
         return strokeCount
-    }
-
-    /**
-     * @param image Image to label. Type: BinaryImage
-     * @param left Leftmost column. Type: Int
-     * @param right Rightmost column. Type: Int
-     * @param top Top row. Type: Int
-     * @param bottom Bottom row. Type: Int
-     * @return Bounding boxes of the connected ink shapes in the region. Type: List<Shape>
-     */
-    private fun connectedShapes(image: BinaryImage, left: Int, right: Int, top: Int, bottom: Int): List<Shape> {
-        val regionWidth = right - left + 1
-        val visited = BooleanArray(regionWidth * (bottom - top + 1))
-        val shapes = mutableListOf<Shape>()
-        val stack = ArrayDeque<Int>()
-        for (startY in top..bottom) for (startX in left..right) {
-            val startIndex = (startY - top) * regionWidth + (startX - left)
-            if (visited[startIndex] || !image.isInk(startX, startY)) continue
-            var shape = Shape(startX, startY, startX, startY)
-            visited[startIndex] = true
-            stack.addLast(startIndex)
-            while (stack.isNotEmpty()) {
-                val index = stack.removeLast()
-                val x = index % regionWidth + left
-                val y = index / regionWidth + top
-                shape = Shape(minOf(shape.left, x), minOf(shape.top, y), maxOf(shape.right, x), maxOf(shape.bottom, y))
-                for ((dx, dy) in NEIGHBOURS) {
-                    val nextX = x + dx
-                    val nextY = y + dy
-                    if (nextX !in left..right || nextY !in top..bottom) continue
-                    val nextIndex = (nextY - top) * regionWidth + (nextX - left)
-                    if (!visited[nextIndex] && image.isInk(nextX, nextY)) {
-                        visited[nextIndex] = true
-                        stack.addLast(nextIndex)
-                    }
-                }
-            }
-            shapes += shape
-        }
-        return shapes
     }
 
     /**
@@ -370,17 +399,20 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
 
     /**
      * @param position Staff position. Type: Int
-     * @return Letter index from G (0) to F (6) in bass clef. Type: Int
+     * @param clef The staff's clef. Type: Clef
+     * @return Letter index of the note there, from C (0) to B (6). Type: Int
      */
-    private fun letterIndexOf(position: Int): Int = Math.floorMod(position, LETTERS_PER_OCTAVE)
+    private fun letterIndexOf(position: Int, clef: Clef): Int = Math.floorMod(clef.bottomLineStep + position, LETTERS_PER_OCTAVE)
 
     /**
-     * @param position Staff position in bass clef. Type: Int
-     * @return Written MIDI number of the natural note there (the bottom line is G2, 43). Type: Int
+     * @param position Staff position. Type: Int
+     * @param clef The staff's clef. Type: Clef
+     * @return Written MIDI number of the natural note there. Type: Int
      */
-    private fun writtenNaturalMidiNumber(position: Int): Int {
-        val octaves = Math.floorDiv(position, LETTERS_PER_OCTAVE)
-        return BOTTOM_LINE_MIDI_NUMBER + octaves * SEMITONES_PER_OCTAVE + SEMITONES_ABOVE_G[letterIndexOf(position)]
+    private fun writtenNaturalMidiNumber(position: Int, clef: Clef): Int {
+        val step = clef.bottomLineStep + position
+        val octave = Math.floorDiv(step, LETTERS_PER_OCTAVE)
+        return (octave + 1) * SEMITONES_PER_OCTAVE + SEMITONES_ABOVE_C[letterIndexOf(position, clef)]
     }
 
     /**
@@ -428,18 +460,8 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
      */
     private data class Accidental(val isFlat: Boolean, val position: Int, val right: Int)
 
-    /**
-     * Bounding box of a connected ink shape.
-     *
-     * @property left Leftmost column. Type: Int
-     * @property top Top row. Type: Int
-     * @property right Rightmost column. Type: Int
-     * @property bottom Bottom row. Type: Int
-     */
-    private data class Shape(val left: Int, val top: Int, val right: Int, val bottom: Int)
-
     private companion object {
-        const val BAND_SPACINGS = 5.0
+        const val BAND_SPACINGS = 3.5
         const val CLEF_WIDTH_SPACINGS = 3.0
         const val KEY_SIGNATURE_START_SPACINGS = 2.5
         const val LEDGER_MIN_LENGTH_SPACINGS = 1.6
@@ -467,15 +489,22 @@ class NotationStaffReader(private val staffLineEraser: StaffLineEraser = StaffLi
         const val ACCIDENTAL_MAX_WIDTH_SPACINGS = 1.2
         const val ACCIDENTAL_STROKE_SPACINGS = 1.2
         const val FLAT_BOWL_ABOVE_BOTTOM_SPACINGS = 0.45
+        const val FLAT_LOWER_HEAVY_RATIO = 1.3
+        const val KEY_ACCIDENTAL_MIN_HEIGHT_SPACINGS = 1.3
+        const val KEY_ACCIDENTAL_MAX_HEIGHT_SPACINGS = 3.5
+        const val STACKED_SYMBOL_MIN_HEIGHT_SPACINGS = 1.0
         const val DUPLICATE_PIXELS = 3.0
         const val CENTRE_OF_PIXEL = 0.5
         const val LETTERS_PER_OCTAVE = 7
         const val SEMITONES_PER_OCTAVE = 12
-        const val BOTTOM_LINE_MIDI_NUMBER = 43
-        const val WRITTEN_OCTAVE_ABOVE_SOUNDING = 12
 
-        /** Semitones from G up to G, A, B, C, D, E and F. */
-        val SEMITONES_ABOVE_G = intArrayOf(0, 2, 4, 5, 7, 9, 10)
-        val NEIGHBOURS = listOf(1 to 0, -1 to 0, 0 to 1, 0 to -1, 1 to 1, -1 to -1, 1 to -1, -1 to 1)
+        /** Letter indexes (C = 0) of a key signature's sharps, in the order they are written. */
+        val SHARP_ORDER = intArrayOf(3, 0, 4, 1, 5, 2, 6)
+
+        /** Letter indexes (C = 0) of a key signature's flats, in the order they are written. */
+        val FLAT_ORDER = intArrayOf(6, 2, 5, 1, 4, 0, 3)
+
+        /** Semitones from C up to C, D, E, F, G, A and B. */
+        val SEMITONES_ABOVE_C = intArrayOf(0, 2, 4, 5, 7, 9, 11)
     }
 }

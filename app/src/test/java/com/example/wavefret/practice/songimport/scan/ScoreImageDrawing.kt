@@ -75,4 +75,36 @@ object ScoreImageDrawing {
         horizontalLine(image, positionY - spacing / 3, centreX - spacing / 2, centreX + spacing / 2)
         horizontalLine(image, positionY + spacing / 3, centreX - spacing / 2, centreX + spacing / 2)
     }
+
+    /** Draws a simplified treble clef starting at column [x]: a stroke from above the staff to below it through a loop on the G line. */
+    fun trebleClef(image: BinaryImage, x: Int, staffTop: Int, spacing: Int) {
+        verticalLine(image, x + spacing, staffTop - spacing * 3 / 2, staffTop + spacing * 4 + spacing * 3 / 2, thickness = 3)
+        hollowNotehead(image, x + spacing, staffTop + spacing * 3, halfWidth = spacing, halfHeight = spacing)
+    }
+
+    /** Draws a simplified bass clef starting at column [x]: a curl around the F line and a stroke ending inside the staff, with two dots. */
+    fun bassClef(image: BinaryImage, x: Int, staffTop: Int, spacing: Int) {
+        hollowNotehead(image, x + spacing, staffTop + spacing, halfWidth = spacing, halfHeight = spacing)
+        verticalLine(image, x + spacing * 2 - 1, staffTop + spacing, staffTop + spacing * 5 / 2, thickness = 3)
+        filledNotehead(image, x + spacing * 3, staffTop + spacing / 2, halfWidth = 2, halfHeight = 2)
+        filledNotehead(image, x + spacing * 3, staffTop + spacing * 3 / 2, halfWidth = 2, halfHeight = 2)
+    }
+
+    /** Fills a rectangle from ([left], [top]) to ([right], [bottom]), edges included. */
+    fun filledRectangle(image: BinaryImage, left: Int, top: Int, right: Int, bottom: Int) {
+        for (y in top..bottom) for (x in left..right) image.setInk(x, y, true)
+    }
+
+    /** Draws a sharp as a low-resolution scan shows it: a solid block with its four ends sticking out, centred on row [positionY]. */
+    fun blurredSharp(image: BinaryImage, centreX: Int, positionY: Int, spacing: Int) {
+        filledRectangle(image, centreX - spacing * 9 / 20, positionY - spacing * 7 / 10, centreX + spacing * 9 / 20, positionY + spacing * 7 / 10)
+        verticalLine(image, centreX - spacing * 3 / 10, positionY - spacing * 7 / 5, positionY + spacing * 7 / 5)
+        verticalLine(image, centreX + spacing * 3 / 10, positionY - spacing * 7 / 5, positionY + spacing * 7 / 5)
+    }
+
+    /** Draws a time signature as two solid digit-sized blocks, one in each half of the staff whose top line is at [staffTop]. */
+    fun timeSignature(image: BinaryImage, left: Int, staffTop: Int, spacing: Int) {
+        filledRectangle(image, left, staffTop + 1, left + spacing, staffTop + spacing * 2 - 2)
+        filledRectangle(image, left, staffTop + spacing * 2 + 2, left + spacing, staffTop + spacing * 4)
+    }
 }
