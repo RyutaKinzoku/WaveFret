@@ -49,4 +49,21 @@ class BasicPitchTranscriberTest {
 
         assertEquals(listOf(28), transcriber.transcribe(FloatArray(22_050), 22_050).map { it.midiNumber })
     }
+
+    @Test
+    fun keepsOnlyTheBassUnderAChordInTheBassRange() {
+        val transcriber = BasicPitchTranscriber(
+            object : BasicPitchModel {
+                override fun predict(window: FloatArray): BasicPitchPrediction {
+                    val notes = Array(BasicPitchWindowing.FRAMES_PER_WINDOW) { FloatArray(88) }
+                    val onsets = Array(BasicPitchWindowing.FRAMES_PER_WINDOW) { FloatArray(88) }
+                    listOf(12, 19, 24).forEach { bin -> onsets[20][bin] = 0.9f; (20 until 60).forEach { notes[it][bin] = 0.8f } }
+                    return BasicPitchPrediction(onsets, notes)
+                }
+            },
+            BasicPitchWindowing(), PosteriorgramNoteDecoder(), AudioResampler()
+        )
+
+        assertEquals(listOf(33), transcriber.transcribe(FloatArray(22_050), 22_050).map { it.midiNumber })
+    }
 }
