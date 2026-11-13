@@ -6,9 +6,10 @@ import androidx.core.graphics.createBitmap
 
 /**
  * Turns a photo or rendered page into black and white, choosing the ink
- * level from the image itself so grey paper and faint ink still work.
+ * level from the image itself (close to the paper's tone) so grey paper,
+ * faint ink and thin anti-aliased staff lines still work.
  *
- * Android framework glue; the threshold is the tested [InkThreshold].
+ * Android framework glue; the threshold is the tested [InkThreshold.lenient].
  *
  * @return The image as ink and paper. Type: BinaryImage
  */
@@ -20,7 +21,7 @@ fun Bitmap.toBinaryImage(): BinaryImage {
         if (Color.alpha(pixel) < OPAQUE_ENOUGH) WHITE_LUMINANCE
         else (Color.red(pixel) * RED_WEIGHT + Color.green(pixel) * GREEN_WEIGHT + Color.blue(pixel) * BLUE_WEIGHT).toInt()
     }
-    return BinaryImage.fromLuminance(width, height, luminance, InkThreshold.of(luminance))
+    return BinaryImage.fromLuminance(width, height, luminance, InkThreshold.lenient(luminance))
 }
 
 /**

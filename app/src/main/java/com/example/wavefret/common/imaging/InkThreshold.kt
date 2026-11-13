@@ -8,6 +8,7 @@ package com.example.wavefret.common.imaging
 object InkThreshold {
 
     private const val LEVELS = 256
+    private const val LENIENT_SHARE_OF_PAPER_GAP = 4
 
     /**
      * @param luminance Luminance of every pixel, 0 black to 255 white. Type: IntArray
@@ -37,5 +38,19 @@ object InkThreshold {
             }
         }
         return if (bestLevel < 0) BinaryImage.DEFAULT_INK_THRESHOLD else bestLevel + 1
+    }
+
+    /**
+     * A threshold close to the paper's own tone, so faint grey lines
+     * (anti-aliased or photographed staff lines) still count as ink while
+     * the paper does not.
+     *
+     * @param luminance Luminance of every pixel, 0 black to 255 white; most pixels are paper. Type: IntArray
+     * @return Luminance below which a pixel is ink. Type: Int
+     */
+    fun lenient(luminance: IntArray): Int {
+        val paperLevel = luminance.sorted()[luminance.size / 2]
+        val inkLevel = of(luminance)
+        return (paperLevel - (paperLevel - inkLevel) / LENIENT_SHARE_OF_PAPER_GAP).coerceAtLeast(inkLevel)
     }
 }

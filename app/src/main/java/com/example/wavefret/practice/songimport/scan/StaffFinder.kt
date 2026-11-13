@@ -10,7 +10,7 @@ import kotlin.math.abs
  * bar lines and text are ignored.
  *
  * @property minimumCoverage Share of the page width a staff line's long runs must cover. Type: Double
- * @property spacingTolerance Allowed difference between gaps in one staff, as a share of its spacing. Type: Double
+ * @property spacingTolerance Allowed difference between a gap and the staff's average gap so far, as a share of it. Type: Double
  */
 class StaffFinder(
     private val minimumCoverage: Double = DEFAULT_MINIMUM_COVERAGE,
@@ -84,11 +84,12 @@ class StaffFinder(
         val staffs = mutableListOf<Staff>()
         var start = 0
         while (start + MINIMUM_STAFF_LINES - 1 < lines.size) {
-            val spacing = lines[start + 1].centreY - lines[start].centreY
             var end = start + 1
-            while (end + 1 < lines.size && end - start + 1 < MAXIMUM_STAFF_LINES &&
-                abs(lines[end + 1].centreY - lines[end].centreY - spacing) <= spacing * spacingTolerance
-            ) end++
+            while (end + 1 < lines.size && end - start + 1 < MAXIMUM_STAFF_LINES) {
+                val averageSpacing = (lines[end].centreY - lines[start].centreY) / (end - start)
+                if (abs(lines[end + 1].centreY - lines[end].centreY - averageSpacing) > averageSpacing * spacingTolerance) break
+                end++
+            }
             if (end - start + 1 >= MINIMUM_STAFF_LINES) {
                 val staffLines = lines.subList(start, end + 1)
                 staffs += Staff(
@@ -117,7 +118,7 @@ class StaffFinder(
 
     private companion object {
         const val DEFAULT_MINIMUM_COVERAGE = 0.3
-        const val DEFAULT_SPACING_TOLERANCE = 0.2
+        const val DEFAULT_SPACING_TOLERANCE = 0.25
         const val MINIMUM_RUN_PIXELS = 8
         const val RUN_LENGTH_DIVISOR = 50
         const val MINIMUM_STAFF_LINES = 4
