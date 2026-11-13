@@ -16,6 +16,7 @@ import com.example.wavefret.AppContainer
 import com.example.wavefret.R
 import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
+import com.example.wavefret.practice.playalong.PlayAlongActivity
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -203,7 +204,9 @@ class LessonEditorActivity : WaveFretActivity() {
     }
 
     /**
-     * Validates title and tempo, stores the lesson and returns to the library.
+     * Validates title and tempo, stores the lesson and opens it: in
+     * play-along when it has a song attached (step 2 after Listen mode),
+     * otherwise in practice.
      *
      * @return Unit
      */
@@ -223,7 +226,11 @@ class LessonEditorActivity : WaveFretActivity() {
         originalTitle?.takeIf { it != savedLesson.title }?.let(appContainer.importedExercisesRepository::delete)
         hasUnsavedChanges = false
         Toast.makeText(this, getString(R.string.lesson_editor_saved, savedLesson.title), Toast.LENGTH_SHORT).show()
-        startActivity(PracticeActivity.intentFor(this, savedLesson.title))
+        val canPlayAlong = savedLesson.mediaSource != null && savedLesson.noteOnsetsMillis != null
+        startActivity(
+            if (canPlayAlong) PlayAlongActivity.intentFor(this, savedLesson.title)
+            else PracticeActivity.intentFor(this, savedLesson.title)
+        )
         finish()
     }
 

@@ -4,6 +4,9 @@ import android.Manifest
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.media.projection.MediaProjectionConfig
+import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -12,11 +15,15 @@ import android.webkit.WebView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
 import com.example.wavefret.common.audio.AudioRecordPcmSource
+import com.example.wavefret.common.audio.PcmAudioSource
+import com.example.wavefret.common.audio.PlaybackCapturePcmSource
+import com.example.wavefret.common.audio.PlaybackCaptureService
 import com.example.wavefret.common.audio.WavFileWriter
 import com.example.wavefret.common.time.ElapsedRealtimeClock
 import com.example.wavefret.common.ui.WaveFretActivity
@@ -33,17 +40,23 @@ import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
- * Listen mode: WaveFret hears a song through the microphone and turns its
- * bass line into a lesson. With a YouTube link the video plays here (in
- * YouTube's own player) while the microphone listens, and the lesson keeps
- * the video's timing for play-along; otherwise the song plays on another
+ * Listen mode: WaveFret hears a song and turns its bass line into a
+ * lesson. With a YouTube link the video plays here (in YouTube's own
+ * player) and, on Android 10 and later, WaveFret hears the video's sound
+ * directly (after the player approves Android's capture prompt), because
+ * phone speakers can't play deep bass notes; the microphone is the
+ * fallback. The lesson keeps the video's timing for play-along, and the
+ * video's sound is never saved. Without a video the song plays on another
  * speaker, and what the microphone heard is kept as the lesson's audio.
  *
  * Android framework glue around the tested transcription classes; verified
@@ -70,7 +83,18 @@ class ListenActivity : WaveFretActivity() {
     private val requestMicrophonePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) startListening() else showMicrophonePermissionNeeded(rootView, R.string.listen_permission_needed)
+        if (isGranted) beginListening() else showMicrophonePermissionNeeded(rootView, R.string.listen_permission_needed)
+    }
+
+    private val captureApprovalLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { approval ->
+        val approvalData = approval.data
+        if (approval.resultCode == RESULT_OK && approvalData != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startHearingThePhone(approval.resultCode, approvalData)
+        } else {
+            useMicrophoneInstead()
+        }
     }
 
     /**
@@ -143,12 +167,74 @@ class ListenActivity : WaveFretActivity() {
             }
             appContainer.microphonePermissionManager.needsPermissionRequest() ->
                 requestMicrophonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-            else -> startListening()
+            else -> beginListening()
         }
     }
 
-    /** @return Unit */
-    private fun startListening() {
+    /**
+     * With a video on Android 10+, explains and asks to hear the video
+     * directly; otherwise listens through the microphone.
+     *
+     * @return Unit
+     */
+    private fun beginListening() {
+        if (youTubeVideoId == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            startListening(microphoneSource)
+            return
+        }
+        MaterialAlertDialogBuilder(this)
+            .setIcon(R.drawable.ic_music_note)
+            .setTitle(R.string.listen_direct_title)
+            .setMessage(R.string.listen_direct_message)
+            .setPositiveButton(R.string.listen_direct_continue) { _, _ ->
+                val projectionManager = getSystemService(MediaProjectionManager::class.java)
+                val approvalIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    projectionManager.createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())
+                } else {
+                    projectionManager.createScreenCaptureIntent()
+                }
+                captureApprovalLauncher.launch(approvalIntent)
+            }
+            .setNegativeButton(R.string.listen_direct_use_microphone) { _, _ -> startListening(microphoneSource) }
+            .show()
+    }
+
+    /**
+     * Starts the capture service with the player's approval and listens to
+     * the phone's playback once it is ready.
+     *
+     * @param approvalResultCode Result code of the system prompt. Type: Int
+     * @param approvalData Data of the system prompt. Type: Intent
+     * @return Unit
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun startHearingThePhone(approvalResultCode: Int, approvalData: Intent) {
+        PlaybackCaptureService.start(this, approvalResultCode, approvalData)
+        lifecycleScope.launch {
+            val mediaProjection = withTimeoutOrNull(CAPTURE_START_TIMEOUT_MILLIS) {
+                PlaybackCaptureService.activeProjection.filterNotNull().first()
+            }
+            if (mediaProjection == null) {
+                useMicrophoneInstead()
+            } else {
+                startListening(PlaybackCapturePcmSource(mediaProjection, LISTEN_SAMPLE_RATE_HZ))
+            }
+        }
+    }
+
+    /**
+     * @return Unit
+     */
+    private fun useMicrophoneInstead() {
+        Snackbar.make(rootView, R.string.listen_direct_declined, Snackbar.LENGTH_LONG).setAnchorView(toggleButton).show()
+        startListening(microphoneSource)
+    }
+
+    /**
+     * @param audioSource Where the song is heard from. Type: PcmAudioSource
+     * @return Unit
+     */
+    private fun startListening(audioSource: PcmAudioSource) {
         heardSamples.clear()
         heardSampleCount = 0
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -156,7 +242,7 @@ class ListenActivity : WaveFretActivity() {
             videoStartMillis = player.positionMillis
             player.play()
         }
-        listeningJob = microphoneSource.audioBufferStream()
+        listeningJob = audioSource.audioBufferStream()
             .onEach { audioBuffer ->
                 if (heardSampleCount < MAXIMUM_LISTEN_SAMPLES) {
                     heardSamples += audioBuffer
@@ -183,6 +269,7 @@ class ListenActivity : WaveFretActivity() {
         timerJob?.cancel()
         timerJob = null
         mediaPlayer?.pause()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) PlaybackCaptureService.stop(this)
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         toggleButton.setText(R.string.listen_start)
         toggleButton.setIconResource(R.drawable.ic_mic)
@@ -275,6 +362,7 @@ class ListenActivity : WaveFretActivity() {
         private const val TIMER_REFRESH_MILLIS = 250L
         private const val FULL_SONG_CHOICE = 1
         private const val LISTENED_AUDIO_FILE_NAME = "listened.wav"
+        private const val CAPTURE_START_TIMEOUT_MILLIS = 3_000L
 
         /**
          * @param context Context starting the screen. Type: Context
