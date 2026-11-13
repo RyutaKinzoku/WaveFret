@@ -24,6 +24,10 @@
         tools:targetApi="33"
         android:theme="@style/Theme.WaveFret">
         <activity
+            android:name=".practice.songsearch.SongFinderActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:exported="false" />
+        <activity
             android:name=".settings.SettingsActivity"
             android:exported="false" />
         <activity

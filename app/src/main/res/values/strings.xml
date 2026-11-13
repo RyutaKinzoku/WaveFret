@@ -249,7 +249,7 @@
     <string name="add_song_find_title">Find a song</string>
     <string name="add_song_find_body">Type its name; WaveFret finds a bass cover or tab</string>
     <string name="find_song_name_hint">Song name</string>
-    <string name="find_song_how_it_works">Pick a video or tab in the app that opens, tap Share, then choose WaveFret. The lesson will be named after this song.</string>
+    <string name="find_song_how_it_works">WaveFret searches inside the app. Open a video or a tab page, then tap Use. Free, no account needed.</string>
     <string name="find_song_youtube">Bass cover on YouTube</string>
     <string name="find_song_tab">Bass tab on the web</string>
     <string name="find_song_name_required">Type a song name first</string>
@@ -269,4 +269,15 @@
     <string name="settings_text_size_extra_large">Extra large</string>
     <string name="settings_text_size_preview">Play the open E string, then fret the 3rd fret for G.</string>
     <string name="settings_text_size_hint">Text size adds to your phone\'s own font size.</string>
+
+    <!-- Song finder -->
+    <string name="song_finder_subtitle">Find a song</string>
+    <string name="song_finder_videos">Videos</string>
+    <string name="song_finder_tabs">Tabs</string>
+    <string name="song_finder_use_video">Use this video</string>
+    <string name="song_finder_use_tab">Use the tab on this page</string>
+    <string name="song_finder_videos_hint">Open a bass cover video to use it.</string>
+    <string name="song_finder_video_ready_hint">Use this video to learn its bass line, then play along.</string>
+    <string name="song_finder_tabs_hint">Open a page that shows the bass tab as text (numbers on four lines), then tap the button.</string>
+    <string name="song_finder_no_tab_on_page">No bass tab text on this page. Try another result, or a page with a text tab.</string>
 </resources>

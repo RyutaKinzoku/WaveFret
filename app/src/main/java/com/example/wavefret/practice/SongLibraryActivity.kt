@@ -15,7 +15,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.IntentCompat
-import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
@@ -52,9 +51,8 @@ import com.example.wavefret.practice.songimport.RecognizedTabTextBuilder
 import com.example.wavefret.practice.songimport.SongFileImporter
 import com.example.wavefret.practice.songimport.SongImportOutcome
 import com.example.wavefret.practice.songimport.SongImporter
-import com.example.wavefret.practice.songsearch.PendingSongTitle
+import com.example.wavefret.practice.songsearch.SongFinderActivity
 import com.example.wavefret.practice.songsearch.PendingSongTitleStore
-import com.example.wavefret.practice.songsearch.SongSearchLinks
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -108,6 +106,15 @@ class SongLibraryActivity : WaveFretActivity() {
 
     private var libraryItems: List<ExercisePickerItem> = emptyList()
     private var songLibraryQuery = SongLibraryQuery()
+
+    private val findSongLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { finderResult ->
+        val foundTab = finderResult.data?.getStringExtra(SongFinderActivity.EXTRA_TAB_TEXT)
+        if (finderResult.resultCode == RESULT_OK && foundTab != null) {
+            showPasteTabDialog(foundTab, finderResult.data?.getStringExtra(SongFinderActivity.EXTRA_SONG_TITLE))
+        }
+    }
 
     private val openSongFileLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -373,26 +380,21 @@ class SongLibraryActivity : WaveFretActivity() {
             .setNegativeButton(R.string.cancel, null)
             .create()
 
-        /** Opens one kind of search for the typed song. */
-        fun search(searchUrlFor: (String) -> String) {
+        /** Opens the in-app finder for the typed song. */
+        fun search(searchKind: SongFinderActivity.SearchKind) {
             val songName = nameEditText.text?.toString().orEmpty().trim()
             if (songName.isEmpty()) {
                 nameLayout.error = getString(R.string.find_song_name_required)
                 return
             }
-            PendingSongTitleStore(this).save(PendingSongTitle(songName, appContainer.clock.currentTimeMillis()))
             findSongDialog.dismiss()
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, searchUrlFor(songName).toUri()))
-            } catch (noBrowser: android.content.ActivityNotFoundException) {
-                showImportFailure(getString(R.string.find_song_no_app))
-            }
+            findSongLauncher.launch(SongFinderActivity.intentFor(this, songName, searchKind))
         }
         dialogView.findViewById<View>(R.id.findSongYouTubeButton).setOnClickListener {
-            search(SongSearchLinks()::youTubeBassCoverSearch)
+            search(SongFinderActivity.SearchKind.VIDEO)
         }
         dialogView.findViewById<View>(R.id.findSongTabButton).setOnClickListener {
-            search(SongSearchLinks()::webBassTabSearch)
+            search(SongFinderActivity.SearchKind.TAB)
         }
         findSongDialog.show()
     }
