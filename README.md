@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: 0.13.0 — tabs and sheet music from PDFs, tabs from videos
+## Status: 0.14.0 — hear any lesson, piano scores, light-on-dark video tabs
 
 The current build lets you:
 
@@ -19,8 +19,8 @@ The current build lets you:
 - add the songs you want to learn (v3, 0.7): paste an ASCII bass tab,
   or open/share a Guitar Pro 7+ (`.gp`), MIDI (`.mid`) or MusicXML
   (`.musicxml`, `.xml`, `.mxl`) file, or read a photo or PDF (0.13): drawn
-  tab staffs, tabs written as text, and bass-clef sheet music
-  (experimental). Songs live in a searchable library sorted by difficulty;
+  tab staffs, tabs written as text, and sheet music (experimental; on
+  piano and vocal scores only the bass-clef staff is read, 0.14). Songs live in a searchable library sorted by difficulty;
 - turn audio into a lesson (0.8): an audio file, shared audio, or one of
   your takes. Pick "just my bass" (YIN, accurate) or "full song"
   (on-device basic-pitch model, rough), then fix any wrong notes in the
@@ -34,7 +34,10 @@ The current build lets you:
   WaveFret hears the video's sound directly) and Listen mode (WaveFret
   listens to a song played on a speaker);
 - choose the theme and text size in Settings (0.12);
-- read the tab a YouTube bass cover shows while WaveFret listens (0.13);
+- read the tab a YouTube bass cover shows while WaveFret listens (0.13),
+  dark on light or light on dark (0.14);
+- hear any lesson on a synthesized bass, from practice or from the
+  selected note in the lesson editor, to check its notes by ear (0.14);
 - add a YouTube video or audio file to any lesson for play-along: the
   lesson's notes stay, their timing comes from the song (0.13);
 - record audio or video takes and share them with any app (0.7);
