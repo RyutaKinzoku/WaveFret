@@ -49,4 +49,13 @@ class ClefDetectorTest {
 
         assertEquals(Clef.UNKNOWN, detect(image))
     }
+
+    @Test
+    fun aThickSystemLineFromTheStaffAboveDoesNotMakeABassClefLookLikeATrebleClef() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.verticalLine(image, 20, 40, 148, thickness = 12)
+        ScoreImageDrawing.bassClef(image, 32, 100, spacing)
+
+        assertEquals(Clef.BASS, detect(image))
+    }
 }
