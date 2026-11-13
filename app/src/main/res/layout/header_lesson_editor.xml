@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Scrolls with the note list: lesson details, help and the tab preview. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -54,6 +55,16 @@
             android:layout_width="match_parent"
             android:layout_height="160dp" />
     </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/lessonEditorHearButton"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:minHeight="@dimen/touch_target"
+        android:text="@string/hear_lesson_from_note"
+        app:icon="@drawable/ic_hear" />
 
     <TextView
         android:id="@+id/lessonEditorNotesHeading"

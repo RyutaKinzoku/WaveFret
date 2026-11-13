@@ -304,6 +304,9 @@
 
     <!-- Editing and adding a song to a lesson -->
     <string name="practice_edit_lesson">Edit lesson</string>
+    <string name="hear_lesson">Hear how it sounds</string>
+    <string name="hear_lesson_from_note">Hear it from the selected note</string>
+    <string name="hear_lesson_stop">Stop</string>
     <string name="practice_add_youtube">Add a YouTube video for play-along</string>
     <string name="practice_add_youtube_message">WaveFret listens to the video once and lines this lesson\'s notes up with it. The notes stay as they are.</string>
     <string name="practice_add_audio">Add an audio file for play-along</string>
