@@ -9,11 +9,16 @@ import androidx.core.graphics.createBitmap
  * level from the image itself (close to the paper's tone) so grey paper,
  * faint ink and thin anti-aliased staff lines still work.
  *
- * Android framework glue; the threshold is the tested [InkThreshold.lenient].
+ * Android framework glue; the threshold is the tested [LuminanceImage.toBinaryImage].
  *
- * @return The image as ink and paper. Type: BinaryImage
+ * @return The image as ink and paper, the writing being darker than the paper. Type: BinaryImage
  */
-fun Bitmap.toBinaryImage(): BinaryImage {
+fun Bitmap.toBinaryImage(): BinaryImage = toLuminanceImage().toBinaryImage(inkIsLight = false)
+
+/**
+ * @return The brightness of every pixel; transparent pixels count as white paper. Type: LuminanceImage
+ */
+fun Bitmap.toLuminanceImage(): LuminanceImage {
     val pixels = IntArray(width * height)
     getPixels(pixels, 0, width, 0, 0, width, height)
     val luminance = IntArray(pixels.size) { index ->
@@ -21,7 +26,7 @@ fun Bitmap.toBinaryImage(): BinaryImage {
         if (Color.alpha(pixel) < OPAQUE_ENOUGH) WHITE_LUMINANCE
         else (Color.red(pixel) * RED_WEIGHT + Color.green(pixel) * GREEN_WEIGHT + Color.blue(pixel) * BLUE_WEIGHT).toInt()
     }
-    return BinaryImage.fromLuminance(width, height, luminance, InkThreshold.lenient(luminance))
+    return LuminanceImage(width, height, luminance)
 }
 
 /**

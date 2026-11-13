@@ -296,6 +296,7 @@
     <string name="sheet_music_read_check">Check the notes</string>
 
     <!-- Reading the tab in a video -->
+    <string name="listen_no_tab_in_video">No tab found in the video yet, so WaveFret is learning the notes by ear. That is less exact: a video that shows the tab on screen gives the right notes.</string>
     <plurals name="listen_tab_notes_read">
         <item quantity="one">Reading the tab in the video: %d note so far</item>
         <item quantity="other">Reading the tab in the video: %d notes so far</item>

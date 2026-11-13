@@ -27,7 +27,7 @@ import com.example.wavefret.common.audio.PcmAudioSource
 import com.example.wavefret.common.audio.PlaybackCapturePcmSource
 import com.example.wavefret.common.audio.PlaybackCaptureService
 import com.example.wavefret.common.imaging.ScreenFrameSource
-import com.example.wavefret.common.imaging.toBinaryImage
+import com.example.wavefret.common.imaging.toLuminanceImage
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.textrecognition.MlKitImageSymbolRecognizer
 import com.example.wavefret.common.textrecognition.MlKitSymbolRecognizer
@@ -42,6 +42,7 @@ import com.example.wavefret.practice.songimport.FretboardPositionFinder
 import com.example.wavefret.practice.songimport.LessonSynchronizer
 import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
 import com.example.wavefret.practice.songimport.scan.ScoreImageReader
+import com.example.wavefret.practice.songimport.scan.VideoFrameTabReader
 import com.example.wavefret.practice.songimport.scan.VideoTabCollector
 import com.example.wavefret.practice.songimport.scan.VideoTabLessonBuilder
 import com.google.android.material.appbar.MaterialToolbar
@@ -259,7 +260,10 @@ class ListenActivity : WaveFretActivity() {
             )
             try {
                 MlKitSymbolRecognizer().use { symbolRecognizer ->
-                    val scoreImageReader = ScoreImageReader(BassTunings.STANDARD, MlKitImageSymbolRecognizer(symbolRecognizer))
+                    val videoFrameTabReader = VideoFrameTabReader(
+                        ScoreImageReader(BassTunings.STANDARD, MlKitImageSymbolRecognizer(symbolRecognizer))
+                    )
+                    var framesRead = 0
                     while (isActive) {
                         delay(FRAME_INTERVAL_MILLIS)
                         val (videoRegion, videoPositionMillis) = withContext(Dispatchers.Main) {
@@ -267,7 +271,7 @@ class ListenActivity : WaveFretActivity() {
                         }
                         val frame = screenFrameSource.latestFrame(videoRegion) ?: continue
                         val frameColumns = try {
-                            scoreImageReader.read(frame.toBinaryImage()).tabSystems.flatten()
+                            videoFrameTabReader.read(frame.toLuminanceImage())
                         } finally {
                             frame.recycle()
                         }
@@ -275,8 +279,11 @@ class ListenActivity : WaveFretActivity() {
                             videoTabCollector.onFrame(frameColumns, videoPositionMillis)
                             videoTabCollector.columns.size
                         }
+                        framesRead++
                         if (collectedCount > 0) withContext(Dispatchers.Main) {
                             statusTextView.text = resources.getQuantityString(R.plurals.listen_tab_notes_read, collectedCount, collectedCount)
+                        } else if (framesRead == FRAMES_BEFORE_NO_TAB_NOTICE) withContext(Dispatchers.Main) {
+                            statusTextView.setText(R.string.listen_no_tab_in_video)
                         }
                     }
                 }
@@ -469,6 +476,7 @@ class ListenActivity : WaveFretActivity() {
         private const val FULL_SONG_CHOICE = 1
         private const val LISTENED_AUDIO_FILE_NAME = "listened.wav"
         private const val CAPTURE_START_TIMEOUT_MILLIS = 3_000L
+        private const val FRAMES_BEFORE_NO_TAB_NOTICE = 15
         private const val FRAME_INTERVAL_MILLIS = 1_000L
         private const val MINIMUM_VIDEO_TAB_NOTES = 8
         private const val EXTRA_SYNC_LESSON_TITLE = "com.example.wavefret.practice.playalong.SYNC_LESSON_TITLE"
