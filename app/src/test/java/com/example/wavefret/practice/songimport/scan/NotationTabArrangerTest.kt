@@ -14,7 +14,7 @@ class NotationTabArrangerTest {
     fun turnsEachPitchIntoOneTabColumn() {
         val systems = notationTabArranger.arrange(listOf(listOf(28, 31, 33)))
 
-        assertEquals(listOf(listOf(listOf(TabNote(0, 0)), listOf(TabNote(0, 3)), listOf(TabNote(1, 0)))), systems)
+        assertEquals(listOf(listOf(listOf(TabNote(0, 0)), listOf(TabNote(0, 3)), listOf(TabNote(0, 5)))), systems)
     }
 
     @Test
