@@ -52,7 +52,6 @@ import com.example.wavefret.practice.songimport.SongFileImporter
 import com.example.wavefret.practice.songimport.SongImportOutcome
 import com.example.wavefret.practice.songimport.SongImporter
 import com.example.wavefret.practice.songsearch.SongFinderActivity
-import com.example.wavefret.practice.songsearch.PendingSongTitleStore
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -191,9 +190,9 @@ class SongLibraryActivity : WaveFretActivity() {
                 when {
                     sharedUri != null -> importSongFile(sharedUri)
                     sharedYouTubeVideoId != null -> startActivity(
-                        ListenActivity.intentFor(this, sharedYouTubeVideoId, songTitle = takeSearchedSongTitle())
+                        ListenActivity.intentFor(this, sharedYouTubeVideoId)
                     )
-                    !sharedText.isNullOrBlank() -> showPasteTabDialog(prefilledTab = sharedText, prefilledTitle = takeSearchedSongTitle())
+                    !sharedText.isNullOrBlank() -> showPasteTabDialog(prefilledTab = sharedText)
                 }
             }
             incomingIntent.action == Intent.ACTION_VIEW -> incomingIntent.data?.let(::importSongFile)
@@ -399,10 +398,6 @@ class SongLibraryActivity : WaveFretActivity() {
         findSongDialog.show()
     }
 
-    /** @return The song name from a recent "Find a song" search, or null. Type: String? */
-    private fun takeSearchedSongTitle(): String? =
-        PendingSongTitleStore(this).takeFreshTitle(appContainer.clock.currentTimeMillis())
-
     /**
      * Asks for a YouTube link and opens Listen mode with that video.
      *
@@ -470,7 +465,7 @@ class SongLibraryActivity : WaveFretActivity() {
                 null
             }
             progressDialog.dismiss()
-            val suggestedTitle = takeSearchedSongTitle() ?: fileName.substringBeforeLast('.')
+            val suggestedTitle = fileName.substringBeforeLast('.')
             when {
                 recognizedTabText == null -> showImportFailure(getString(R.string.import_song_unreadable_file))
                 containsReadableTab(recognizedTabText) -> showPasteTabDialog(recognizedTabText, suggestedTitle)

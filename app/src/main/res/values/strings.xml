@@ -253,7 +253,6 @@
     <string name="find_song_youtube">Bass cover on YouTube</string>
     <string name="find_song_tab">Bass tab on the web</string>
     <string name="find_song_name_required">Type a song name first</string>
-    <string name="find_song_no_app">No app here can open that search</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
