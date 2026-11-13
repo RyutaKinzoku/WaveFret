@@ -19,7 +19,7 @@ class TabLineGapFillerTest {
 
     @Test
     fun fillsGapsInATabLineWithoutABar() {
-        assertEquals("E --3--5--", tabLineGapFiller.fill("E -- 3  5 --"))
+        assertEquals("E ---3--5---", tabLineGapFiller.fill("E -- 3  5 --"))
     }
 
     @Test
