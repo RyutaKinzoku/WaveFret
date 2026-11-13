@@ -10,8 +10,10 @@ import kotlin.math.abs
  * Pro, MuseScore and most video lessons draw tabs): each recognized
  * number belongs to the string of the line it sits on, numbers in one
  * column are played together, and columns are read left to right.
- * Numbers away from the lines (bar numbers, tuplets) and letters are
- * ignored. 4-line bass tabs are read; on a 5-line tab the low B line is
+ * Numbers away from the lines (bar numbers, tuplets), letters and the
+ * TAB clef at the start of the staff are ignored; letters that text
+ * recognition often mistakes for digits (O for 0, l for 1…) are read as
+ * those digits. 4-line bass tabs are read; on a 5-line tab the low B line is
  * dropped; guitar tabs are not read.
  *
  * @property tuning Tuning the tab is read in. Type: BassTuning
@@ -62,7 +64,10 @@ class DrawnTabReader(
      * @return Digit symbols on a line, paired with that line's index (0 = top). Type: List<Pair<Int, RecognizedSymbol>>
      */
     private fun digitsOnLines(staff: Staff, symbols: List<RecognizedSymbol>): List<Pair<Int, RecognizedSymbol>> {
+        val firstNoteColumn = staff.left + staff.lineSpacing * CLEF_WIDTH_SPACINGS
         return symbols
+            .filter { symbol -> (symbol.left + symbol.right) / 2.0 >= firstNoteColumn }
+            .map { symbol -> symbol.copy(text = symbol.text.map { DIGIT_LOOKALIKES[it] ?: it }.joinToString("")) }
             .filter { symbol -> symbol.text.isNotEmpty() && symbol.text.all(Char::isDigit) }
             .mapNotNull { symbol ->
                 val nearestLineIndex = staff.lineYs.indices.minBy { abs(staff.lineYs[it] - symbol.centerY) }
@@ -106,5 +111,13 @@ class DrawnTabReader(
         const val MAXIMUM_LINES = 5
         const val COLUMN_WIDTH_IN_SPACINGS = 0.5
         const val JOIN_GAP_IN_HEIGHTS = 0.5
+        const val CLEF_WIDTH_SPACINGS = 2.0
+
+        /** Letters text recognition often returns instead of a digit. */
+        val DIGIT_LOOKALIKES = mapOf(
+            'O' to '0', 'o' to '0', 'D' to '0', 'Q' to '0',
+            'l' to '1', 'I' to '1', 'i' to '1', '|' to '1', '!' to '1',
+            'Z' to '2', 'z' to '2', 'S' to '5', 's' to '5', 'b' to '6', 'G' to '6', 'q' to '9', 'g' to '9'
+        )
     }
 }
