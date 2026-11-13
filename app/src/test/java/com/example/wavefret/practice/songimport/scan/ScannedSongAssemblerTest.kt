@@ -32,7 +32,7 @@ class ScannedSongAssemblerTest {
         val scannedSong = scannedSongAssembler.assemble(pages, textTabFallback = "")
 
         assertEquals(ScannedSong.Source.SHEET_MUSIC, scannedSong.source)
-        assertEquals(listOf(TabNote(0, 0), TabNote(0, 5)), asciiTabParser.parseNotes(scannedSong.tabText!!))
+        assertEquals(listOf(TabNote(0, 0), TabNote(1, 0)), asciiTabParser.parseNotes(scannedSong.tabText!!))
     }
 
     @Test
