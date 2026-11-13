@@ -3,6 +3,7 @@ package com.example.wavefret.practice
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
 import com.example.wavefret.common.audio.LowPassFilter
+import com.example.wavefret.common.audio.MediaCodecAudioDecoder
 import com.example.wavefret.common.audio.Metronome
 import com.example.wavefret.common.audio.ToneGeneratorClickPlayer
 import com.example.wavefret.common.music.BassTunings
@@ -25,7 +27,9 @@ import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
 import com.example.wavefret.practice.playalong.LessonAudioStore
+import com.example.wavefret.practice.playalong.ListenActivity
 import com.example.wavefret.practice.playalong.PlayAlongActivity
+import com.example.wavefret.practice.playalong.YouTubeLinkParser
 import com.example.wavefret.practice.progression.ExercisePickerItem
 import com.example.wavefret.practice.progression.ExercisePickerItemsBuilder
 import com.example.wavefret.practice.progression.PerformanceRating
@@ -33,6 +37,9 @@ import com.example.wavefret.practice.progression.PracticeMode
 import com.example.wavefret.practice.progression.PracticeResult
 import com.example.wavefret.practice.progression.PracticeSummary
 import com.example.wavefret.practice.progression.PracticeSummaryBuilder
+import com.example.wavefret.practice.songimport.FretboardPositionFinder
+import com.example.wavefret.practice.songimport.LessonSynchronizer
+import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -40,11 +47,15 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Practice screen. The chosen exercise sits in a card that opens a picker
@@ -83,6 +94,10 @@ class PracticeActivity : WaveFretActivity() {
 
     private var exercisePickerItems: List<ExercisePickerItem> = emptyList()
     private var selectedExercise: Exercise? = null
+
+    private val syncAudioPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { audioUri ->
+        audioUri?.let(::syncLessonWithAudio)
+    }
     private var practiceProgressJob: Job? = null
     private var metronomeJob: Job? = null
 
@@ -118,9 +133,17 @@ class PracticeActivity : WaveFretActivity() {
         topAppBar.setNavigationOnClickListener { finish() }
         topAppBar.inflateMenu(R.menu.menu_practice)
         topAppBar.setOnMenuItemClickListener { menuItem ->
-            val isImportItem = menuItem.itemId == R.id.practiceImportSongMenuItem
-            if (isImportItem) startActivity(SongLibraryActivity.intentFor(this, showAddSong = true))
-            isImportItem
+            val exercise = selectedExercise
+            when (menuItem.itemId) {
+                R.id.practiceImportSongMenuItem -> startActivity(SongLibraryActivity.intentFor(this, showAddSong = true))
+                R.id.practiceEditLessonMenuItem -> exercise?.let {
+                    startActivity(LessonEditorActivity.intentFor(this, it, originalTitle = it.title))
+                }
+                R.id.practiceAddYouTubeMenuItem -> exercise?.let(::askForYouTubeVideoToSync)
+                R.id.practiceAddAudioMenuItem -> exercise?.let { syncAudioPicker.launch(arrayOf("audio/*", "video/mp4")) }
+                else -> return@setOnMenuItemClickListener false
+            }
+            true
         }
         topAppBar.applySystemBarPadding(applyTop = true, applyBottom = false)
         findViewById<View>(R.id.practiceBottomBar).applySystemBarPadding(applyTop = false, applyBottom = true)
@@ -180,7 +203,93 @@ class PracticeActivity : WaveFretActivity() {
         tabStaffView.contentDescription = getString(R.string.practice_tab_description, pickerItem.exercise.title)
         findViewById<View>(R.id.practicePlayAlongButton).isVisible =
             pickerItem.exercise.noteOnsetsMillis != null && pickerItem.exercise.mediaSource != null
+        val practiceMenu = findViewById<MaterialToolbar>(R.id.topAppBar).menu
+        listOf(R.id.practiceEditLessonMenuItem, R.id.practiceAddYouTubeMenuItem, R.id.practiceAddAudioMenuItem).forEach { itemId ->
+            practiceMenu.findItem(itemId)?.isVisible = pickerItem.isImported
+        }
         showPreview(pickerItem.exercise)
+    }
+
+    /**
+     * Asks for a YouTube link, then opens Listen mode to give the lesson
+     * that video's timing for play-along.
+     *
+     * @param lesson Lesson to add the video to. Type: Exercise
+     * @return Unit
+     */
+    private fun askForYouTubeVideoToSync(lesson: Exercise) {
+        val linkLayout = layoutInflater.inflate(R.layout.dialog_youtube_link, rootView, false) as TextInputLayout
+        val linkEditText = requireNotNull(linkLayout.editText)
+        val linkDialog = MaterialAlertDialogBuilder(this)
+            .setIcon(R.drawable.ic_play)
+            .setTitle(R.string.practice_add_youtube)
+            .setMessage(R.string.practice_add_youtube_message)
+            .setView(linkLayout)
+            .setPositiveButton(R.string.next, null)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        linkDialog.setOnShowListener {
+            linkDialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+                val videoId = YouTubeLinkParser().videoIdFrom(linkEditText.text.toString())
+                if (videoId == null) {
+                    linkLayout.error = getString(R.string.youtube_link_invalid)
+                } else {
+                    linkDialog.dismiss()
+                    startActivity(ListenActivity.intentFor(this, videoId, syncLessonTitle = lesson.title))
+                }
+            }
+        }
+        linkDialog.show()
+    }
+
+    /**
+     * Gives the selected lesson the timing of an audio file: the file is
+     * decoded and transcribed, the lesson's notes are lined up with what was
+     * heard, and the file is kept for play-along.
+     *
+     * @param audioUri Audio file chosen by the player. Type: Uri
+     * @return Unit
+     */
+    private fun syncLessonWithAudio(audioUri: Uri) {
+        val lesson = selectedExercise ?: return
+        val progressView = layoutInflater.inflate(R.layout.dialog_transcribing, rootView, false)
+        progressView.findViewById<TextView>(R.id.transcribingStepTextView).setText(R.string.practice_syncing_audio)
+        val progressDialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.practice_add_audio)
+            .setView(progressView)
+            .setCancelable(false)
+            .create()
+        val syncJob = lifecycleScope.launch {
+            try {
+                val syncedLesson = withContext(Dispatchers.Default) {
+                    val decodedAudio = MediaCodecAudioDecoder(this@PracticeActivity).decode(audioUri)
+                    val heardNotes = OnDeviceLessonTranscriber(this@PracticeActivity)
+                        .transcribeNotes(decodedAudio.samples, decodedAudio.sampleRateHz, isFullSong = true)
+                    val storedAudioName = contentResolver.openInputStream(audioUri)?.use { audioStream ->
+                        LessonAudioStore(appContainer.appStorageDirectoryProvider).store(lesson.title + AUDIO_FILE_SUFFIX, audioStream)
+                    } ?: throw IllegalArgumentException(getString(R.string.import_song_unreadable_file))
+                    LessonSynchronizer(FretboardPositionFinder(lesson.tuning))
+                        .synchronize(lesson, heardNotes, LessonMediaSource.StoredAudio(storedAudioName))
+                }
+                appContainer.importedExercisesRepository.save(syncedLesson)
+                progressDialog.dismiss()
+                refreshExercises(preferredTitle = syncedLesson.title)
+                Snackbar.make(rootView, R.string.practice_song_added, Snackbar.LENGTH_LONG)
+                    .setAnchorView(startStopButton)
+                    .setAction(R.string.practice_play_along) { startActivity(PlayAlongActivity.intentFor(this@PracticeActivity, syncedLesson.title)) }
+                    .show()
+            } catch (syncFailure: IllegalArgumentException) {
+                progressDialog.dismiss()
+                Snackbar.make(rootView, getString(R.string.transcription_failed, syncFailure.message), Snackbar.LENGTH_LONG)
+                    .setAnchorView(startStopButton)
+                    .show()
+            } catch (deniedFile: SecurityException) {
+                progressDialog.dismiss()
+                Snackbar.make(rootView, R.string.import_song_unreadable_file, Snackbar.LENGTH_LONG).setAnchorView(startStopButton).show()
+            }
+        }
+        progressDialog.setButton(android.content.DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel)) { _, _ -> syncJob.cancel() }
+        progressDialog.show()
     }
 
     /**
@@ -509,6 +618,7 @@ class PracticeActivity : WaveFretActivity() {
         private const val DETAIL_SEPARATOR = " · "
 
         private const val TEMPO_MODE_REQUIRED_MATCHES = 1
+        private const val AUDIO_FILE_SUFFIX = ".audio"
 
         /**
          * @param context Context starting the screen. Type: Context

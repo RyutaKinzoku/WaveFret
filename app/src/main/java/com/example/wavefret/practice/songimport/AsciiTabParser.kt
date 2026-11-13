@@ -53,7 +53,7 @@ class AsciiTabParser(val tuning: BassTuning) {
         val tabSystems = findTabSystems(lines.map(::normalizedLine))
         if (tabSystems.isEmpty()) return null
         val firstLineIndex = tabSystems.first().first().lineIndex
-        val lastLineIndex = tabSystems.last().last().lineIndex
+        val lastLineIndex = tabSystems.last().last().lastLineIndex
         return lines.subList(firstLineIndex, lastLineIndex + 1).joinToString("\n")
     }
 
@@ -70,8 +70,8 @@ class AsciiTabParser(val tuning: BassTuning) {
         val stringCount = tuning.strings.size
         val runs = mutableListOf<List<TabLine>>()
         var currentRun = mutableListOf<TabLine>()
-        for ((lineIndex, line) in lines.withIndex()) {
-            val tabLine = parseTabLine(line, lineIndex)
+        for (sourceLine in joinWrappedLines(lines)) {
+            val tabLine = parseTabLine(sourceLine)
             if (tabLine != null) {
                 currentRun += tabLine
             } else if (currentRun.isNotEmpty()) {
@@ -90,17 +90,58 @@ class AsciiTabParser(val tuning: BassTuning) {
     }
 
     /**
-     * @param line One normalized line of text. Type: String
-     * @param lineIndex The line's position in the text. Type: Int
+     * Undoes the line wrapping of websites and PDFs: when a system of named
+     * lines (G|, D|, A|, E|) is directly followed by the same number of
+     * unnamed tab fragments, each fragment is the rest of the matching
+     * line, so it is appended to it. Fragments may start with a fret number.
+     *
+     * @param lines All lines, normalized. Type: List<String>
+     * @return The lines with wrapped parts joined back. Type: List<SourceLine>
+     */
+    private fun joinWrappedLines(lines: List<String>): List<SourceLine> {
+        val stringCount = tuning.strings.size
+        val joinedLines = mutableListOf<SourceLine>()
+        var lineIndex = 0
+        while (lineIndex < lines.size) {
+            val namedEnd = lineIndex + stringCount
+            val continuationEnd = namedEnd + stringCount
+            val isWrappedSystem = continuationEnd <= lines.size &&
+                (lineIndex until namedEnd).all { NAMED_LINE_START.containsMatchIn(lines[it]) } &&
+                (namedEnd until continuationEnd).all { WRAPPED_FRAGMENT.matches(lines[it]) }
+            if (isWrappedSystem) {
+                for (stringLine in 0 until stringCount) {
+                    val continuationIndex = namedEnd + stringLine
+                    joinedLines += SourceLine(
+                        text = lines[lineIndex + stringLine].trimEnd() + lines[continuationIndex].trim(),
+                        firstLineIndex = lineIndex + stringLine,
+                        lastLineIndex = continuationIndex
+                    )
+                }
+                lineIndex = continuationEnd
+            } else {
+                joinedLines += SourceLine(lines[lineIndex], lineIndex, lineIndex)
+                lineIndex++
+            }
+        }
+        return joinedLines
+    }
+
+    /**
+     * @param sourceLine One normalized line of text, possibly joined from wrapped parts. Type: SourceLine
      * @return The line's string name and tab content, or null if it is not a tab line. Type: TabLine?
      */
-    private fun parseTabLine(line: String, lineIndex: Int): TabLine? {
-        val lineMatch = TAB_LINE_PATTERN.matchEntire(line) ?: return null
+    private fun parseTabLine(sourceLine: SourceLine): TabLine? {
+        val lineMatch = TAB_LINE_PATTERN.matchEntire(sourceLine.text) ?: return null
         val content = withoutTextAfterLastBar(lineMatch.groupValues[2])
         val dashCount = content.count { it == '-' }
         val markCount = content.count { !it.isWhitespace() }
         if (dashCount < MINIMUM_DASHES || dashCount * DASH_SHARE_DIVISOR < markCount) return null
-        return TabLine(stringName = lineMatch.groupValues[1], content = content, lineIndex = lineIndex)
+        return TabLine(
+            stringName = lineMatch.groupValues[1],
+            content = content,
+            lineIndex = sourceLine.firstLineIndex,
+            lastLineIndex = sourceLine.lastLineIndex
+        )
     }
 
     /**
@@ -145,14 +186,26 @@ class AsciiTabParser(val tuning: BassTuning) {
      *
      * @property stringName Name written before the line, or empty if none. Type: String
      * @property content The line's tab marks. Type: String
-     * @property lineIndex The line's position in the original text. Type: Int
+     * @property lineIndex The line's first position in the original text. Type: Int
+     * @property lastLineIndex Its last position, further down when the line was wrapped. Type: Int
      */
-    private data class TabLine(val stringName: String, val content: String, val lineIndex: Int)
+    private data class TabLine(val stringName: String, val content: String, val lineIndex: Int, val lastLineIndex: Int)
+
+    /**
+     * A line of the original text, or a wrapped line joined back together.
+     *
+     * @property text The line's text. Type: String
+     * @property firstLineIndex Where it starts in the original text. Type: Int
+     * @property lastLineIndex Where it ends in the original text. Type: Int
+     */
+    private data class SourceLine(val text: String, val firstLineIndex: Int, val lastLineIndex: Int)
 
     private companion object {
         /** An optional string name, then tab content starting with a bar, colon or dash. */
         val TAB_LINE_PATTERN = Regex("^\\s*([A-Ga-g][#b]?)?\\s*([|:-].*)$")
         val FRET_NUMBER_PATTERN = Regex("\\d+")
+        val NAMED_LINE_START = Regex("^\\s*[A-Ga-g][#b]?\\s*[|:-]")
+        val WRAPPED_FRAGMENT = Regex("^\\s*[-0-9|hpbsrx~/\\\\.()^*<>=]*[-|][-0-9|hpbsrx~/\\\\.()^*<>=]*\\s*$")
         val DASH_LOOKALIKES = Regex("[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]")
         const val MINIMUM_DASHES = 3
         /** A tab line is at least one third dashes; text lines are not. */

@@ -7,4 +7,21 @@
         android:title="@string/practice_open_library"
         app:iconTint="?attr/colorOnSurface"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/practiceEditLessonMenuItem"
+        android:icon="@drawable/ic_edit"
+        android:title="@string/practice_edit_lesson"
+        android:visible="false"
+        app:iconTint="?attr/colorOnSurface"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/practiceAddYouTubeMenuItem"
+        android:title="@string/practice_add_youtube"
+        android:visible="false"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/practiceAddAudioMenuItem"
+        android:title="@string/practice_add_audio"
+        android:visible="false"
+        app:showAsAction="never" />
 </menu>

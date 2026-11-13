@@ -134,12 +134,12 @@
     <string name="add_song_open_file_body">Guitar Pro (.gp), MusicXML, MIDI or a text tab</string>
     <string name="add_song_paste_title">Paste a tab</string>
     <string name="add_song_paste_body">Copy a bass tab from a website and paste it</string>
-    <string name="add_song_sheet_music_title">Tab from a photo or PDF</string>
+    <string name="add_song_sheet_music_title">Tab or sheet music from a photo or PDF</string>
     <string name="add_song_sheet_music_body">WaveFret reads the tab on your phone, free and offline</string>
     <string name="reading_tab_title">Reading the tab</string>
-    <string name="reading_tab_step">Looking for fret numbers on every page…</string>
+    <string name="reading_tab_step">Looking for tab and sheet music on every page…</string>
     <string name="no_tab_found_title">No bass tab found</string>
-    <string name="no_tab_found_message">WaveFret reads tabs (numbers on four lines). It can\'t read notes on a music staff yet. If the picture is a tab, try a sharper, straight photo, or edit what was read.</string>
+    <string name="no_tab_found_message">WaveFret couldn\'t find a bass tab or bass-clef sheet music here. Try a sharper, straight photo or a higher-quality PDF, or edit what was read.</string>
     <string name="no_tab_found_edit">Edit what was read</string>
     <string name="ok">OK</string>
     <string name="importing_song">Importing…</string>
@@ -289,4 +289,24 @@
     <string name="playback_capture_channel">Learning a song</string>
     <string name="playback_capture_notification_title">WaveFret is learning the notes</string>
     <string name="playback_capture_notification_body">Only the video\'s sound is used. Nothing is saved.</string>
+
+    <!-- Sheet music reading -->
+    <string name="sheet_music_read_title">Read from sheet music</string>
+    <string name="sheet_music_read_message">There was no tab, so WaveFret read the notes on the staff and placed them on your bass. Reading sheet music is new and can miss sharps, flats or notes: please check each note before saving.</string>
+    <string name="sheet_music_read_check">Check the notes</string>
+
+    <!-- Reading the tab in a video -->
+    <plurals name="listen_tab_notes_read">
+        <item quantity="one">Reading the tab in the video: %d note so far</item>
+        <item quantity="other">Reading the tab in the video: %d notes so far</item>
+    </plurals>
+
+    <!-- Editing and adding a song to a lesson -->
+    <string name="practice_edit_lesson">Edit lesson</string>
+    <string name="practice_add_youtube">Add a YouTube video for play-along</string>
+    <string name="practice_add_youtube_message">WaveFret listens to the video once and lines this lesson\'s notes up with it. The notes stay as they are.</string>
+    <string name="practice_add_audio">Add an audio file for play-along</string>
+    <string name="practice_syncing_audio">Lining the lesson up with the song…</string>
+    <string name="practice_song_added">Song added. The lesson can now be played along.</string>
+    <string name="listen_status_sync">Press Start and let the video play. WaveFret lines up %1$s with it; you don\'t need to play yet.</string>
 </resources>

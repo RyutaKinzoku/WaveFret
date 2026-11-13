@@ -222,4 +222,53 @@ class AsciiTabParserTest {
     fun extractingFromAPageWithoutTabGivesNothing() {
         assertEquals(null, asciiTabParser.extractTab("Lyrics only\nNo tab here"))
     }
+
+    @Test
+    fun joinsLinesThatAWebsiteWrappedOntoTheNextLines() {
+        val wrappedTab = """
+            [Intro]
+             
+            G|-----|-------|----
+            D|-----|-------|----
+            A|-----|---2---|----
+            E|-3---|-------|-5-6
+            ---|
+            ---|
+            ---|
+            -7-|
+             
+            Page 1/3
+        """.trimIndent()
+
+        assertEquals(
+            listOf(TabNote(0, 3), TabNote(1, 2), TabNote(0, 5), TabNote(0, 6), TabNote(0, 7)),
+            asciiTabParser.parseNotes(wrappedTab)
+        )
+    }
+
+    @Test
+    fun wrappedPartsMayStartWithAFretNumber() {
+        val wrappedTab = """
+            G|--------|------
+            D|----5---|------
+            A|-3------|------
+            E|--------|-5--5-
+            --|
+            --|
+            --|
+            6-7-|
+        """.trimIndent()
+
+        assertEquals(
+            listOf(TabNote(1, 3), TabNote(2, 5), TabNote(0, 5), TabNote(0, 5), TabNote(0, 6), TabNote(0, 7)),
+            asciiTabParser.parseNotes(wrappedTab)
+        )
+    }
+
+    @Test
+    fun wrappedTabIsExtractedWholeFromAPage() {
+        val pageText = "Intro\nG|---|-\nD|---|-\nA|-2-|-\nE|---|-\n-|\n-|\n-|\n3|\nRate this tab"
+
+        assertEquals("G|---|-\nD|---|-\nA|-2-|-\nE|---|-\n-|\n-|\n-|\n3|", asciiTabParser.extractTab(pageText))
+    }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.wavefret.common.audio.AudioResampler
 import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.music.BassTunings
+import com.example.wavefret.common.music.NoteEvent
 import com.example.wavefret.common.transcription.BasicPitchTranscriber
 import com.example.wavefret.common.transcription.BasicPitchWindowing
 import com.example.wavefret.common.transcription.MonophonicTranscriber
@@ -24,6 +25,20 @@ import com.example.wavefret.practice.Exercise
  * @param context Context used to open the model asset. Type: Context
  */
 class OnDeviceLessonTranscriber(private val context: Context) {
+
+    /**
+     * @param samples Mono audio samples in -1..1. Type: FloatArray
+     * @param sampleRateHz Their sample rate. Type: Int
+     * @param isFullSong True for a full mix (basic-pitch, bass line kept), false for bass alone (YIN). Type: Boolean
+     * @return The notes heard, in time order. Type: List<NoteEvent>
+     */
+    fun transcribeNotes(samples: FloatArray, sampleRateHz: Int, isFullSong: Boolean): List<NoteEvent> {
+        if (!isFullSong) return MonophonicTranscriber(YinPitchDetector()).transcribe(samples, sampleRateHz)
+        return TfLiteBasicPitchModel(context).use { basicPitchModel ->
+            BasicPitchTranscriber(basicPitchModel, BasicPitchWindowing(), PosteriorgramNoteDecoder(), AudioResampler())
+                .transcribe(samples, sampleRateHz)
+        }
+    }
 
     /**
      * Call from a background thread: this can take a while for long songs.
