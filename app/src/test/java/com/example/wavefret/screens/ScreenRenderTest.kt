@@ -139,6 +139,15 @@ class ScreenRenderTest {
         }
     }
 
+    @Test
+    @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun settingsShowsThemeAndTextSizeChoices() =
+        renderAndCheck(SettingsActivity::class.java, "settings_dark", R.id.settingsTextSizeRadioGroup)
+
+    @Test
+    fun settingsShowsThemeChoicesInLightTheme() =
+        renderAndCheck(SettingsActivity::class.java, "settings_light", R.id.settingsThemeRadioGroup)
+
     /**
      * @param activityClass Screen to launch. Type: Class<T>
      * @param screenshotName File name, without extension. Type: String

@@ -10,11 +10,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -36,7 +36,7 @@ import java.util.Locale
  * Android framework glue — every edit goes through the tested
  * [LessonEditor] and rows through [LessonNoteFormatter] — verified on-device.
  */
-class LessonEditorActivity : AppCompatActivity() {
+class LessonEditorActivity : WaveFretActivity() {
 
     private lateinit var rootView: ViewGroup
     private lateinit var notesRecyclerView: RecyclerView

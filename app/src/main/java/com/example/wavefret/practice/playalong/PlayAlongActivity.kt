@@ -10,21 +10,21 @@ import android.webkit.WebView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
 import com.example.wavefret.common.audio.LowPassFilter
 import com.example.wavefret.common.time.ElapsedRealtimeClock
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
 import com.example.wavefret.practice.Exercise
 import com.example.wavefret.practice.HitConfirmer
 import com.example.wavefret.practice.LessonMediaSource
 import com.example.wavefret.practice.NoteMatcher
-import com.example.wavefret.practice.PracticeListeningPipeline
 import com.example.wavefret.practice.PracticeDisplayFormatter
+import com.example.wavefret.practice.PracticeListeningPipeline
 import com.example.wavefret.practice.PracticeProgress
 import com.example.wavefret.practice.TabStaffView
 import com.example.wavefret.practice.progression.PracticeMode
@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
  * Android framework glue — the stop-and-wait rules live in the tested
  * [PlayAlongSession] — verified on-device.
  */
-class PlayAlongActivity : AppCompatActivity() {
+class PlayAlongActivity : WaveFretActivity() {
 
     private lateinit var rootView: View
     private lateinit var currentNoteTextView: TextView

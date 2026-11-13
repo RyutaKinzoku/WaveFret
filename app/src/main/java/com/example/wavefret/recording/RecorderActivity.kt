@@ -8,7 +8,6 @@ import android.view.WindowManager
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -18,17 +17,18 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
 import com.example.wavefret.common.time.ElapsedRealtimeClock
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import java.io.File
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.io.File
 
 /**
  * Recorder: one large record/stop button in the thumb zone, a running
@@ -43,7 +43,7 @@ import java.io.File
  * [RecordingUiController], [RecordingSessionController], [PlaybackController],
  * [RecordingsRepository] and [RecordingDisplayFormatter] — so it is verified on-device.
  */
-class RecorderActivity : AppCompatActivity() {
+class RecorderActivity : WaveFretActivity() {
 
     private val appContainer = AppContainer(this)
     private val elapsedRealtimeClock = ElapsedRealtimeClock()

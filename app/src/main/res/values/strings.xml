@@ -251,4 +251,19 @@
     <string name="find_song_tab">Bass tab on the web</string>
     <string name="find_song_name_required">Type a song name first</string>
     <string name="find_song_no_app">No app here can open that search</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_open_description">Settings</string>
+    <string name="settings_theme_heading">Theme</string>
+    <string name="settings_theme_system">Same as my phone</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_text_size_heading">Text size</string>
+    <string name="settings_text_size_small">Small</string>
+    <string name="settings_text_size_default">Default</string>
+    <string name="settings_text_size_large">Large</string>
+    <string name="settings_text_size_extra_large">Extra large</string>
+    <string name="settings_text_size_preview">Play the open E string, then fret the 3rd fret for G.</string>
+    <string name="settings_text_size_hint">Text size adds to your phone\'s own font size.</string>
 </resources>

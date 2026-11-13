@@ -12,7 +12,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.wavefret.AppContainer
 import com.example.wavefret.R
@@ -24,6 +23,7 @@ import com.example.wavefret.common.audio.LowPassFilteredPitchDetector
 import com.example.wavefret.common.audio.SlidingWindowAudioSource
 import com.example.wavefret.common.audio.YinPitchDetector
 import com.example.wavefret.common.music.BassTunings
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
 import com.google.android.material.appbar.MaterialToolbar
@@ -44,7 +44,7 @@ import kotlinx.coroutines.flow.onEach
  * Android framework glue — every decision lives in the tested
  * [GuidedTuner] and [TunerDisplayFormatter] — verified on-device.
  */
-class TunerActivity : AppCompatActivity() {
+class TunerActivity : WaveFretActivity() {
 
     private lateinit var rootView: View
     private lateinit var tunerGaugeView: TunerGaugeView

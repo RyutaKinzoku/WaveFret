@@ -5,8 +5,8 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.practice.PracticeActivity
 import com.example.wavefret.practice.SongLibraryActivity
@@ -15,6 +15,7 @@ import com.example.wavefret.practice.progression.DifficultyScorer
 import com.example.wavefret.practice.progression.PracticeStats
 import com.example.wavefret.practice.progression.PracticeStatsCalculator
 import com.example.wavefret.recording.RecorderActivity
+import com.example.wavefret.settings.SettingsActivity
 import com.example.wavefret.tuner.TunerActivity
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -30,7 +31,7 @@ import java.util.TimeZone
  * [PracticeStatsCalculator] and [com.example.wavefret.practice.progression.ExerciseProgression]
  * — so it is verified manually on-device.
  */
-class MainActivity : AppCompatActivity() {
+class MainActivity : WaveFretActivity() {
 
     private val appContainer = AppContainer(this)
     private val practiceStatsCalculator by lazy { PracticeStatsCalculator(appContainer.exerciseProgression) }
@@ -69,6 +70,9 @@ class MainActivity : AppCompatActivity() {
         continueDetailTextView = findViewById(R.id.homeContinueDetailTextView)
         practiceButton = findViewById(R.id.homePracticeButton)
 
+        findViewById<Button>(R.id.homeSettingsButton).setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
         findViewById<MaterialCardView>(R.id.homeTunerCard).setOnClickListener {
             startActivity(Intent(this, TunerActivity::class.java))
         }

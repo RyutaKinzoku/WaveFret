@@ -12,7 +12,6 @@ import android.webkit.WebView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.example.wavefret.AppContainer
@@ -20,6 +19,7 @@ import com.example.wavefret.R
 import com.example.wavefret.common.audio.AudioRecordPcmSource
 import com.example.wavefret.common.audio.WavFileWriter
 import com.example.wavefret.common.time.ElapsedRealtimeClock
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
 import com.example.wavefret.practice.LessonEditorActivity
@@ -29,6 +29,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -37,7 +38,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 
 /**
  * Listen mode: WaveFret hears a song through the microphone and turns its
@@ -49,7 +49,7 @@ import java.io.ByteArrayOutputStream
  * Android framework glue around the tested transcription classes; verified
  * on-device.
  */
-class ListenActivity : AppCompatActivity() {
+class ListenActivity : WaveFretActivity() {
 
     private lateinit var rootView: ViewGroup
     private lateinit var timerTextView: TextView

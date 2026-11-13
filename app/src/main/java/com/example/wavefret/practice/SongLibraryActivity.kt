@@ -13,7 +13,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
@@ -26,31 +25,32 @@ import com.example.wavefret.AppContainer
 import com.example.wavefret.R
 import com.example.wavefret.common.audio.MediaCodecAudioDecoder
 import com.example.wavefret.common.music.BassTunings
+import com.example.wavefret.common.ui.WaveFretActivity
 import com.example.wavefret.common.ui.applySystemBarPadding
+import com.example.wavefret.practice.playalong.LessonAudioStore
+import com.example.wavefret.practice.playalong.ListenActivity
+import com.example.wavefret.practice.playalong.YouTubeLinkParser
 import com.example.wavefret.practice.progression.ExercisePickerItem
 import com.example.wavefret.practice.progression.ExercisePickerItemsBuilder
 import com.example.wavefret.practice.progression.SongLibraryQuery
 import com.example.wavefret.practice.progression.SongSortOrder
 import com.example.wavefret.practice.progression.SongSource
-import com.example.wavefret.practice.playalong.LessonAudioStore
-import com.example.wavefret.practice.playalong.ListenActivity
-import com.example.wavefret.practice.playalong.YouTubeLinkParser
 import com.example.wavefret.practice.songimport.AsciiTabParser
-import com.example.wavefret.practice.songsearch.PendingSongTitle
-import com.example.wavefret.practice.songsearch.PendingSongTitleStore
-import com.example.wavefret.practice.songsearch.SongSearchLinks
-import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
-import com.example.wavefret.practice.songimport.SongFileFormat
 import com.example.wavefret.practice.songimport.FretboardPositionFinder
 import com.example.wavefret.practice.songimport.GuitarProFileParser
 import com.example.wavefret.practice.songimport.MidiFileParser
 import com.example.wavefret.practice.songimport.MusicXmlBassParser
 import com.example.wavefret.practice.songimport.MusicXmlFileReader
 import com.example.wavefret.practice.songimport.NoteEventsLessonBuilder
+import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
+import com.example.wavefret.practice.songimport.SongFileFormat
 import com.example.wavefret.practice.songimport.SongFileFormatDetector
 import com.example.wavefret.practice.songimport.SongFileImporter
 import com.example.wavefret.practice.songimport.SongImportOutcome
 import com.example.wavefret.practice.songimport.SongImporter
+import com.example.wavefret.practice.songsearch.PendingSongTitle
+import com.example.wavefret.practice.songsearch.PendingSongTitleStore
+import com.example.wavefret.practice.songsearch.SongSearchLinks
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -60,10 +60,10 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 
 /**
  * The song library: every built-in exercise and imported song, searchable,
@@ -78,7 +78,7 @@ import java.io.IOException
  * Android framework glue — filtering lives in the tested [SongLibraryQuery],
  * reading in the tested [SongFileImporter] — so it is verified on-device.
  */
-class SongLibraryActivity : AppCompatActivity() {
+class SongLibraryActivity : WaveFretActivity() {
 
     private lateinit var rootView: ViewGroup
     private lateinit var songsRecyclerView: RecyclerView

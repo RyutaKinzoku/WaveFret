@@ -12,6 +12,7 @@
         android:required="false" />
 
     <application
+        android:name=".WaveFretApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -22,6 +23,9 @@
         android:enableOnBackInvokedCallback="true"
         tools:targetApi="33"
         android:theme="@style/Theme.WaveFret">
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
