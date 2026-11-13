@@ -41,6 +41,23 @@ class AsciiTabParser(val tuning: BassTuning) {
     }
 
     /**
+     * Cuts the tab out of a longer text, such as everything on a web page:
+     * from the first line of the first system to the last line of the last
+     * system, keeping section names and blank lines in between.
+     *
+     * @param text Text that may contain a tab. Type: String
+     * @return The tab part of the text, or null if it has no tab system. Type: String?
+     */
+    fun extractTab(text: String): String? {
+        val lines = text.lines()
+        val tabSystems = findTabSystems(lines.map(::normalizedLine))
+        if (tabSystems.isEmpty()) return null
+        val firstLineIndex = tabSystems.first().first().lineIndex
+        val lastLineIndex = tabSystems.last().last().lineIndex
+        return lines.subList(firstLineIndex, lastLineIndex + 1).joinToString("\n")
+    }
+
+    /**
      * Groups consecutive tab lines into systems of exactly one line per
      * string. A run of several systems written back to back is split; a
      * run with one or two extra lines (a 5- or 6-string tab) keeps its top
@@ -53,8 +70,8 @@ class AsciiTabParser(val tuning: BassTuning) {
         val stringCount = tuning.strings.size
         val runs = mutableListOf<List<TabLine>>()
         var currentRun = mutableListOf<TabLine>()
-        for (line in lines) {
-            val tabLine = parseTabLine(line)
+        for ((lineIndex, line) in lines.withIndex()) {
+            val tabLine = parseTabLine(line, lineIndex)
             if (tabLine != null) {
                 currentRun += tabLine
             } else if (currentRun.isNotEmpty()) {
@@ -74,15 +91,16 @@ class AsciiTabParser(val tuning: BassTuning) {
 
     /**
      * @param line One normalized line of text. Type: String
+     * @param lineIndex The line's position in the text. Type: Int
      * @return The line's string name and tab content, or null if it is not a tab line. Type: TabLine?
      */
-    private fun parseTabLine(line: String): TabLine? {
+    private fun parseTabLine(line: String, lineIndex: Int): TabLine? {
         val lineMatch = TAB_LINE_PATTERN.matchEntire(line) ?: return null
         val content = withoutTextAfterLastBar(lineMatch.groupValues[2])
         val dashCount = content.count { it == '-' }
         val markCount = content.count { !it.isWhitespace() }
         if (dashCount < MINIMUM_DASHES || dashCount * DASH_SHARE_DIVISOR < markCount) return null
-        return TabLine(stringName = lineMatch.groupValues[1], content = content)
+        return TabLine(stringName = lineMatch.groupValues[1], content = content, lineIndex = lineIndex)
     }
 
     /**
@@ -127,8 +145,9 @@ class AsciiTabParser(val tuning: BassTuning) {
      *
      * @property stringName Name written before the line, or empty if none. Type: String
      * @property content The line's tab marks. Type: String
+     * @property lineIndex The line's position in the original text. Type: Int
      */
-    private data class TabLine(val stringName: String, val content: String)
+    private data class TabLine(val stringName: String, val content: String, val lineIndex: Int)
 
     private companion object {
         /** An optional string name, then tab content starting with a bar, colon or dash. */
