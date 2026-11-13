@@ -227,11 +227,9 @@ class NotationStaffReader(
         val spacing = staff.lineSpacing
         return working.connectedInkShapes(PixelRegion(staff.left, band.first, staff.right, band.last))
             .filter { shape ->
-                val shapeHeight = shape.bottom - shape.top + 1
-                val shapeWidth = shape.right - shape.left + 1
                 shape.left >= firstAccidentalColumn &&
-                    shapeHeight >= spacing * ACCIDENTAL_MIN_HEIGHT_SPACINGS && shapeHeight <= spacing * ACCIDENTAL_MAX_HEIGHT_SPACINGS &&
-                    shapeWidth <= spacing * ACCIDENTAL_MAX_WIDTH_SPACINGS &&
+                    shape.height >= spacing * ACCIDENTAL_MIN_HEIGHT_SPACINGS && shape.height <= spacing * ACCIDENTAL_MAX_HEIGHT_SPACINGS &&
+                    shape.width <= spacing * ACCIDENTAL_MAX_WIDTH_SPACINGS &&
                     noteheads.none { it.centreX.roundToInt() in shape.left..shape.right && it.centreY.roundToInt() in shape.top..shape.bottom }
             }
             .mapNotNull { shape -> accidentalOf(working, shape, staff) }
