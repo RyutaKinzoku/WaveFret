@@ -10,22 +10,26 @@ import kotlin.math.roundToInt
 /**
  * Reads the music on a page image (a PDF page, a photo or a video frame):
  * finds the staffs, reads tab staffs by recognizing the numbers on their
- * lines, and, only when a page has no tab, reads bass-clef music staffs
- * note by note. A 5-line staff with numbers on its lines is a 5-string
- * bass tab; without them it is a music staff.
+ * lines, and, only when a page has no tab, reads music staffs note by
+ * note. A 5-line staff with numbers on its lines is a 5-string bass tab;
+ * without them it is a music staff. On pages with both treble-clef and
+ * bass-clef staffs (piano and vocal scores) only the bass-clef staffs are
+ * read, since they hold the bass line.
  *
  * @property tuning Tuning tabs are read in. Type: BassTuning
  * @property symbolRecognizer Reads the numbers around each tab staff. Type: ImageSymbolRecognizer
  * @property staffFinder Finds staffs. Type: StaffFinder
  * @property staffLineEraser Removes lines before numbers are read. Type: StaffLineEraser
  * @property notationStaffReader Reads music staffs. Type: NotationStaffReader
+ * @property clefDetector Tells treble from bass clef. Type: ClefDetector
  */
 class ScoreImageReader(
     tuning: BassTuning,
     private val symbolRecognizer: ImageSymbolRecognizer,
     private val staffFinder: StaffFinder = StaffFinder(),
     private val staffLineEraser: StaffLineEraser = StaffLineEraser(),
-    private val notationStaffReader: NotationStaffReader = NotationStaffReader(staffLineEraser)
+    private val notationStaffReader: NotationStaffReader = NotationStaffReader(staffLineEraser),
+    private val clefDetector: ClefDetector = ClefDetector(staffLineEraser)
 ) {
 
     private val drawnTabReader = DrawnTabReader(tuning)
@@ -57,7 +61,12 @@ class ScoreImageReader(
             }
         }
         if (tabSystems.isNotEmpty()) return PageReading(tabSystems.filter { it.isNotEmpty() }, emptyList())
-        val notationSystems = musicStaffs.map { notationStaffReader.read(page, it) }.filter { it.isNotEmpty() }
+        val clefs = musicStaffs.associateWith { clefDetector.detect(page, it) }
+        val hasBassClef = clefs.values.any { it == Clef.BASS }
+        val notationSystems = musicStaffs
+            .filter { !hasBassClef || clefs.getValue(it) == Clef.BASS }
+            .map { notationStaffReader.read(page, it, clefs.getValue(it)) }
+            .filter { it.isNotEmpty() }
         return PageReading(emptyList(), notationSystems)
     }
 
