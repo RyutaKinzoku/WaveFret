@@ -182,4 +182,44 @@ class AsciiTabParserTest {
 
         assertEquals(listOf(TabNote(1, 0), TabNote(0, 3)), asciiTabParser.parseNotes(asciiTab))
     }
+
+    @Test
+    fun extractsJustTheTabFromAWholeWebPage() {
+        val pageText = """
+            Sign in   Tabs   Courses
+            Seven Nation Army Bass Tab
+            Tuning: E A D G
+            [Intro]
+            G|--------|
+            D|--------|
+            A|--7--7--|
+            E|--------|
+
+            [Verse]
+            G|--------|
+            D|--------|
+            A|--5--3--|
+            E|--------|
+            Rate this tab   Comments (12)
+        """.trimIndent()
+
+        val expectedTab = """
+            G|--------|
+            D|--------|
+            A|--7--7--|
+            E|--------|
+
+            [Verse]
+            G|--------|
+            D|--------|
+            A|--5--3--|
+            E|--------|
+        """.trimIndent()
+        assertEquals(expectedTab, asciiTabParser.extractTab(pageText))
+    }
+
+    @Test
+    fun extractingFromAPageWithoutTabGivesNothing() {
+        assertEquals(null, asciiTabParser.extractTab("Lyrics only\nNo tab here"))
+    }
 }
