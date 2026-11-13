@@ -20,6 +20,7 @@ import com.example.wavefret.practice.playalong.PlayAlongActivity
 import com.example.wavefret.practice.TabNote
 import com.example.wavefret.practice.SongLibraryActivity
 import com.example.wavefret.recording.RecorderActivity
+import com.example.wavefret.settings.SettingsActivity
 import com.example.wavefret.tuner.TunerActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
