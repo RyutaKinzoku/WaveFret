@@ -31,7 +31,8 @@ class ExercisePickerItemsBuilder(private val exerciseProgression: ExerciseProgre
                 isMastered = exerciseProgression.isMastered(title, results),
                 isRecommended = rankedExercise.exercise == recommendedExercise,
                 difficultyScore = rankedExercise.difficultyScore.overallScore,
-                isImported = title in importedTitles
+                isImported = title in importedTitles,
+                isFinished = exerciseProgression.isFinished(title, results)
             )
         }
     }

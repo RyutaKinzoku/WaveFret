@@ -98,18 +98,27 @@ class ExercisePickerAdapter(
             titleTextView.text = pickerItem.exercise.title
             detailTextView.text = detailText
             recommendedTextView.isVisible = pickerItem.isRecommended
-            statusImageView.setImageResource(if (pickerItem.isMastered) R.drawable.ic_check_circle else R.drawable.ic_music_note)
+            val statusIconResource = when {
+                pickerItem.isMastered -> R.drawable.ic_trophy
+                pickerItem.isFinished -> R.drawable.ic_check_circle
+                else -> R.drawable.ic_music_note
+            }
+            val statusDescription = when {
+                pickerItem.isMastered -> context.getString(R.string.exercise_picker_mastered_description)
+                pickerItem.isFinished -> context.getString(R.string.exercise_picker_finished_description)
+                else -> null
+            }
+            statusImageView.setImageResource(statusIconResource)
             statusImageView.setColorFilter(
                 MaterialColors.getColor(
                     rowView,
-                    if (pickerItem.isMastered) com.google.android.material.R.attr.colorSecondary
+                    if (pickerItem.isFinished || pickerItem.isMastered) com.google.android.material.R.attr.colorSecondary
                     else com.google.android.material.R.attr.colorOnSurfaceVariant
                 )
             )
-            statusImageView.contentDescription =
-                if (pickerItem.isMastered) context.getString(R.string.exercise_picker_mastered_description) else null
+            statusImageView.contentDescription = statusDescription
             statusImageView.importantForAccessibility =
-                if (pickerItem.isMastered) View.IMPORTANT_FOR_ACCESSIBILITY_YES else View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                if (statusDescription != null) View.IMPORTANT_FOR_ACCESSIBILITY_YES else View.IMPORTANT_FOR_ACCESSIBILITY_NO
             deleteButton.isVisible = isDeletable
             deleteButton.contentDescription = context.getString(R.string.exercise_picker_delete_description, pickerItem.exercise.title)
             rowView.setOnClickListener { onChosen() }

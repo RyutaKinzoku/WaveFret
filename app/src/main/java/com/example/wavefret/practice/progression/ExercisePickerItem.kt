@@ -12,6 +12,7 @@ import com.example.wavefret.practice.Exercise
  * @property isRecommended True for the single exercise suggested next. Type: Boolean
  * @property difficultyScore Overall difficulty, 0..100, for sorting. Type: Int
  * @property isImported True for songs the player added, false for built-in exercises. Type: Boolean
+ * @property isFinished True once a run was finished in any mode. Type: Boolean
  */
 data class ExercisePickerItem(
     val exercise: Exercise,
@@ -20,5 +21,6 @@ data class ExercisePickerItem(
     val isMastered: Boolean,
     val isRecommended: Boolean,
     val difficultyScore: Int = 0,
-    val isImported: Boolean = false
+    val isImported: Boolean = false,
+    val isFinished: Boolean = false
 )

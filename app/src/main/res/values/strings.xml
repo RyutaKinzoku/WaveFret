@@ -22,7 +22,7 @@
     <string name="home_recorder_body">Record a take and listen back</string>
     <string name="home_continue_label_new">Start here</string>
     <string name="home_continue_label">Up next</string>
-    <string name="home_continue_label_all_mastered">Everything mastered</string>
+    <string name="home_continue_label_all_mastered">Everything finished</string>
     <string name="home_continue_all_mastered_body">Import a song or replay a favourite.</string>
     <string name="home_practice_button">Practise %1$s</string>
     <string name="home_open_practice_button">Open practice</string>
@@ -82,6 +82,7 @@
     <string name="exercise_picker_title">Choose an exercise</string>
     <string name="exercise_picker_recommended">Recommended</string>
     <string name="exercise_picker_mastered_description">Mastered</string>
+    <string name="exercise_picker_finished_description">Finished</string>
     <string name="exercise_picker_delete_description">Delete %1$s</string>
     <string name="delete_song_title">Delete this song?</string>
     <string name="delete_song_message">%1$s will be removed from your songs. Your scores are kept.</string>
