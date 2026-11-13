@@ -11,13 +11,14 @@ class LessonPlaybackSchedule {
 
     /**
      * @param lesson Lesson to play back. Type: Exercise
-     * @return Its notes in order, each with its start and length. Type: List<ScheduledNote>
+     * @param fromNoteIndex First note to play; playback time starts there. Type: Int
+     * @return Its notes from that one on, in order, each with its start and length. Type: List<ScheduledNote>
      */
-    fun schedule(lesson: Exercise): List<ScheduledNote> {
+    fun schedule(lesson: Exercise, fromNoteIndex: Int = 0): List<ScheduledNote> {
         val beatMillis = MILLIS_PER_MINUTE / lesson.tempoBpm
         val onsetsMillis = lesson.noteOnsetsMillis
         var startMillis = 0L
-        return lesson.notes.mapIndexed { index, note ->
+        return lesson.notes.withIndex().drop(fromNoteIndex).map { (index, note) ->
             val durationMillis = if (onsetsMillis == null || index == lesson.notes.lastIndex) {
                 beatMillis
             } else {
