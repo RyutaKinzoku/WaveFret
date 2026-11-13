@@ -7,7 +7,8 @@ import com.example.wavefret.practice.TabNote
  * of the tab; a frame that shows the same notes as the previous one adds
  * nothing, a view that scrolled on adds only the notes after the overlap,
  * and a new page adds all its notes. A few misread numbers don't break
- * the overlap.
+ * the overlap. The time each part appeared gives a rough timing, used
+ * when the notes can't be lined up with the song's sound.
  *
  * @property minimumOverlap Columns that must match to count as an overlap. Type: Int
  * @property allowedMismatchShare Share of overlapping columns that may differ (misreads). Type: Double
@@ -18,6 +19,7 @@ class VideoTabCollector(
 ) {
 
     private val collectedColumns = mutableListOf<List<TabNote>>()
+    private val addedBatches = mutableListOf<Pair<Long, Int>>()
     private var previousFrame: List<List<TabNote>> = emptyList()
 
     /** Every column collected so far, in playing order. Type: List<List<TabNote>> */
@@ -25,13 +27,32 @@ class VideoTabCollector(
 
     /**
      * @param frameColumns Columns read from one frame, left to right and top to bottom. Type: List<List<TabNote>>
+     * @param frameTimeMillis When the frame was shown, in video time. Type: Long
      * @return Unit
      */
-    fun onFrame(frameColumns: List<List<TabNote>>) {
+    fun onFrame(frameColumns: List<List<TabNote>>, frameTimeMillis: Long = 0L) {
         if (frameColumns.isEmpty()) return
-        val overlap = overlapLength(previousFrame, frameColumns)
-        collectedColumns += frameColumns.drop(overlap)
+        val newColumns = frameColumns.drop(overlapLength(previousFrame, frameColumns))
+        if (newColumns.isNotEmpty()) {
+            collectedColumns += newColumns
+            addedBatches += frameTimeMillis to newColumns.size
+        }
         previousFrame = frameColumns
+    }
+
+    /**
+     * Spreads the columns added by each frame evenly until the next frame
+     * added any; the last ones use the pace of the earlier ones.
+     *
+     * @return A rough time for every collected column, in video time. Type: List<Long>
+     */
+    fun columnOnsetsMillis(): List<Long> {
+        val pacesMillis = addedBatches.zipWithNext().map { (batch, nextBatch) -> (nextBatch.first - batch.first) / batch.second }
+        val lastPaceMillis = pacesMillis.sorted().let { if (it.isEmpty()) DEFAULT_PACE_MILLIS else it[it.size / 2] }
+        return addedBatches.flatMapIndexed { batchIndex, (batchTimeMillis, columnCount) ->
+            val paceMillis = pacesMillis.getOrNull(batchIndex) ?: lastPaceMillis
+            List(columnCount) { column -> batchTimeMillis + paceMillis * column }
+        }
     }
 
     /**
@@ -54,5 +75,6 @@ class VideoTabCollector(
     private companion object {
         const val DEFAULT_MINIMUM_OVERLAP = 3
         const val DEFAULT_ALLOWED_MISMATCH_SHARE = 0.15
+        const val DEFAULT_PACE_MILLIS = 500L
     }
 }
