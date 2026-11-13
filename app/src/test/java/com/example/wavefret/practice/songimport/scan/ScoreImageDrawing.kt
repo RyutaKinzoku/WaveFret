@@ -89,4 +89,22 @@ object ScoreImageDrawing {
         filledNotehead(image, x + spacing * 3, staffTop + spacing / 2, halfWidth = 2, halfHeight = 2)
         filledNotehead(image, x + spacing * 3, staffTop + spacing * 3 / 2, halfWidth = 2, halfHeight = 2)
     }
+
+    /** Fills a rectangle from ([left], [top]) to ([right], [bottom]), edges included. */
+    fun filledRectangle(image: BinaryImage, left: Int, top: Int, right: Int, bottom: Int) {
+        for (y in top..bottom) for (x in left..right) image.setInk(x, y, true)
+    }
+
+    /** Draws a sharp as a low-resolution scan shows it: a solid block with its four ends sticking out, centred on row [positionY]. */
+    fun blurredSharp(image: BinaryImage, centreX: Int, positionY: Int, spacing: Int) {
+        filledRectangle(image, centreX - spacing * 9 / 20, positionY - spacing * 7 / 10, centreX + spacing * 9 / 20, positionY + spacing * 7 / 10)
+        verticalLine(image, centreX - spacing * 3 / 10, positionY - spacing * 7 / 5, positionY + spacing * 7 / 5)
+        verticalLine(image, centreX + spacing * 3 / 10, positionY - spacing * 7 / 5, positionY + spacing * 7 / 5)
+    }
+
+    /** Draws a time signature as two solid digit-sized blocks, one in each half of the staff whose top line is at [staffTop]. */
+    fun timeSignature(image: BinaryImage, left: Int, staffTop: Int, spacing: Int) {
+        filledRectangle(image, left, staffTop + 1, left + spacing, staffTop + spacing * 2 - 2)
+        filledRectangle(image, left, staffTop + spacing * 2 + 2, left + spacing, staffTop + spacing * 4)
+    }
 }
