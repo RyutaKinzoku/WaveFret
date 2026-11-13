@@ -69,4 +69,13 @@ class VideoTabCollectorTest {
 
         assertEquals(listOf(9, 9, 1, 2, 3, 4, 5, 6), collectedFrets())
     }
+
+    @Test
+    fun notesOfEachNewPageAreSpreadUntilTheNextPageAppears() {
+        videoTabCollector.onFrame(frame(1, 2), frameTimeMillis = 1_000)
+        videoTabCollector.onFrame(frame(1, 2), frameTimeMillis = 2_000)
+        videoTabCollector.onFrame(frame(5, 6, 7, 8), frameTimeMillis = 5_000)
+
+        assertEquals(listOf(1_000L, 3_000L, 5_000L, 7_000L, 9_000L, 11_000L), videoTabCollector.columnOnsetsMillis())
+    }
 }
