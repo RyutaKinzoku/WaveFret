@@ -43,4 +43,36 @@ object ScoreImageDrawing {
             if (distance <= 1.0 && distance >= 0.45) image.setInk(x, y, true)
         }
     }
+
+    /** Draws a filled notehead with a stem rising from its right edge, [spacing] being the staff spacing. */
+    fun quarterNote(image: BinaryImage, centreX: Int, centreY: Int, spacing: Int) {
+        filledNotehead(image, centreX, centreY, halfWidth = spacing * 7 / 12, halfHeight = spacing * 5 / 12)
+        verticalLine(image, centreX + spacing * 7 / 12 - 1, centreY - spacing * 7 / 2, centreY)
+    }
+
+    /** Draws a hollow notehead with a stem (a half note). */
+    fun halfNote(image: BinaryImage, centreX: Int, centreY: Int, spacing: Int) {
+        hollowNotehead(image, centreX, centreY, halfWidth = spacing * 7 / 12, halfHeight = spacing * 5 / 12)
+        verticalLine(image, centreX + spacing * 7 / 12 - 1, centreY - spacing * 7 / 2, centreY)
+    }
+
+    /** Draws a hollow notehead without a stem (a whole note). */
+    fun wholeNote(image: BinaryImage, centreX: Int, centreY: Int, spacing: Int) {
+        hollowNotehead(image, centreX, centreY, halfWidth = spacing * 7 / 12, halfHeight = spacing * 5 / 12)
+    }
+
+    /** Draws a flat sign whose bowl sits at row [positionY]. */
+    fun flat(image: BinaryImage, x: Int, positionY: Int, spacing: Int) {
+        verticalLine(image, x, positionY - spacing * 9 / 4, positionY + spacing / 2)
+        hollowNotehead(image, x + spacing / 3, positionY + spacing / 6, halfWidth = spacing / 3, halfHeight = spacing / 3)
+    }
+
+    /** Draws a sharp sign centred on row [positionY]. */
+    fun sharp(image: BinaryImage, centreX: Int, positionY: Int, spacing: Int) {
+        val halfHeight = spacing * 3 / 2
+        verticalLine(image, centreX - spacing / 4, positionY - halfHeight, positionY + halfHeight)
+        verticalLine(image, centreX + spacing / 4, positionY - halfHeight, positionY + halfHeight)
+        horizontalLine(image, positionY - spacing / 3, centreX - spacing / 2, centreX + spacing / 2)
+        horizontalLine(image, positionY + spacing / 3, centreX - spacing / 2, centreX + spacing / 2)
+    }
 }
