@@ -75,4 +75,18 @@ object ScoreImageDrawing {
         horizontalLine(image, positionY - spacing / 3, centreX - spacing / 2, centreX + spacing / 2)
         horizontalLine(image, positionY + spacing / 3, centreX - spacing / 2, centreX + spacing / 2)
     }
+
+    /** Draws a simplified treble clef starting at column [x]: a stroke from above the staff to below it through a loop on the G line. */
+    fun trebleClef(image: BinaryImage, x: Int, staffTop: Int, spacing: Int) {
+        verticalLine(image, x + spacing, staffTop - spacing * 3 / 2, staffTop + spacing * 4 + spacing * 3 / 2, thickness = 3)
+        hollowNotehead(image, x + spacing, staffTop + spacing * 3, halfWidth = spacing, halfHeight = spacing)
+    }
+
+    /** Draws a simplified bass clef starting at column [x]: a curl around the F line and a stroke ending inside the staff, with two dots. */
+    fun bassClef(image: BinaryImage, x: Int, staffTop: Int, spacing: Int) {
+        hollowNotehead(image, x + spacing, staffTop + spacing, halfWidth = spacing, halfHeight = spacing)
+        verticalLine(image, x + spacing * 2 - 1, staffTop + spacing, staffTop + spacing * 5 / 2, thickness = 3)
+        filledNotehead(image, x + spacing * 3, staffTop + spacing / 2, halfWidth = 2, halfHeight = 2)
+        filledNotehead(image, x + spacing * 3, staffTop + spacing * 3 / 2, halfWidth = 2, halfHeight = 2)
+    }
 }

@@ -117,4 +117,14 @@ class NotationStaffReaderTest {
 
         assertEquals(listOf(31), read(image))
     }
+
+    @Test
+    fun aTrebleClefStaffIsReadTwoOctavesLowerSoItFitsTheBass() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.quarterNote(image, 100, rowOf(0), spacing)
+        ScoreImageDrawing.quarterNote(image, 150, rowOf(2), spacing)
+        val staff = StaffFinder().find(image).single()
+
+        assertEquals(listOf(40, 43), notationStaffReader.read(image, staff, Clef.TREBLE))
+    }
 }
