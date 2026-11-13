@@ -8,8 +8,9 @@ import kotlin.math.roundToInt
 /**
  * Tells a treble clef from a bass clef at the start of a music staff by
  * its height: a treble clef reaches well above and below the staff,
- * while a bass clef stays inside it. Thin vertical lines (the line
- * joining a piano system, bar lines) are not clefs.
+ * while a bass clef stays inside it. A clef starts a little after the
+ * staff's first column, so the line joining a piano system (which starts
+ * right at it, however thick) is not taken for a clef.
  *
  * @property staffLineEraser Removes the staff lines, keeping symbols that cross them. Type: StaffLineEraser
  */
@@ -31,7 +32,8 @@ class ClefDetector(private val staffLineEraser: StaffLineEraser = StaffLineErase
         val withoutLines = staffLineEraser.erase(image, listOf(staff), eraseBarLines = false)
         val clefShape = withoutLines.connectedInkShapes(searchRegion)
             .filter { shape ->
-                shape.left <= staff.left + CLEF_START_SPACINGS * spacing &&
+                shape.left >= staff.left + EARLIEST_START_SPACINGS * spacing &&
+                    shape.left <= staff.left + LATEST_START_SPACINGS * spacing &&
                     shape.width >= MINIMUM_WIDTH_SPACINGS * spacing &&
                     shape.height >= MINIMUM_HEIGHT_SPACINGS * spacing
             }
@@ -44,7 +46,8 @@ class ClefDetector(private val staffLineEraser: StaffLineEraser = StaffLineErase
     private companion object {
         const val SEARCH_MARGIN_SPACINGS = 3.0
         const val SEARCH_WIDTH_SPACINGS = 4.5
-        const val CLEF_START_SPACINGS = 2.0
+        const val EARLIEST_START_SPACINGS = 0.4
+        const val LATEST_START_SPACINGS = 2.0
         const val MINIMUM_WIDTH_SPACINGS = 0.5
         const val MINIMUM_HEIGHT_SPACINGS = 2.0
         const val OVERHANG_SPACINGS = 0.75
