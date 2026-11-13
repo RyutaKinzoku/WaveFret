@@ -21,7 +21,7 @@ class NotationStaffReaderTest {
 
     private fun read(image: BinaryImage): List<Int> {
         val staff = StaffFinder().find(image).single()
-        return notationStaffReader.read(StaffLineEraser().erase(image, listOf(staff)), staff)
+        return notationStaffReader.read(image, staff)
     }
 
     @Test

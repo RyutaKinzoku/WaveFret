@@ -55,4 +55,26 @@ class StaffLineEraserTest {
 
         assertTrue(image.isInk(60, 40))
     }
+
+    @Test
+    fun keepsANoteheadSittingOnALine() {
+        val (image, staff) = pageWithTabStaff()
+        ScoreImageDrawing.filledNotehead(image, 150, 41, halfWidth = 8, halfHeight = 6)
+
+        val erased = staffLineEraser.erase(image, listOf(staff))
+
+        assertTrue(erased.isInk(150, 41))
+        assertTrue(erased.isInk(145, 40))
+    }
+
+    @Test
+    fun canKeepBarLines() {
+        val (image, staff) = pageWithTabStaff()
+        ScoreImageDrawing.verticalLine(image, 150, 40, 83)
+
+        val erased = staffLineEraser.erase(image, listOf(staff), eraseBarLines = false)
+
+        assertTrue(erased.isInk(150, 60))
+        assertFalse(erased.isInk(60, 40))
+    }
 }
