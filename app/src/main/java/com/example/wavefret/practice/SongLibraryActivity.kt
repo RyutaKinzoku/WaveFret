@@ -25,9 +25,6 @@ import com.example.wavefret.R
 import com.example.wavefret.common.audio.MediaCodecAudioDecoder
 import com.example.wavefret.common.music.BassTunings
 import com.example.wavefret.common.ui.WaveFretActivity
-import com.example.wavefret.common.textrecognition.DocumentPageRenderer
-import com.example.wavefret.common.textrecognition.MlKitSymbolRecognizer
-import com.example.wavefret.common.textrecognition.RecognizedSymbol
 import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.practice.playalong.LessonAudioStore
 import com.example.wavefret.practice.playalong.ListenActivity
@@ -47,10 +44,11 @@ import com.example.wavefret.practice.songimport.NoteEventsLessonBuilder
 import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
 import com.example.wavefret.practice.songimport.SongFileFormat
 import com.example.wavefret.practice.songimport.SongFileFormatDetector
-import com.example.wavefret.practice.songimport.RecognizedTabTextBuilder
 import com.example.wavefret.practice.songimport.SongFileImporter
 import com.example.wavefret.practice.songimport.SongImportOutcome
 import com.example.wavefret.practice.songimport.SongImporter
+import com.example.wavefret.practice.songimport.scan.DocumentSongReader
+import com.example.wavefret.practice.songimport.scan.ScannedSong
 import com.example.wavefret.practice.songsearch.SongFinderActivity
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -428,9 +426,9 @@ class SongLibraryActivity : WaveFretActivity() {
     }
 
     /**
-     * Reads the tab in a photo or PDF with on-device text recognition, then
-     * opens the paste dialog with what was read so the player can check it,
-     * fix it and name it.
+     * Reads the bass part of a photo or PDF on the phone (drawn tab staffs,
+     * sheet music, or a tab written as text), then opens the paste dialog
+     * with it as tab so the player can check it, fix it and name it.
      *
      * @param documentUri Photo or PDF to read. Type: Uri
      * @param fileName Its display name, used as the suggested title. Type: String
@@ -447,15 +445,9 @@ class SongLibraryActivity : WaveFretActivity() {
             .create()
         val isPdf = mimeType == "application/pdf" || fileName.endsWith(".pdf", ignoreCase = true)
         val readingJob = lifecycleScope.launch {
-            val recognizedTabText = try {
+            val scannedSong = try {
                 withContext(Dispatchers.Default) {
-                    val pages = mutableListOf<List<RecognizedSymbol>>()
-                    MlKitSymbolRecognizer().use { symbolRecognizer ->
-                        DocumentPageRenderer(contentResolver).forEachPage(documentUri, isPdf) { pageBitmap ->
-                            pages += symbolRecognizer.recognize(pageBitmap)
-                        }
-                    }
-                    RecognizedTabTextBuilder().build(pages)
+                    DocumentSongReader(contentResolver, BassTunings.STANDARD).read(documentUri, isPdf)
                 }
             } catch (unreadableDocument: IOException) {
                 null
@@ -466,10 +458,18 @@ class SongLibraryActivity : WaveFretActivity() {
             }
             progressDialog.dismiss()
             val suggestedTitle = fileName.substringBeforeLast('.')
+            val tabText = scannedSong?.tabText
             when {
-                recognizedTabText == null -> showImportFailure(getString(R.string.import_song_unreadable_file))
-                containsReadableTab(recognizedTabText) -> showPasteTabDialog(recognizedTabText, suggestedTitle)
-                else -> showNoTabFoundDialog(recognizedTabText, suggestedTitle)
+                scannedSong == null -> showImportFailure(getString(R.string.import_song_unreadable_file))
+                tabText == null -> showNoTabFoundDialog(scannedSong.recognizedText, suggestedTitle)
+                scannedSong.source == ScannedSong.Source.SHEET_MUSIC -> MaterialAlertDialogBuilder(this@SongLibraryActivity)
+                    .setIcon(R.drawable.ic_music_note)
+                    .setTitle(R.string.sheet_music_read_title)
+                    .setMessage(R.string.sheet_music_read_message)
+                    .setPositiveButton(R.string.sheet_music_read_check) { _, _ -> showPasteTabDialog(tabText, suggestedTitle) }
+                    .setNegativeButton(R.string.cancel, null)
+                    .show()
+                else -> showPasteTabDialog(tabText, suggestedTitle)
             }
         }
         progressDialog.setButton(android.content.DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel)) { _, _ ->
@@ -477,13 +477,6 @@ class SongLibraryActivity : WaveFretActivity() {
         }
         progressDialog.show()
     }
-
-    /**
-     * @param tabText Text that may contain a bass tab. Type: String
-     * @return True if at least one note can be read from it. Type: Boolean
-     */
-    private fun containsReadableTab(tabText: String): Boolean =
-        runCatching { AsciiTabParser(BassTunings.STANDARD).parseNotes(tabText) }.isSuccess
 
     /**
      * Explains that no tab was found (for example, the picture is sheet

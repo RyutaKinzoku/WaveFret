@@ -69,4 +69,18 @@ class DrawnTabReaderTest {
 
         assertEquals(2, drawnTabReader.countNumbersOnLines(fourLineStaff, symbols))
     }
+
+    @Test
+    fun readsLettersThatTextRecognitionConfusesWithDigits() {
+        val symbols = listOf(digit("O", 100, 92), digit("l", 130, 78), digit("S", 160, 64))
+
+        assertEquals(listOf(listOf(TabNote(0, 0)), listOf(TabNote(1, 1)), listOf(TabNote(2, 5))), drawnTabReader.read(fourLineStaff, symbols))
+    }
+
+    @Test
+    fun ignoresTheTabClefAtTheStartOfTheStaff() {
+        val symbols = listOf(digit("T", 22, 57), digit("A", 22, 71), digit("B", 22, 85), digit("0", 22, 92), digit("3", 100, 92))
+
+        assertEquals(listOf(listOf(TabNote(0, 3))), drawnTabReader.read(fourLineStaff, symbols))
+    }
 }

@@ -107,7 +107,7 @@ class DocumentPageRenderer(
 
     private companion object {
         const val DEFAULT_MAXIMUM_PAGES = 12
-        const val DEFAULT_PAGE_WIDTH_PIXELS = 2000
+        const val DEFAULT_PAGE_WIDTH_PIXELS = 2480
         const val DEFAULT_MAXIMUM_IMAGE_SIDE_PIXELS = 3000
     }
 }
