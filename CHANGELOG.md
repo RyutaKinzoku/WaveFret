@@ -354,3 +354,43 @@
 - New dependency: `com.google.mlkit:text-recognition` 16.0.1 (bundled
   model, no Play services download).
 
+## [0.13.0] - 2026-11-13 - Tabs and sheet music from PDFs, tabs from videos, play-along with the right notes
+
+### Added
+- PDFs and photos with drawn tab staffs (Guitar Pro, MuseScore, Songsterr
+  exports): WaveFret finds the staff lines, tells 4-line tab staffs from
+  5-line music staffs, recognizes the fret numbers on each line and maps
+  them to strings. When a page has both sheet music and tab, the tab is
+  used. The result opens as editable tab.
+- Sheet music in bass clef (experimental): filled and hollow noteheads,
+  ledger lines, key signature and sharps/flats before a note; pitches are
+  read an octave below written (as bass parts are notated) and placed on
+  the fretboard. Rhythm isn't read. WaveFret asks the player to check the
+  notes.
+- Listen mode reads the tab shown in a YouTube video while it hears the
+  video directly: about once a second it reads the video picture, joins the
+  pages and scrolled views into one tab, and makes the lesson from that tab
+  with its timing lined up to the video's sound.
+- Any of your lessons can get a song for play-along (practice screen menu):
+  a YouTube video (Listen mode lines the lesson up with it) or an audio
+  file. The lesson's notes stay exactly as they are; only their timing
+  comes from the song.
+- Edit lesson in the practice screen menu, for every lesson you added.
+
+### Fixed
+- Tabs copied from websites that wrap long lines (the wrapped part, which
+  may start with a fret number, is joined back to its line).
+- Faint or anti-aliased staff lines and uneven line gaps in low-resolution
+  pages and photos.
+
+### Architecture
+- `common.imaging` (`BinaryImage`, `InkThreshold`, `PixelRegion`,
+  bitmap conversions, `ScreenFrameSource`); `common.textrecognition`
+  (`ImageSymbolRecognizer`, `MlKitImageSymbolRecognizer`).
+- `practice.songimport.scan` (`StaffFinder`, `Staff`, `StaffLineEraser`,
+  `DrawnTabReader`, `NotationStaffReader`, `NotationTabArranger`,
+  `ScoreImageReader`, `PageReading`, `ScannedSong`, `ScannedSongAssembler`,
+  `DocumentSongReader`, `VideoTabCollector`, `VideoTabLessonBuilder`).
+- `practice.songimport.AsciiTabWriter`, `LessonSynchronizer`;
+  `OnDeviceLessonTranscriber.transcribeNotes`.
+

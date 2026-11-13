@@ -2,7 +2,7 @@
 
 This document maps each product-quality characteristic of ISO/IEC 25010:2023
 to what WaveFret does about it, how that is verified, and what is still
-open. It is updated with every release; the current state is **0.12.0**.
+open. It is updated with every release; the current state is **0.13.0**.
 
 Verification legend: **UT** = JUnit unit test, **RT** = Robolectric screen
 test (`ScreenRenderTest`, renders every screen in light/dark),
@@ -19,6 +19,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 | Functional correctness (transcription) | Note decoding, windowing, resampling and tempo estimation are unit-tested against synthetic signals and synthetic model outputs; a harmonic-rich bass line is transcribed end to end. Real-song accuracy is not yet measured. | UT, DEV pending |
 | Functional correctness (0.11) | A note on the same string as the previous one, or a repeated note, only counts after a detected pluck attack, so ringing strings and fading tails can't play the lesson for you. | UT (`AttackDetector`, `HitConfirmer`, sessions, `PracticeController`) |
 | Functional correctness (0.12) | Finished lessons are never recommended again; the next suggestion is the easiest unfinished one. Re-plucked notes stay separate notes, quiet recordings are transcribed, full songs keep only the bass line. Pasted, photographed and web tabs are normalised before parsing. | UT (`ExerciseProgression`, `PracticeSummaryBuilder`, `MonophonicTranscriber`, `BassLineExtractor`, `AsciiTabParser`, `TextGridBuilder`, `TabLineGapFiller`) |
+| Functional correctness (0.13) | Drawn tab staffs and bass-clef sheet music are read from page images; video tabs are merged across frames; a tab lesson is lined up with a recording note by note (exact pitch, then octave) so play-along uses the tab's notes. Checked with drawn test pages, synthetic frames and note sequences, and the staff finder against a real screenshot of a Guitar Pro PDF. | UT (`StaffFinder`, `StaffLineEraser`, `DrawnTabReader`, `NotationStaffReader`, `ScoreImageReader`, `ScannedSongAssembler`, `VideoTabCollector`, `VideoTabLessonBuilder`, `LessonSynchronizer`, `AsciiTabParser`) |
 | Functional appropriateness | The app compares against a *known* expected note instead of open transcription, the simplest reliable approach for "wait until I play it right". | Design (charter) |
 
 ## 2. Performance efficiency
@@ -66,6 +67,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 
 | Sub-characteristic | How | Verified by |
 |---|---|---|
+| Confidentiality (0.13) | Reading the tab in a video uses the same approved capture session as hearing it: pictures of the screen are read in memory about once a second and never saved. PDFs and photos are read on the phone. | Manifest review, DEV |
 | Confidentiality (0.12) | Text recognition for photos/PDFs runs on the device (bundled ML Kit model). Hearing a video directly needs the player's approval in Android's capture prompt each time, runs only while Listen mode listens (with an ongoing notification), and the captured sound is analysed in memory and never saved. The song finder is an ordinary in-app browser; WaveFret sends nothing to the sites it opens. | Manifest review, DEV |
 | Confidentiality | `RECORD_AUDIO` and `CAMERA` are requested only when a screen needs them. `INTERNET` (since 0.9) is used only to load YouTube's embedded player for a video the player chose; no WaveFret data is sent anywhere, there are no accounts, analytics or ads, and transcription runs on the device. Takes leave the device only when the player shares one: a FileProvider exposes just that file, read-only, to the app they pick. | Manifest review |
 | Integrity | YouTube video ids are checked against YouTube's id format before they are placed in the player page, and the page's JavaScript bridge only receives player events. All XML (MusicXML, Guitar Pro) goes through `SafeXmlDocumentParser` (no entity expansion, no external DTDs); file names are URL-encoded so titles can't escape the storage folder; shared files are parsed, never executed. | UT |
@@ -109,6 +111,7 @@ test (`ScreenRenderTest`, renders every screen in light/dark),
 - English only; strings are externalized, so translation is possible but not done.
 - Android Gradle Plugin 9.5.1 is available (lint notice); upgrading is a separate task.
 - Rhythm is not part of the tab model, so it doesn't count towards difficulty.
-- Sheet music (notes on a staff) in photos and PDFs isn't read; only tabs are.
+- Sheet music reading is experimental: rhythm isn't read, and it was only checked on drawn test pages and a low-resolution screenshot, where blurred rests still read as notes.
+- Reading tabs from videos depends on the video showing a clear tab staff; tab pages that repeat exactly are only counted once.
 - Text recognition, playback capture and the song finder have only been checked with unit tests and rendered screens, not on a phone.
 - Transcription accuracy on real songs is still unmeasured; the new rules were checked against synthetic audio and synthetic model output.
