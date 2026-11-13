@@ -65,6 +65,14 @@ class StaffFinderTest {
     }
 
     @Test
+    fun findsAllFiveLinesWhenALowResolutionPageMakesTheGapsUneven() {
+        val image = BinaryImage.blank(400, 200)
+        listOf(40, 56, 76, 96, 112).forEach { ScoreImageDrawing.horizontalLine(image, it, 20, 380) }
+
+        assertEquals(listOf(5), staffFinder.find(image).map { it.lineYs.size })
+    }
+
+    @Test
     fun aBlankPageHasNoStaffs() {
         assertEquals(0, staffFinder.find(BinaryImage.blank(100, 100)).size)
     }
