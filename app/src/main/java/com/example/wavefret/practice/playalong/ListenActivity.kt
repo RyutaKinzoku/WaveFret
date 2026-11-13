@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.graphics.Rect
+import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionConfig
 import android.media.projection.MediaProjectionManager
 import android.os.Build
@@ -24,6 +26,11 @@ import com.example.wavefret.common.audio.AudioRecordPcmSource
 import com.example.wavefret.common.audio.PcmAudioSource
 import com.example.wavefret.common.audio.PlaybackCapturePcmSource
 import com.example.wavefret.common.audio.PlaybackCaptureService
+import com.example.wavefret.common.imaging.ScreenFrameSource
+import com.example.wavefret.common.imaging.toBinaryImage
+import com.example.wavefret.common.music.BassTunings
+import com.example.wavefret.common.textrecognition.MlKitImageSymbolRecognizer
+import com.example.wavefret.common.textrecognition.MlKitSymbolRecognizer
 import com.example.wavefret.common.audio.WavFileWriter
 import com.example.wavefret.common.time.ElapsedRealtimeClock
 import com.example.wavefret.common.ui.WaveFretActivity
@@ -31,7 +38,12 @@ import com.example.wavefret.common.ui.applySystemBarPadding
 import com.example.wavefret.common.ui.showMicrophonePermissionNeeded
 import com.example.wavefret.practice.LessonEditorActivity
 import com.example.wavefret.practice.LessonMediaSource
+import com.example.wavefret.practice.songimport.FretboardPositionFinder
+import com.example.wavefret.practice.songimport.LessonSynchronizer
 import com.example.wavefret.practice.songimport.OnDeviceLessonTranscriber
+import com.example.wavefret.practice.songimport.scan.ScoreImageReader
+import com.example.wavefret.practice.songimport.scan.VideoTabCollector
+import com.example.wavefret.practice.songimport.scan.VideoTabLessonBuilder
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -55,8 +67,12 @@ import kotlinx.coroutines.withTimeoutOrNull
  * player) and, on Android 10 and later, WaveFret hears the video's sound
  * directly (after the player approves Android's capture prompt), because
  * phone speakers can't play deep bass notes; the microphone is the
- * fallback. The lesson keeps the video's timing for play-along, and the
- * video's sound is never saved. Without a video the song plays on another
+ * fallback. While hearing the video directly it also reads the tab the
+ * video shows, frame by frame; when enough tab is read, the lesson takes
+ * its notes from that tab and its timing from the sound. The lesson keeps
+ * the video's timing for play-along, and the video's sound and pictures
+ * are never saved. Opened for an existing lesson, it only adds the
+ * video's timing to that lesson's notes. Without a video the song plays on another
  * speaker, and what the microphone heard is kept as the lesson's audio.
  *
  * Android framework glue around the tested transcription classes; verified
@@ -79,6 +95,8 @@ class ListenActivity : WaveFretActivity() {
     private val heardSamples = ArrayList<FloatArray>()
     private var heardSampleCount = 0
     private var videoStartMillis = 0L
+    private var frameReadingJob: Job? = null
+    private val videoTabCollector = VideoTabCollector()
 
     private val requestMicrophonePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -127,7 +145,9 @@ class ListenActivity : WaveFretActivity() {
                 findViewById(R.id.songMediaWebView), videoId,
                 onReady = {
                     toggleButton.isEnabled = true
-                    statusTextView.setText(R.string.listen_status_youtube)
+                    val lessonToSync = syncLessonTitle()
+                    if (lessonToSync == null) statusTextView.setText(R.string.listen_status_youtube)
+                    else statusTextView.text = getString(R.string.listen_status_sync, lessonToSync)
                 },
                 onError = {
                     toggleButton.isEnabled = false
@@ -218,9 +238,77 @@ class ListenActivity : WaveFretActivity() {
                 useMicrophoneInstead()
             } else {
                 startListening(PlaybackCapturePcmSource(mediaProjection, LISTEN_SAMPLE_RATE_HZ))
+                if (youTubeVideoId != null && syncLessonTitle() == null) startReadingVideoFrames(mediaProjection)
             }
         }
     }
+
+    /**
+     * Reads the tab shown in the video about once a second while listening.
+     *
+     * @param mediaProjection The approved capture session. Type: MediaProjection
+     * @return Unit
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun startReadingVideoFrames(mediaProjection: MediaProjection) {
+        val videoFrameView = findViewById<View>(R.id.songMediaVideoFrame)
+        val screenBounds = screenBounds()
+        frameReadingJob = lifecycleScope.launch(Dispatchers.Default) {
+            val screenFrameSource = ScreenFrameSource(
+                mediaProjection, screenBounds.width(), screenBounds.height(), resources.displayMetrics.densityDpi
+            )
+            try {
+                MlKitSymbolRecognizer().use { symbolRecognizer ->
+                    val scoreImageReader = ScoreImageReader(BassTunings.STANDARD, MlKitImageSymbolRecognizer(symbolRecognizer))
+                    while (isActive) {
+                        delay(FRAME_INTERVAL_MILLIS)
+                        val (videoRegion, videoPositionMillis) = withContext(Dispatchers.Main) {
+                            regionOnScreen(videoFrameView) to (mediaPlayer?.positionMillis ?: 0L)
+                        }
+                        val frame = screenFrameSource.latestFrame(videoRegion) ?: continue
+                        val frameColumns = try {
+                            scoreImageReader.read(frame.toBinaryImage()).tabSystems.flatten()
+                        } finally {
+                            frame.recycle()
+                        }
+                        val collectedCount = synchronized(videoTabCollector) {
+                            videoTabCollector.onFrame(frameColumns, videoPositionMillis)
+                            videoTabCollector.columns.size
+                        }
+                        if (collectedCount > 0) withContext(Dispatchers.Main) {
+                            statusTextView.text = resources.getQuantityString(R.plurals.listen_tab_notes_read, collectedCount, collectedCount)
+                        }
+                    }
+                }
+            } finally {
+                screenFrameSource.close()
+            }
+        }
+    }
+
+    /**
+     * @param view A view on screen. Type: View
+     * @return Its area in screen pixels. Type: Rect
+     */
+    private fun regionOnScreen(view: View): Rect {
+        val location = IntArray(2)
+        view.getLocationOnScreen(location)
+        return Rect(location[0], location[1], location[0] + view.width, location[1] + view.height)
+    }
+
+    /**
+     * @return The whole screen's size in pixels. Type: Rect
+     */
+    private fun screenBounds(): Rect {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) return windowManager.maximumWindowMetrics.bounds
+        val metrics = android.util.DisplayMetrics()
+        @Suppress("DEPRECATION")
+        windowManager.defaultDisplay.getRealMetrics(metrics)
+        return Rect(0, 0, metrics.widthPixels, metrics.heightPixels)
+    }
+
+    /** @return The title of the lesson to add the video's timing to, or null when making a new lesson. Type: String? */
+    private fun syncLessonTitle(): String? = intent.getStringExtra(EXTRA_SYNC_LESSON_TITLE)
 
     /**
      * @return Unit
@@ -266,6 +354,8 @@ class ListenActivity : WaveFretActivity() {
     private fun stopListening() {
         listeningJob?.cancel()
         listeningJob = null
+        frameReadingJob?.cancel()
+        frameReadingJob = null
         timerJob?.cancel()
         timerJob = null
         mediaPlayer?.pause()
@@ -328,11 +418,27 @@ class ListenActivity : WaveFretActivity() {
                 val draftLesson = withContext(Dispatchers.Default) {
                     val defaultTitle = intent.getStringExtra(EXTRA_SONG_TITLE)
                         ?: getString(if (videoId != null) R.string.youtube_lesson_title else R.string.listen_lesson_title)
-                    val transcribed = OnDeviceLessonTranscriber(this@ListenActivity)
-                        .transcribe(defaultTitle, heardAudio, LISTEN_SAMPLE_RATE_HZ, isFullSong)
+                    val transcriber = OnDeviceLessonTranscriber(this@ListenActivity)
                     if (videoId != null) {
-                        transcribed.withTimingsShiftedBy(videoStartMillis).copy(mediaSource = LessonMediaSource.YouTubeVideo(videoId))
+                        val video = LessonMediaSource.YouTubeVideo(videoId)
+                        val heardNotes = transcriber.transcribeNotes(heardAudio, LISTEN_SAMPLE_RATE_HZ, isFullSong)
+                            .map { it.copy(onsetMillis = it.onsetMillis + videoStartMillis) }
+                        val lessonToSync = syncLessonTitle()?.let { title ->
+                            appContainer.importedExercisesRepository.listExercises().firstOrNull { it.title == title }
+                        }
+                        val videoTabLesson = synchronized(videoTabCollector) {
+                            VideoTabLessonBuilder(BassTunings.STANDARD, MINIMUM_VIDEO_TAB_NOTES)
+                                .build(defaultTitle, videoTabCollector, heardNotes, video)
+                        }
+                        when {
+                            lessonToSync != null -> LessonSynchronizer(FretboardPositionFinder(BassTunings.STANDARD))
+                                .synchronize(lessonToSync, heardNotes, video)
+                            videoTabLesson != null -> videoTabLesson
+                            else -> transcriber.transcribe(defaultTitle, heardAudio, LISTEN_SAMPLE_RATE_HZ, isFullSong)
+                                .withTimingsShiftedBy(videoStartMillis).copy(mediaSource = video)
+                        }
                     } else {
+                        val transcribed = transcriber.transcribe(defaultTitle, heardAudio, LISTEN_SAMPLE_RATE_HZ, isFullSong)
                         val wavBytes = ByteArrayOutputStream().also { WavFileWriter().write(heardAudio, LISTEN_SAMPLE_RATE_HZ, it) }
                         val storedName = LessonAudioStore(appContainer.appStorageDirectoryProvider)
                             .store(LISTENED_AUDIO_FILE_NAME, wavBytes.toByteArray().inputStream())
@@ -340,7 +446,7 @@ class ListenActivity : WaveFretActivity() {
                     }
                 }
                 progressDialog.dismiss()
-                startActivity(LessonEditorActivity.intentFor(this@ListenActivity, draftLesson, originalTitle = null))
+                startActivity(LessonEditorActivity.intentFor(this@ListenActivity, draftLesson, originalTitle = syncLessonTitle()))
                 finish()
             } catch (transcriptionFailure: IllegalArgumentException) {
                 progressDialog.dismiss()
@@ -363,17 +469,22 @@ class ListenActivity : WaveFretActivity() {
         private const val FULL_SONG_CHOICE = 1
         private const val LISTENED_AUDIO_FILE_NAME = "listened.wav"
         private const val CAPTURE_START_TIMEOUT_MILLIS = 3_000L
+        private const val FRAME_INTERVAL_MILLIS = 1_000L
+        private const val MINIMUM_VIDEO_TAB_NOTES = 8
+        private const val EXTRA_SYNC_LESSON_TITLE = "com.example.wavefret.practice.playalong.SYNC_LESSON_TITLE"
 
         /**
          * @param context Context starting the screen. Type: Context
          * @param youTubeVideoId Video to play while listening, or null to listen to a speaker. Type: String?
          * @param songTitle Name for the lesson, e.g. from "Find a song", or null for a default. Type: String?
+         * @param syncLessonTitle Existing lesson to give this video's timing to, or null to make a new lesson. Type: String?
          * @return An intent that opens Listen mode. Type: Intent
          */
-        fun intentFor(context: Context, youTubeVideoId: String?, songTitle: String? = null): Intent {
+        fun intentFor(context: Context, youTubeVideoId: String?, songTitle: String? = null, syncLessonTitle: String? = null): Intent {
             return Intent(context, ListenActivity::class.java)
                 .putExtra(EXTRA_YOUTUBE_VIDEO_ID, youTubeVideoId)
-                .putExtra(EXTRA_SONG_TITLE, songTitle)
+                .putExtra(EXTRA_SONG_TITLE, songTitle ?: syncLessonTitle)
+                .putExtra(EXTRA_SYNC_LESSON_TITLE, syncLessonTitle)
         }
     }
 }
