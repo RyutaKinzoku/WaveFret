@@ -58,4 +58,12 @@ class ClefDetectorTest {
 
         assertEquals(Clef.BASS, detect(image))
     }
+
+    @Test
+    fun aBassClefStartingTwoSpacesIntoTheStaffIsStillFound() {
+        val image = blankStaffPage()
+        ScoreImageDrawing.bassClef(image, 46, 100, spacing)
+
+        assertEquals(Clef.BASS, detect(image))
+    }
 }

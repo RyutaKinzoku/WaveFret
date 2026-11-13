@@ -123,4 +123,17 @@ class ScoreImageReaderTest {
 
         assertEquals(listOf(listOf(40)), pageReading.notationSystems)
     }
+
+    @Test
+    fun aFourLineStaffWithoutNumbersDoesNotHideTheSheetMusic() = runTest {
+        val page = BinaryImage.blank(500, 300)
+        ScoreImageDrawing.staff(page, top = 30, lineCount = 4, spacing = 12, left = 20, right = 480)
+        ScoreImageDrawing.staff(page, top = 150, lineCount = 5, spacing = 12, left = 20, right = 480)
+        ScoreImageDrawing.quarterNote(page, 120, 199, 12)
+
+        val pageReading = reader(PrintedDigits(emptyList())).read(page)
+
+        assertEquals(listOf(listOf(31)), pageReading.notationSystems)
+        assertTrue(pageReading.tabSystems.isEmpty())
+    }
 }
