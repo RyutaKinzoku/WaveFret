@@ -8,4 +8,11 @@
     <issue id="GradleDependency">
         <ignore regexp="com\.google\.ai\.edge\.litert:litert" />
     </issue>
+    <!--
+      Android Studio 2026.2.1 supports the Android Gradle Plugin up to 9.4.0 and
+      refuses to sync a project on a newer one. Stay on 9.4.0 until Studio is updated.
+    -->
+    <issue id="AndroidGradlePluginVersion">
+        <ignore regexp="com\.android\.application" />
+    </issue>
 </lint>
