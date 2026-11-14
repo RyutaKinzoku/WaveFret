@@ -354,6 +354,14 @@
 - New dependency: `com.google.mlkit:text-recognition` 16.0.1 (bundled
   model, no Play services download).
 
+## [0.14.2] - 2026-11-13 - Android Studio syncs the project again
+
+### Fixed
+- Android Studio 2026.2.1 refused to sync the project ("incompatible
+  version (AGP 9.5.1) of the Android Gradle plugin. Latest supported
+  version is AGP 9.4.0"). The project now uses the Android Gradle Plugin
+  9.4.0, and lint no longer suggests upgrading it.
+
 ## [0.14.1] - 2026-11-13 - Make Project works in Android Studio
 
 ### Fixed
