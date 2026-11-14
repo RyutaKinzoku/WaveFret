@@ -4,7 +4,7 @@ An Android app for practicing bass guitar: record yourself, review, and
 (eventually) get real-time feedback on pitch against a chosen
 tab/tablature — see [Roadmap](#roadmap).
 
-## Status: 0.14.1 — hear any lesson, piano scores, light-on-dark video tabs
+## Status: 0.14.2 — hear any lesson, piano scores, light-on-dark video tabs
 
 The current build lets you:
 
